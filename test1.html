@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script type="text/javascript" src="js/jquery/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="js/lodash.min.js"></script>
+	<script>
+            $(function ()
+            {
+                var get_line_id = function(arr, name){
+                    var ret;
+                    ret = _.result(_.find(arr,  _.matchesProperty('properties.name', name)), '_id');
+                    return ret;
+                };
+                var arr1 = [{_id:'111',properties:{name:'aaa',webgis_type:'a', prop:'aa'}}, {_id:'222',properties:{name:'bbb',webgis_type:'a', prop:'bb'}}];
+//                var r =  get_line_id(arr, 'bbb');
+                var arr2 = [{_id:'222',properties:{name:'ccc',webgis_type:'c'}}, {_id:'333',properties:{name:'ddd',webgis_type:'d'}}];
+                var arr =  _.uniq(_.union(arr1, arr2), _.property('_id'));
+//                var arr =  _.uniq(_.union(arr1, arr2));
+                console.log(arr);
+                console.log(_.result(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}}), 'properties.name'));
+            });
+
+	</script>
+
+</head>
+
+<body>
+</body>
+</html>
