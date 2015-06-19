@@ -19,7 +19,8 @@
                 var arr =  _.uniq(_.union(arr1, arr2), _.property('_id'));
 //                var arr =  _.uniq(_.union(arr1, arr2));
                 console.log(arr);
-                console.log(_.result(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}}), 'properties.name'));
+                console.log(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}}));
+                console.log(_.result(_.first(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}})), 'properties.name'));
             });
 
 	</script>
