@@ -21,6 +21,7 @@
                 console.log(arr);
                 console.log(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}}));
                 console.log(_.result(_.first(_.filter(arr, {properties:{prop: 'bb', webgis_type:'a'}})), 'properties.name'));
+                console.log(_.pluck(arr1, 'properties.name'));
             });
 
 	</script>
