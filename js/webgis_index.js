@@ -303,6 +303,7 @@ function LoadEdgeByLineId(viewer, db_name, lineid, callback)
 {
 	console.log(lineid);
 	var cond = {'db':db_name, 'collection':'-', action:'loadtoweredge', 'lineid':lineid};
+	//console.log('000   ' + moment().local().format('YYYY-MM-DD HH:mm:ss'));
 	MongoFind(cond, function(data){
 		if(data.length>0)
 		{
@@ -3785,10 +3786,8 @@ function GetCheckedBoxList(prefix)
 }
 function InitSearchBox(viewer)
 {
-	//$('#control_search').css( 'z-index','9');
 	$('#button_search_clear').on( 'click', function(){
 		var v = $('#input_search').val();
-		//console.log(v);
 		if(v.length>0)
 		{
 			$('#input_search').val('');
@@ -3814,7 +3813,6 @@ function InitSearchBox(viewer)
 	$( "input[id^=chb_search_webgis_type_]").on("ifChanged", function(e){
 	});
 	
-	//$( "#input_search" ).css("border", "1px 1px 0px 1px solid #00FF00");
 	$( "#input_search" ).on('keyup',function(e){
 		if($(e.target).val().length > 0)
 		{
@@ -3892,27 +3890,6 @@ function InitSearchBox(viewer)
 								$.webgis.control.leaflet_geojson_layer.addData(item);
 							}
 						});
-						//for(var i in data)
-						//{
-						//	var _id = data[i]['_id'];
-						//	var geojson = data[i];
-						//	if(!$.webgis.data.geojsons[_id])
-						//	{
-						//		$.webgis.data.geojsons[_id] = geojson;
-						//	}
-						//	if($.webgis.config.map_backend === 'cesium')
-						//	{
-						//		if(!$.webgis.data.czmls[_id])
-						//		{
-						//			$.webgis.data.czmls[_id] = CreateCzmlFromGeojson($.webgis.data.geojsons[_id]);
-						//		}
-						//	}
-						//	if($.webgis.config.map_backend === 'leaflet')
-						//	{
-						//		//console.log(geojson);
-						//		$.webgis.control.leaflet_geojson_layer.addData(geojson);
-						//	}
-						//}
 						var extent = GetExtentByCzml();
 						FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
 						if($.webgis.config.map_backend === 'cesium')
@@ -3935,6 +3912,7 @@ function InitSearchBox(viewer)
 				var name = ui.item.geojson.properties.name;
 				if(name)
 				{
+
 					LoadTowerByLineName(viewer, $.webgis.db.db_name, name, function(data){
 						LoadLineByLineName(viewer, $.webgis.db.db_name, name, function(data1){
 							var extent = GetExtentByCzml();
@@ -4842,8 +4820,6 @@ function LoadLineByLineName(viewer, db_name, name, callback)
 		return ret;
 	};
 	var _id = get_line_id(name);
-	
-	
 	LoadEdgeByLineId(viewer, db_name, _id, callback);
 	if(true) return;
 	
@@ -9796,7 +9772,8 @@ function OnSelect(viewer, e, selectedEntity)
 					clearselcolor();
 					console.log('selected polyline id=' + id);
 					$.webgis.select.polyline_material_unselect = $.webgis.select.selected_obj.polyline.material;
-					$.webgis.select.selected_obj.polyline.material = Cesium.ColorMaterialProperty.fromColor(Cesium.Color.fromCssColorString('rgba(0, 255, 255, 1.0)'));
+					//$.webgis.select.selected_obj.polyline.material = Cesium.ColorMaterialProperty.fromColor(Cesium.Color.fromCssColorString('rgba(0, 255, 255, 1.0)'));
+					$.webgis.select.selected_obj.polyline.material = new Cesium.ColorMaterialProperty(Cesium.Color.fromCssColorString('rgba(0, 255, 255, 1.0)'));
 					var cz = _.find($.webgis.data.czmls, {id:id});
 					if(cz && cz.webgis_type == 'polyline_line')
 					{
@@ -9811,7 +9788,8 @@ function OnSelect(viewer, e, selectedEntity)
 					clearselcolor();
 					console.log('selected polygon id=' + id);
 					$.webgis.select.polygon_material_unselect = $.webgis.select.selected_obj.polygon.material;
-					$.webgis.select.selected_obj.polygon.material = Cesium.ColorMaterialProperty.fromColor(Cesium.Color.fromCssColorString('rgba(0, 255, 0, 0.3)'));
+					//$.webgis.select.selected_obj.polygon.material = Cesium.ColorMaterialProperty.fromColor(Cesium.Color.fromCssColorString('rgba(0, 255, 0, 0.3)'));
+					$.webgis.select.selected_obj.polygon.material = new Cesium.ColorMaterialProperty(Cesium.Color.fromCssColorString('rgba(0, 255, 0, 0.3)'));
 				}
 			}
 			else if ($.webgis.select.selected_obj.point)
