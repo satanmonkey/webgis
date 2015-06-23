@@ -8,7 +8,7 @@
 	<link rel="stylesheet" href="css/icheck-skins/flat/green.css" />
 	<link rel="stylesheet" href="css/jquery.jgrowl.css">
 	<link rel="stylesheet" href="css/kmgd-tools.css" />
-    <script type="text/javascript" src="js/jquery/jquery-2.1.0.min.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery-2.1.4.min.js"></script>
     <script type="text/javascript" src="js/jquery/jquery-uuid.js"></script>
     <script type="text/javascript" src="js/jquery/jquery-ui-1.10.4.custom.js"></script>
     <script type="text/javascript" src="js/icheck.js"></script>
@@ -16,14 +16,14 @@
     <script type="text/javascript" src="js/jquery/jquery.validate.js"></script>
     <script type="text/javascript" src="js/jquery/jquery.metadata.js"></script>
     <script type="text/javascript" src="js/jquery/messages_cn.js"></script>
-    <script type="text/javascript" src="js/webgis_common.js"></script>
 	<script type="text/javascript" src="js/jquery/jquery.tooltipster.js"></script>
 	<script type="text/javascript" src="js/jquery/jquery.jgrowl.js"></script>
 	<script type="text/javascript" src="js/encryption/aes.js"></script>
+    <script type="text/javascript" src="js/webgis_common.js"></script>
 	<script type="text/javascript">
 	function Login(username, password, callback)
 	{
-		var cond = {'db':g_db_name, 'collection':'userinfo', 'url':'/login', 'action':'login','username':username, 'password':password};
+		var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'url':'/login', 'action':'login','username':username, 'password':password};
 		MongoFind(cond, function(data){
 			//console.log(data);
 			if(callback) callback(data);
@@ -63,7 +63,7 @@
 						console.log(data);
 						if(data.username) {
 							var json = encodeURIComponent(JSON.stringify(data));
-							var encrypted = CryptoJS.AES.encrypt(json, g_encrypt_key);
+							var encrypted = CryptoJS.AES.encrypt(json, $.webgis.config.encrypt_key);
 							window.location.href = '/webgis_index.html?' + encrypted;
 						}
 						else if(data.result)
