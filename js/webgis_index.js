@@ -7882,7 +7882,10 @@ function AntiBirdHeatmap(viewer, dict)
 
 function ShowTowerInfoDialog(viewer, tower)
 {
-	//var infoBox = viewer.infoBox;
+	//try{
+	//	$("#listbox_tower_info_metal").ligerListBox().setData([]);
+	//}catch(e){}
+
 	var title = '';
 	title = tower['properties']['name'];
 	var buttons = [];
@@ -8178,9 +8181,6 @@ function ShowTowerInfoDialog(viewer, tower)
 		$.webgis.control.contextmenu_metal.show({ top: e.pageY, left: e.pageX });
 		return false;
 	});
-	//try{
-		//$("#listbox_tower_info_metal").ligerListBox().clearContent();
-	//}catch(e){}
 	var listbox_tower_info_metal = $("#listbox_tower_info_metal").ligerListBox({
 		data: data,
 		valueField:'idx',

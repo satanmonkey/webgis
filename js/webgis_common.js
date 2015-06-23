@@ -13,12 +13,11 @@ $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
 $.webgis.key_event = {};
-$.webgis.remote.arcserver_host = 'localhost';//10.181.160.72
-$.webgis.remote.host = 'localhost';//10.181.160.72
-//$.webgis.remote.arcserver_host = '192.168.1.107';//10.181.160.72
-//$.webgis.remote.host = '192.168.1.107';//10.181.160.72
+$.webgis.remote.localhost = 'yncaiyun1.com';//10.181.160.72
+$.webgis.remote.arcserver_host = $.webgis.remote.localhost;
+$.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
-$.webgis.remote.tiles_host = 'localhost';
+$.webgis.remote.tiles_host = $.webgis.remote.localhost;
 $.webgis.remote.tiles_port = 8088;
 //var $.webgis.db.db_name = 'kmgd';
 $.webgis.db.db_name = 'kmgd';
@@ -26,7 +25,7 @@ $.webgis.db.db_name = 'kmgd';
 $.webgis.config.zaware = false;
 
 $.webgis.websocket.antibird.WS_PROTOCOL = 'ws';
-$.webgis.websocket.antibird.HOST = 'localhost';
+$.webgis.websocket.antibird.HOST = $.webgis.remote.localhost;
 $.webgis.websocket.antibird.PORT = 8088;
 
 $.webgis.config.encrypt_key = 'kmgd111';
