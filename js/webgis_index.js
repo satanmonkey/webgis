@@ -24,7 +24,7 @@ $.webgis.config.node_connect_mode = false;
 $.webgis.mapping.leaflet_old_style = {};
 
 $.webgis.data.heatmap_layers = {};
-$.webgis.current_userinfo = {};
+
 $.webgis.data.sysrole = [];
 $.webgis.config.map_backend = 'cesium';
 $.webgis.config.use_catenary = true;
@@ -46,9 +46,8 @@ $.webgis.config.max_file_size = 5000000;
 
 
 
-$(function() {
 
-	$.webgis.current_userinfo = GetParamsFromUrl();
+$(function() {
 
 	$.jGrowl.defaults.closerTemplate = '<div class="bubblestylesuccess">关闭所有提示信息</div>';
 	
@@ -308,15 +307,6 @@ function LoadEdgeByLineId(viewer, db_name, lineid, callback)
 		if(data.length>0)
 		{
 			$.webgis.data.geojsons =  _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
-			//for(var i in data)
-			//{
-			//	var id = data[i]['_id'];
-			//	if(!$.webgis.data.geojsons[id])
-			//	{
-			//		//console.log(data[i]);
-			//		$.webgis.data.geojsons[id] = data[i];
-			//	}
-			//}
 		}
 		if(callback) callback(data);
 	});
@@ -1117,11 +1107,14 @@ function InitKeyboardEvent(viewer)
 
 function Logout(callback)
 {
-	var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'url':'/logout'};
-	MongoFind(cond, function(data){
-		if(callback) callback(data);
+	//var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'url':'/logout'};
+	//MongoFind(cond, function(data){
+	//	if(callback) callback(data);
+	//});
+	var url = '/logout';
+	$.get(url,{}, function( data1 ){
+		if(callback) callback(data1);
 	});
-
 }
 
 function InitLogout(viewer)
@@ -1135,10 +1128,12 @@ function InitLogout(viewer)
 				'确认要登出吗?',
 				function(){
 					Logout(function(data){
+						console.log(data);
 						if(data.result)
 						{
 							window.location.href = '/webgis_login.html';
 						}
+						//window.location.href = '/logout';
 					});
 				},
 				function(){
@@ -10210,17 +10205,6 @@ function ShowLineDialog(viewer, mode)
 
 }
 
-function GetParamsFromUrl() {
-	var ret = {};
-	if(location.search.length>0)
-	{
-		var s = decodeURIComponent(location.search.substr(1));
-		var decrypted = CryptoJS.AES.decrypt(s,  $.webgis.config.encrypt_key);
-		s = decrypted.toString(CryptoJS.enc.Utf8);
-		ret = JSON.parse(s);
-	}
-	return ret;
-}
 
 
 function CheckPermission(funcname)

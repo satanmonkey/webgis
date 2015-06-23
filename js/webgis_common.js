@@ -13,7 +13,7 @@ $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
 $.webgis.key_event = {};
-$.webgis.remote.localhost = 'yncaiyun1.com';//10.181.160.72
+$.webgis.remote.localhost = 'localhost';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
 $.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
@@ -23,12 +23,25 @@ $.webgis.remote.tiles_port = 8088;
 $.webgis.db.db_name = 'kmgd';
 //$.webgis.db.db_name = 'ztgd';
 $.webgis.config.zaware = false;
-
+$.webgis.current_userinfo = {};
 $.webgis.websocket.antibird.WS_PROTOCOL = 'ws';
 $.webgis.websocket.antibird.HOST = $.webgis.remote.localhost;
 $.webgis.websocket.antibird.PORT = 8088;
 
 $.webgis.config.encrypt_key = 'kmgd111';
+var GetParamsFromUrl = function() {
+	var ret = {};
+	if(location.search.length>0)
+	{
+		var s = decodeURIComponent(location.search.substr(1));
+		var decrypted = CryptoJS.AES.decrypt(s,  $.webgis.config.encrypt_key);
+		s = decrypted.toString(CryptoJS.enc.Utf8);
+		ret = JSON.parse(s);
+	}
+	console.log(ret);
+	return ret;
+};
+$.webgis.current_userinfo = GetParamsFromUrl();
 $.webgis.mapping.phase_color_mapping = {
 	'A':'#FFFF00',
 	'B':'#FF0000',
@@ -983,7 +996,7 @@ function MongoFind(data, success, host)
 	//console.log(data);
 	$.post(url, encodeURIComponent(JSON.stringify(data)), function( data1 ){
 		//console.log(data1);
-		//if(data.redirect) return;
+
 		ret = JSON.parse(decodeURIComponent(data1));
 		if(success)
 		{
