@@ -1,25 +1,23 @@
 <!DOCTYPE html>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1"> 
-    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
-	<link rel="stylesheet" href="css/black-green-theme/jquery-ui-1.10.4.custom.css" />
-	<link rel="stylesheet" href="css/tooltipster.css" />
-	<link rel="stylesheet" href="css/icheck-skins/flat/green.css" />
-	<link rel="stylesheet" href="css/jquery.jgrowl.css">
-	<link rel="stylesheet" href="css/kmgd-tools.css" />
-    <script type="text/javascript" src="js/jquery/jquery-2.1.4.min.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery-uuid.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery-ui-1.10.4.custom.js"></script>
-    <script type="text/javascript" src="js/icheck.js"></script>
-    <script type="text/javascript" src="js/json3.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery.validate.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery.metadata.js"></script>
-    <script type="text/javascript" src="js/jquery/messages_cn.js"></script>
-	<script type="text/javascript" src="js/jquery/jquery.tooltipster.js"></script>
-	<script type="text/javascript" src="js/jquery/jquery.jgrowl.js"></script>
-    <script type="text/javascript" src="js/webgis_common.js"></script>
 <body>
 <div>试图访问未授权网页</div>
-<a href="/webgis_login.html">返回登录页面</a>
+将于<span id="sec">5</span>秒后自动跳转至
+<a href="/webgis_login.html">登录页面</a>
+    <script type="text/javascript" >
+        var ele = document.getElementById('sec');
+        var autoredirect = function(){
+            var sec = parseInt(ele.innerHTML);
+            sec -= 1;
+            if(sec < 0 ){
+                window.location.href = '/webgis_login.html';
+            }else {
+                ele.innerHTML = sec;
+            }
+        };
+        setInterval(autoredirect, 1000);
+    </script>
+
 </body>
 </html>

@@ -107,7 +107,7 @@ $(function() {
 		InitKeyboardEvent(viewer);
 		load_init_data();
 		InitAntiBird(viewer);
-		InitScreenSize();
+		InitScreenSize(viewer);
 	}catch(ex)
 	{
 		console.log(ex);
@@ -166,9 +166,12 @@ $(function() {
 	//};
 });
 
-function InitScreenSize()
+function InitScreenSize(viewer)
 {
 	$('#cesiumContainer').css('height', $( window ).height() + 'px');
+	$( window ).resize(function(e) {
+		$('#cesiumContainer').css('height', $( window ).height() + 'px');
+	});
 }
 function CreateTileHeatMap(viewer, options)
 {
@@ -689,6 +692,7 @@ function InitCesiumViewer()
 		sceneModePicker:false,
 		navigationInstructionsInitiallyVisible:false,
 		infoBox:false,
+		//useDefaultRenderLoop:true,
 		imageryProviderViewModels:providerViewModels,
 		terrainProviderViewModels:terrainProviderViewModels
 	});
@@ -4285,7 +4289,6 @@ function CreatePointCzmlFromGeojson(geojson)
 	{
 		subtype = 'point_dn_transformarea'
 	}
-	//console.log(subtype);
 	var style = $.webgis.mapping.style_mapping[subtype];
 	var v;
 	var icon_img = 'img/marker30x48.png';

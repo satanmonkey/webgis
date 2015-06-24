@@ -34,7 +34,7 @@
 		$( "#logindialog" ).dialog({
 			dialogClass: "login-no-close",
 			width: 400,
-			height: 250,
+			height: 270,
 			minWidth:200,
 			minHeight: 200,
 			draggable: false,
@@ -57,6 +57,7 @@
 						return;
 					}
 					ShowProgressBar(true, 670, 200, '登录中', '正在登录，请稍候...');
+				  	$('#login_msg').html('');
 					Login($('#username').val(),  $('#password').val(), function(data){
 						$(that).removeAttr('disabled');
 						ShowProgressBar(false);
@@ -69,6 +70,7 @@
 						}
 						else if(data.result)
 						{
+							$('#login_msg').html(data.result);
 							$.jGrowl(data.result,{
 								life: 2000,
 								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
@@ -78,6 +80,7 @@
 						}
 						else
 						{
+							$('#login_msg').html("网络异常");
 							$.jGrowl("网络异常",{
 								life: 2000,
 								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
@@ -127,7 +130,10 @@
 		<label for="username">用户名:</label><input class="ui-widget" id="username" type="text">
 	</div>
 	<div style="margin:20px 0px 20px 30px;">
-		<label for="username">密&nbsp;&nbsp;&nbsp;码:</label><input class="ui-widget" id="password" type="password">
+		<label for="password">密&nbsp;&nbsp;&nbsp;码:</label><input class="ui-widget" id="password" type="password">
+	</div>
+	<div id="login_msg" style="margin:20px 0px 20px 30px;color:red;text-align: center;">
+
 	</div>
 </form>
 
