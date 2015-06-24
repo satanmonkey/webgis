@@ -48,7 +48,7 @@ $.webgis.config.max_file_size = 5000000;
 
 
 $(function() {
-
+	$.webgis.current_userinfo = GetParamsFromUrl();
 	$.jGrowl.defaults.closerTemplate = '<div class="bubblestylesuccess">关闭所有提示信息</div>';
 	
 	var viewer;

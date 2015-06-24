@@ -13,7 +13,7 @@ $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
 $.webgis.key_event = {};
-$.webgis.remote.localhost = 'yncaiyun1.com';//10.181.160.72
+$.webgis.remote.localhost = 'localhost';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
 $.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
@@ -122,7 +122,7 @@ function GetParamsFromUrl () {
 	}
 	return ret;
 }
-$.webgis.current_userinfo = GetParamsFromUrl();
+
 
 function GetDefaultExtent(db_name)
 {
