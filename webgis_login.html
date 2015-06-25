@@ -63,10 +63,10 @@
 						ShowProgressBar(false);
 //						console.log(data);
 						if(data.username) {
-							var json = encodeURIComponent(JSON.stringify(data));
-							var encrypted = CryptoJS.AES.encrypt(json, $.webgis.config.encrypt_key);
-							window.location.href = '/webgis_index.html?' + encrypted;
-//							window.location.href = '/webgis_index.html' ;
+//							var json = encodeURIComponent(JSON.stringify(data));
+//							var encrypted = CryptoJS.AES.encrypt(json, $.webgis.config.encrypt_key);
+//							window.location.href = '/webgis_index.html?' + encrypted;
+							window.location.href = '/webgis_index.html' ;
 						}
 						else if(data.result)
 						{

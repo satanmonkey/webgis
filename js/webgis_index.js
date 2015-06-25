@@ -48,7 +48,10 @@ $.webgis.config.max_file_size = 5000000;
 
 
 $(function() {
-	$.webgis.current_userinfo = GetParamsFromUrl();
+	var session_data_string = Cookies.get('session_data').replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
+	$.webgis.current_userinfo  = JSON.parse(session_data_string);
+	console.log("current login user: " + $.webgis.current_userinfo.displayname);
+	//GetParamsFromUrl();
 	$.jGrowl.defaults.closerTemplate = '<div class="bubblestylesuccess">关闭所有提示信息</div>';
 	
 	var viewer;
@@ -2502,7 +2505,6 @@ function InitAntiBirdWebsocket(viewer)
 					}
 					else
 					{
-						console.log(data1);
 						AntiBirdBadgeMessageArrival(viewer, data1);
 						$.webgis.websocket.antibird.websocket.send('');
 					}
@@ -3214,6 +3216,10 @@ function InitToolPanel(viewer)
 		$('#but_sys_role').on('click', function(){
 			ShowRoleControl(viewer);
 		});
+		$('#but_sys_user').button({label:'用户管理'});
+		$('#but_sys_user').on('click', function(){
+			ShowUserManagement(viewer);
+		});
 	}else
 	{
 		$('#but_sys_role').hide();
@@ -3383,6 +3389,165 @@ function GetEdgeLeafletByWebgisType(viewer, webgis_type, initpolyline)
 	return {polyline:lyr_polylinegroup, arrow:lyr_arrow, exist:exist};
 }
 
+function CreateDialogSkeleton(viewer, dlg_id)
+{
+	if($('#' + dlg_id).length === 0)
+	{
+		if (dlg_id === 'dlg_user_management') {
+			$(document.body).append('\
+			div id="dlg_user_management" style="display:none;">\
+				<form id="form_user_management"></form>\
+			</div>');
+		}
+	}
+}
+function ShowUserManagement(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_user_management');
+	$('#dlg_user_management').dialog({
+		width: 420,
+		height: 320,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'用户管理',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "确定",
+				click: function(e){
+					if($('#form_change_password').valid())
+					{
+						var data = $('#form_change_password').webgisform('getdata');
+						if(data['password_new'] != data['password_new1'])
+						{
+							$.jGrowl("两次输入的新密码不一致,请检查", {
+								life: 2000,
+								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+								theme: 'bubblestylefail',
+								glue:'before'
+							});
+							return;
+						}
+						var that = this;
+						var username;
+						if($.webgis.current_userinfo['username'] === 'admin')
+						{
+							username = data['username'];
+						}
+						else
+						{
+							username = $.webgis.current_userinfo['username'];
+							if(data['password_old'] != $.webgis.current_userinfo['password'])
+							{
+								$.jGrowl("旧密码不正确,请检查", {
+									life: 2000,
+									position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+									theme: 'bubblestylefail',
+									glue:'before'
+								});
+								return;
+							}
+						}
+						if(username && username.length>0)
+						{
+
+							ShowConfirm(null, 500, 200,
+								'保存确认',
+								'确认保存新修改的密码吗? ',
+								function(){
+									var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{'password':data['password_new']}, 'username':username};
+									ShowProgressBar(true, 670, 200, '保存用户信息', '正在保存用户信息，请稍候...');
+									MongoFind(cond, function(data1){
+										ShowProgressBar(false);
+										$.jGrowl("保存成功", {
+											life: 2000,
+											position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+											theme: 'bubblestylesuccess',
+											glue:'before'
+										});
+										$( that ).dialog( "close" );
+								});
+							},function(){
+								$( that ).dialog( "close" );
+							});
+						}else
+						{
+							$.jGrowl("请选择用户名", {
+								life: 2000,
+								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+								theme: 'bubblestylefail',
+								glue:'before'
+							});
+						}
+					}
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	var flds;
+	var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
+	ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
+	MongoFind(cond, function(data1){
+		ShowProgressBar(false);
+		var userlist = [];
+		for(var i in data1)
+		{
+			userlist.push({'value':data1[i]['username'], 'label':data1[i]['displayname']});
+		}
+		flds = [
+			{ display: "选择用户", id: "username", newline: true,  type: "select", editor:{data:userlist}, group:'用户信息', labelwidth:130, width:200, validate:{required:true}, change:function(selected){
+				for(var i in data1)
+				{
+					if(data1[i]['username'] === selected)
+					{
+						$('#form_change_password').webgisform('set', 'password_old', data1[i]['password']);
+						var password_old = $('#form_change_password').webgisform('get', 'password_old');
+						//console.log(password_old[0]);
+						$(password_old[0]).focus(function(){
+							this.type = "text";
+						}).blur(function(){
+							this.type = "password";
+						})
+						break;
+					}
+				}
+			}},
+			{ display: "旧密码", id: "password_old", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
+			{ display: "新密码", id: "password_new", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
+			{ display: "确认新密码", id: "password_new1", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
+		];
+		$('#form_change_password').webgisform(flds, {
+				//divorspan: "div",
+				prefix: "form_change_password_",
+				maxwidth: 370
+				//margin:10,
+				//groupmargin:10
+		});
+	});
+
+
+}
 function ShowChangePassword(viewer)
 {
 	$('#dlg_change_password').dialog({
@@ -3621,82 +3786,77 @@ function ShowRoleControl(viewer)
 	var get_permission = function()
 	{
 		var ret = [];
-		$.each($('input[id^=form_change_role_role_functions_]'), function(i, element){
-			if($(element).is(':checked'))
+		$('input[id^=form_change_role_role_functions_]').each( function(i, ele){
+			if($(ele).is(':checked'))
 			{
-				ret.push($(element).attr('id').replace('form_change_role_role_functions_',''));
+				ret.push($(ele).attr('id').replace('form_change_role_role_functions_',''));
 			}
 		});
 		return ret;
 	};
 	var update_form = function()
 	{
-		var userlist = [];
+		//var userlist = [];
 		var rolelist = [];
-		var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
+		//var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
 		ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
+		//MongoFind(cond, function(data1){
+		//	ShowProgressBar(false);
+		//	if(data1.result){
+		//		ShowMessage(null, 400, 250, '获取数据出错', data1.result);
+		//	}else {
+		//		data1 = _.filter(data1, function(n){
+		//			return n.username != 'admin';
+		//		});
+		//		userlist = _.map(data1, function(n){
+		//			return {'value': n._id, 'label': n.displayname};
+		//		});
+		//	}
+		var cond = {'db':$.webgis.db.db_name, 'collection':'sysrole'};
+		ShowProgressBar(true, 670, 200, '获取权限信息', '正在获取权限信息，请稍候...');
 		MongoFind(cond, function(data1){
 			ShowProgressBar(false);
-			for(var i in data1)
-			{
-				if(data1[i]['username'] != 'admin')
-				{
-					userlist.push({'value':data1[i]['_id'], 'label':data1[i]['displayname']});
-				}
-			}
-			cond = {'db':$.webgis.db.db_name, 'collection':'sysrole'};
-			ShowProgressBar(true, 670, 200, '获取权限信息', '正在获取权限信息，请稍候...');
-			MongoFind(cond, function(data2){
-				ShowProgressBar(false);
-				for(var i in data2)
-				{
-					if(data2[i]['name'] != 'admin')
-					{
-						rolelist.push({'value':data2[i]['_id'], 'label':data2[i]['displayname']});
-					}
-				}
-				
-				var flds = [
-					{display: "角色列表", id: "roleid", newline: true,  type: "select", editor:{data:rolelist},  group:'角色', labelwidth:130, width:200, validate:{required:true}, 
-						change:function(selected){
-							var users = $('#form_change_role').webgisform('get', 'users');
-							
-							$('input[id^=form_change_role_role_functions_]' ).iCheck('uncheck');
-							for(var i in data2)
-							{
-								if(data2[i]['_id'] === selected)
-								{
-									
-									$(users[0]).multipleSelect("setSelects", data2[i]['users']);
-									for(var j in data2[i]['permission'])
-									{
-										$('#form_change_role_role_functions_' + data2[i]['permission'][j]).iCheck('check');
-									}
-									break;
-								}
-							}
-						}
-					},
-					{display: "用户列表", id: "users", newline: true,  type: "multiselect", editor:{data:userlist},  group:'用户', labelwidth:130, width:200, validate:{required:true}},
-				];
-				
-				
-				for(var i in $.webgis.mapping.role_functions)
-				{
-					flds.push({display: $.webgis.mapping.role_functions[i]['label'], id: "role_functions_" + $.webgis.mapping.role_functions[i]['value'], newline: true,  type: "checkbox", defaultvalue:false,  group:'允许功能', labelwidth:270});
-				}
-				
-				
-				$('#form_change_role').empty();
-				$('#form_change_role').webgisform(flds, {
-					prefix: "form_change_role_",
-					maxwidth: 370
-					//margin:10,
-					//groupmargin:10
+			if(data1.result){
+				ShowMessage(null, 400, 250, '获取数据出错', data1.result);
+			}else {
+				data1 = _.filter(data1, function(n){
+					return n.name != 'admin';
 				});
-				
+				rolelist = _.map(data1, function(n){
+					return {'value': n._id, 'label': n.displayname};
+				});
+			}
+
+			var flds = [
+				{display: "角色列表", id: "roleid", newline: true,  type: "select", editor:{data:rolelist},  group:'角色', labelwidth:130, width:200, validate:{required:true},
+					change:function(selected){
+						var users = $('#form_change_role').webgisform('get', 'users');
+						$('input[id^=form_change_role_role_functions_]' ).iCheck('uncheck');
+						var o = _.find(data1, {_id: selected});
+						if(o) {
+							$(users[0]).multipleSelect("setSelects", o.users);
+							_.forEach(o.permission, function(item)
+							{
+								$('#form_change_role_role_functions_' + item).iCheck('check');
+							});
+						}
+					}
+				//{display: "用户列表", id: "users", newline: true,  type: "multiselect", editor:{data:userlist},  group:'用户', labelwidth:130, width:200, validate:{required:true}
+				 },
+			];
+			_.forEach($.webgis.mapping.role_functions, function(item)
+			{
+				flds.push({display: item.label, id: "role_functions_" + item.value, newline: true,  type: "checkbox", defaultvalue:false,  group:'允许功能', labelwidth:270});
+			});
+			$('#form_change_role').empty();
+			$('#form_change_role').webgisform(flds, {
+				prefix: "form_change_role_",
+				maxwidth: 370
+				//margin:10,
+				//groupmargin:10
 			});
 		});
+		//});
 	};
 	update_form();
 }
@@ -4679,7 +4839,7 @@ function LoadSysRole(db_name, callback)
 		function(data){
 			ShowProgressBar(false);
 			$.webgis.data.sysrole = data;
-			//console.log($.webgis.data.sysrole);
+			console.log($.webgis.data.sysrole);
 			if (callback) callback();
 	});
 }

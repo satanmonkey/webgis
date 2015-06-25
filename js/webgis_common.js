@@ -13,15 +13,13 @@ $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
 $.webgis.key_event = {};
-$.webgis.remote.localhost = 'localhost';//10.181.160.72
+$.webgis.remote.localhost = 'yncaiyun1.com';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
 $.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
 $.webgis.remote.tiles_host = $.webgis.remote.localhost;
 $.webgis.remote.tiles_port = 8088;
-//var $.webgis.db.db_name = 'kmgd';
 $.webgis.db.db_name = 'kmgd';
-//$.webgis.db.db_name = 'ztgd';
 $.webgis.config.zaware = false;
 $.webgis.current_userinfo = {};
 $.webgis.websocket.antibird.WS_PROTOCOL = 'ws';
@@ -92,6 +90,7 @@ $.webgis.mapping.role_functions = [
 	{value:'feature_save', label:'地标创建与保存'},
 	{value:'feature_delete', label:'地标删除'},
 	{value:'buffer_analyze', label:'缓冲区分析'},
+	{value:'anti_bird_save', label:'驱鸟器修改'}
 ];
 
 $.webgis.mapping.heat_map_gradient_stops = {
