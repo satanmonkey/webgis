@@ -1023,7 +1023,10 @@ function InitKeyboardEvent(viewer)
 					
 				});
 			}
-			var g = _.find($.webgis.data.geojsons, {_id:$.webgis.select.selected_obj.id});
+			var g;
+			if($.webgis.select.selected_obj) {
+				g = _.find($.webgis.data.geojsons, {_id: $.webgis.select.selected_obj.id});
+			}
 			if($.webgis.select.selected_obj && $.webgis.select.selected_obj.id && ($.webgis.select.selected_obj.point || $.webgis.select.selected_obj.polyline || $.webgis.select.selected_obj.polygon) && g  &&
 			(  g.properties.webgis_type === 'point_marker'
 			|| g.properties.webgis_type === 'point_hazard'
@@ -3212,17 +3215,21 @@ function InitToolPanel(viewer)
 	
 	if($.webgis.current_userinfo['username'] === 'admin')
 	{
-		$('#but_sys_role').button({label:'权限控制'});
-		$('#but_sys_role').on('click', function(){
+		$('#but_sys_role_func').button({label:'权限控制'});
+		$('#but_sys_role_func').on('click', function(){
 			ShowRoleControl(viewer);
 		});
 		$('#but_sys_user').button({label:'用户管理'});
 		$('#but_sys_user').on('click', function(){
 			ShowUserManagement(viewer);
 		});
+		$('#but_sys_role').button({label:'角色管理'});
+		$('#but_sys_role').on('click', function(){
+			ShowRoleManagement(viewer);
+		});
 	}else
 	{
-		$('#but_sys_role').hide();
+		$('#but_sys_role_func').hide();
 	}
 }
 
@@ -3395,18 +3402,23 @@ function CreateDialogSkeleton(viewer, dlg_id)
 	{
 		if (dlg_id === 'dlg_user_management') {
 			$(document.body).append('\
-			div id="dlg_user_management" style="display:none;">\
+			<div id="dlg_user_management" >\
 				<form id="form_user_management"></form>\
 			</div>');
 		}
 	}
 }
+
+function ShowRoleManagement(viewer){
+
+}
 function ShowUserManagement(viewer)
 {
+	var userlist = [];
 	CreateDialogSkeleton(viewer, 'dlg_user_management');
 	$('#dlg_user_management').dialog({
 		width: 420,
-		height: 320,
+		height: 350,
 		minWidth:200,
 		minHeight: 200,
 		draggable: true,
@@ -3428,72 +3440,109 @@ function ShowUserManagement(viewer)
 		},
 		buttons:[
 			{
-				text: "确定",
+				text: "新增",
 				click: function(e){
-					if($('#form_change_password').valid())
+					$('#form_user_management_userlist').multipleSelect("setSelects", []);
+					$('#form_user_management_username').val("");
+					$('#form_user_management_displayname').val("");
+				}
+			},
+			{
+				text: "删除",
+				click: function(e){
+					var selectusername = $('#form_user_management_userlist').multipleSelect("getSelects", 'text');
+					var selectuserid = $('#form_user_management_userlist').multipleSelect("getSelects");
+					if(selectuserid.length){
+						selectuserid = selectuserid[0];
+					}
+					ShowConfirm(null, 500, 200,
+						'删除确认',
+						'确认删除用户[' + selectusername.join(',') + ']吗? ',
+						function () {
+							console.log('delete user:' + selectuserid);
+							DeleteUser(viewer, selectuserid, function(){
+								reload_user(function(list){
+									userlist = list;
+									$('#form_user_management_userlist').empty();
+									$('#form_user_management_userlist').append($('<option />', {
+										'value': '',
+										'text': '(请选择)'
+									}));
+									_.forEach(list, function(n){
+										$('#form_user_management_userlist').append( $('<option />',{'value': n._id, 'text': n.displayname}));
+									});
+									$('#form_user_management_userlist').multipleSelect('refresh');
+									$('#form_user_management_userlist').multipleSelect("setSelects", []);
+									$('#form_user_management_username').val("");
+									$('#form_user_management_displayname').val("");
+								});
+							});
+						},
+						function () {
+						}
+					);
+				}
+			},
+			{
+				text: "保存",
+				click: function(e){
+					if($('#form_user_management').valid())
 					{
-						var data = $('#form_change_password').webgisform('getdata');
-						if(data['password_new'] != data['password_new1'])
-						{
-							$.jGrowl("两次输入的新密码不一致,请检查", {
-								life: 2000,
-								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-								theme: 'bubblestylefail',
-								glue:'before'
-							});
-							return;
+						var data = $('#form_user_management').webgisform('getdata');
+						var id = $('#form_user_management_userlist').multipleSelect("getSelects");
+						if(id.length){
+							data._id = id[0];
+						}else{
+							data._id = null;
 						}
-						var that = this;
-						var username;
-						if($.webgis.current_userinfo['username'] === 'admin')
-						{
-							username = data['username'];
-						}
-						else
-						{
-							username = $.webgis.current_userinfo['username'];
-							if(data['password_old'] != $.webgis.current_userinfo['password'])
-							{
-								$.jGrowl("旧密码不正确,请检查", {
-									life: 2000,
-									position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-									theme: 'bubblestylefail',
-									glue:'before'
-								});
-								return;
-							}
-						}
-						if(username && username.length>0)
-						{
+						delete data.userlist;
+						console.log(data);
 
-							ShowConfirm(null, 500, 200,
-								'保存确认',
-								'确认保存新修改的密码吗? ',
-								function(){
-									var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{'password':data['password_new']}, 'username':username};
-									ShowProgressBar(true, 670, 200, '保存用户信息', '正在保存用户信息，请稍候...');
-									MongoFind(cond, function(data1){
-										ShowProgressBar(false);
-										$.jGrowl("保存成功", {
-											life: 2000,
-											position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-											theme: 'bubblestylesuccess',
-											glue:'before'
+						var that = this;
+						ShowConfirm(null, 500, 200,
+							'保存确认',
+							'确认保存该用户信息吗? ',
+							function(){
+								var cond ;
+								if(data._id){
+									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{username:data.username, displayname:data.displayname}, '_id':data._id};
+								}else{
+									data.password = '123';
+									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'save','data':data};
+								}
+								ShowProgressBar(true, 670, 200, '保存用户信息', '正在保存用户信息，请稍候...');
+								MongoFind(cond, function(data1){
+									ShowProgressBar(false);
+									$.jGrowl("保存成功", {
+										life: 2000,
+										position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+										theme: 'bubblestylesuccess',
+										glue:'before'
+									});
+									if(!data._id) {
+										reload_user(function (list) {
+											userlist = list;
+											$('#form_user_management_userlist').empty();
+											$('#form_user_management_userlist').append($('<option />', {
+												'value': '',
+												'text': '(请选择)'
+											}));
+											_.forEach(list, function (n) {
+												$('#form_user_management_userlist').append($('<option />', {
+													'value': n._id,
+													'text': n.displayname
+												}));
+											});
+											$('#form_user_management_userlist').multipleSelect('refresh');
+											$('#form_user_management_userlist').multipleSelect("setSelects", []);
+											$('#form_user_management_username').val("");
+											$('#form_user_management_displayname').val("");
 										});
-										$( that ).dialog( "close" );
-								});
-							},function(){
-								$( that ).dialog( "close" );
+									}
 							});
-						}else
-						{
-							$.jGrowl("请选择用户名", {
-								life: 2000,
-								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-								theme: 'bubblestylefail',
-								glue:'before'
-							});
-						}
+						},function(){
+
+						});
 					}
 				}
 			},
@@ -3505,49 +3554,90 @@ function ShowUserManagement(viewer)
 			}
 		]
 	});
-	var flds;
-	var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
-	ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
-	MongoFind(cond, function(data1){
-		ShowProgressBar(false);
-		var userlist = [];
-		for(var i in data1)
-		{
-			userlist.push({'value':data1[i]['username'], 'label':data1[i]['displayname']});
-		}
-		flds = [
-			{ display: "选择用户", id: "username", newline: true,  type: "select", editor:{data:userlist}, group:'用户信息', labelwidth:130, width:200, validate:{required:true}, change:function(selected){
-				for(var i in data1)
-				{
-					if(data1[i]['username'] === selected)
-					{
-						$('#form_change_password').webgisform('set', 'password_old', data1[i]['password']);
-						var password_old = $('#form_change_password').webgisform('get', 'password_old');
-						//console.log(password_old[0]);
-						$(password_old[0]).focus(function(){
-							this.type = "text";
-						}).blur(function(){
-							this.type = "password";
-						})
-						break;
-					}
-				}
-			}},
-			{ display: "旧密码", id: "password_old", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
-			{ display: "新密码", id: "password_new", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
-			{ display: "确认新密码", id: "password_new1", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
-		];
-		$('#form_change_password').webgisform(flds, {
-				//divorspan: "div",
-				prefix: "form_change_password_",
-				maxwidth: 370
-				//margin:10,
-				//groupmargin:10
+	var reload_user = function(callback){
+		ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
+		var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
+		MongoFind(cond, function(data1){
+			ShowProgressBar(false);
+			var list = [];
+			if(data1.result){
+				ShowMessage(null, 400, 250, '获取数据出错', data1.result);
+			}else {
+				list = _.filter(data1, function(n){
+					return n.username != 'admin';
+				});
+				if(callback) callback(list);
+			}
 		});
+	};
+	var fill_form = function(id){
+		if(!id){
+			$('#form_user_management_username').val("");
+			$('#form_user_management_displayname').val("");
+		}
+		var o = _.find(userlist, {_id:id});
+		if(o){
+			_.forIn(o, function(v, k){
+				if(k === 'username' || k === 'displayname' ){
+					$('#form_user_management_' + k).val(v);
+				}
+			});
+		}
+	};
+	var init_form = function(list) {
+		var users = _.map(list, function(n){
+			return {value: n._id, label: n.displayname};
+		});
+		users.unshift({value:'',label:'(请选择)'});
+		var flds = [
+			{
+				display: "用户",
+				id: "userlist",
+				newline: true,
+				type: "select",
+				editor: {data: users},
+				group: '用户列表',
+				labelwidth: 130,
+				width: 200,
+				change: function (selected) {
+					fill_form(selected);
+				}
+			},
+			{
+				display: "用户名称",
+				id: "username",
+				newline: true,
+				type: "text",
+				group: '用户信息',
+				labelwidth: 130,
+				width: 200,
+				validate: {required: true}
+			},
+			{
+				display: "显示名称",
+				id: "displayname",
+				newline: true,
+				type: "text",
+				group: '用户信息',
+				labelwidth: 130,
+				width: 200,
+				validate: {required: true}
+			}
+		];
+		$('#form_user_management').webgisform(flds, {
+			//divorspan: "div",
+			prefix: "form_user_management_",
+			maxwidth: 370
+			//margin:10,
+			//groupmargin:10
+		});
+	}
+	reload_user(function(list){
+		userlist = list;
+		init_form(userlist);
 	});
-
-
 }
+
 function ShowChangePassword(viewer)
 {
 	$('#dlg_change_password').dialog({
@@ -3579,7 +3669,7 @@ function ShowChangePassword(viewer)
 					if($('#form_change_password').valid())
 					{
 						var data = $('#form_change_password').webgisform('getdata');
-						if(data['password_new'] != data['password_new1'])
+						if(data.password_new != data.password_new1)
 						{
 							$.jGrowl("两次输入的新密码不一致,请检查", { 
 								life: 2000,
@@ -3590,15 +3680,18 @@ function ShowChangePassword(viewer)
 							return;
 						}
 						var that = this;
-						var username;
-						if($.webgis.current_userinfo['username'] === 'admin')
+						var userid;
+						if($.webgis.current_userinfo.username === 'admin')
 						{
-							username = data['username'];
+							var l = $('#form_change_password_userlist').multipleSelect('getSelects');
+							if(l.length){
+								userid = l[0];
+							}
 						}
 						else
 						{
-							username = $.webgis.current_userinfo['username'];
-							if(data['password_old'] != $.webgis.current_userinfo['password'])
+							userid = $.webgis.current_userinfo._id;
+							if(data.password_old != $.webgis.current_userinfo.password)
 							{
 								$.jGrowl("旧密码不正确,请检查", { 
 									life: 2000,
@@ -3609,14 +3702,13 @@ function ShowChangePassword(viewer)
 								return;
 							}
 						}
-						if(username && username.length>0)
+						if(userid && userid.length>0)
 						{
-							
 							ShowConfirm(null, 500, 200,
 								'保存确认',
 								'确认保存新修改的密码吗? ',
 								function(){
-									var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{'password':data['password_new']}, 'username':username};
+									var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{'password':data.password_new}, '_id':userid};
 									ShowProgressBar(true, 670, 200, '保存用户信息', '正在保存用户信息，请稍候...');
 									MongoFind(cond, function(data1){
 										ShowProgressBar(false);
@@ -3652,35 +3744,33 @@ function ShowChangePassword(viewer)
 		]
 	});
 	var flds;
-	if($.webgis.current_userinfo['username'] === 'admin')
+	if($.webgis.current_userinfo.username === 'admin')
 	{
 		var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
 		ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
 		MongoFind(cond, function(data1){
 			ShowProgressBar(false);
 			var userlist = [];
-			for(var i in data1)
-			{
-				userlist.push({'value':data1[i]['username'], 'label':data1[i]['displayname']});
-			}
+			userlist = _.map(data1, function(n){
+				return {value: n._id, label: n.displayname};
+			});
+			userlist.unshift({value:'', label: '(请选择)'});
 			flds = [
-				{ display: "选择用户", id: "username", newline: true,  type: "select", editor:{data:userlist}, group:'用户信息', labelwidth:130, width:200, validate:{required:true}, change:function(selected){
-					for(var i in data1)
-					{
-						if(data1[i]['username'] === selected)
-						{
-							$('#form_change_password').webgisform('set', 'password_old', data1[i]['password']);
+				{ display: "选择用户", id: "userlist", newline: true,  type: "select", editor:{data:userlist}, group:'用户信息', labelwidth:130, width:200,
+					change:function(selected){
+						var user = _.find(data1, {_id:selected});
+						if(user){
+							$('#form_change_password').webgisform('set', 'password_old', user.password);
 							var password_old = $('#form_change_password').webgisform('get', 'password_old');
 							//console.log(password_old[0]);
 							$(password_old[0]).focus(function(){
 								this.type = "text";
 							}).blur(function(){
 								this.type = "password";
-							})							
-							break;
+							})
 						}
 					}
-				}},
+				},
 				{ display: "旧密码", id: "password_old", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
 				{ display: "新密码", id: "password_new", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
 				{ display: "确认新密码", id: "password_new1", newline: true,  type: "password",  group:'用户信息', labelwidth:130, width:200, validate:{required:true}},
@@ -3799,19 +3889,6 @@ function ShowRoleControl(viewer)
 		//var userlist = [];
 		var rolelist = [];
 		//var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
-		ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
-		//MongoFind(cond, function(data1){
-		//	ShowProgressBar(false);
-		//	if(data1.result){
-		//		ShowMessage(null, 400, 250, '获取数据出错', data1.result);
-		//	}else {
-		//		data1 = _.filter(data1, function(n){
-		//			return n.username != 'admin';
-		//		});
-		//		userlist = _.map(data1, function(n){
-		//			return {'value': n._id, 'label': n.displayname};
-		//		});
-		//	}
 		var cond = {'db':$.webgis.db.db_name, 'collection':'sysrole'};
 		ShowProgressBar(true, 670, 200, '获取权限信息', '正在获取权限信息，请稍候...');
 		MongoFind(cond, function(data1){
@@ -6991,6 +7068,29 @@ function CheckTowerInfoModified()
 	}
 	return false;
 }
+function DeleteUser(viewer, id, callback)
+{
+	var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'remove', '_id':id};
+	ShowProgressBar(true, 670, 200, '删除中', '正在删除数据，请稍候...');
+	MongoFind(cond, function(data1){
+		ShowProgressBar(false);
+		if(data1.length>0)
+		{
+			if(data1[0]['ok'] === 0) {
+				ShowMessage(null, 400, 250, '删除失败', '');
+			} else {
+				$.jGrowl("删除成功", {
+					life: 2000,
+					position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+					theme: 'bubblestylesuccess',
+					glue: 'before'
+				});
+				if (callback) callback();
+			}
+		}
+	});
+}
+
 
 function DeleteLine(viewer, id, callback)
 {
@@ -7029,7 +7129,7 @@ function DeleteLine(viewer, id, callback)
 	});
 }
 
-function SaveLine(viewer, id)
+function SaveLine(viewer, id, callback)
 {
 	var data = {};
 	if(id)
@@ -7064,37 +7164,17 @@ function SaveLine(viewer, id)
 					theme: 'bubblestylefail',
 					glue:'before'
 				});
-				ShowMessage(null, 400, 200, '保存出错','保存出错:' + data1[0].result, callback);
+				ShowMessage(null, 400, 200, '保存出错','保存出错:' + data1[0].result);
 			}
 			else
 			{
-				var idx = _.findIndex($.webgis.data.lines, '_id', data1[0]._id);
-				if(idx < 0){
-					$.webgis.data.lines.push(data1[0]);
-				}else{
-					$.webgis.data.lines[idx] = data1[0];
-				}
-				idx = _.findIndex($.webgis.data.geojsons, '_id', data1[0]._id);
-				if(idx < 0){
-					var line = {};
-					line._id =  data1[0]._id;
-					line.properties =  data1[0].properties;
-					$.webgis.data.geojsons.push(line);
-				}else{
-					$.webgis.data.geojsons[idx].properties = data1[0].properties;
-				}
-				//$.webgis.data.lines[data1[0]['_id']] = data1[0];
-				//if(!$.webgis.data.geojsons[data1[0]['_id']])
-				//{
-				//	$.webgis.data.geojsons[data1[0]['_id']] = {};
-				//}
-				//$.webgis.data.geojsons[data1[0]['_id']]['properties'] = data1[0]['properties'];
-				$.jGrowl("保存成功", { 
+				$.jGrowl("保存成功", {
 					life: 2000,
 					position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
 					theme: 'bubblestylesuccess',
 					glue:'before'
 				});
+				if(callback) callback(data1);
 			}
 		}
 	});
@@ -10202,7 +10282,23 @@ function ShowLineDialog(viewer, mode)
 							'保存确认',
 							'确认保存' + text + '吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
 							function () {
-								SaveLine(viewer, id);
+								SaveLine(viewer, id, function(data1){
+									var idx = _.findIndex($.webgis.data.lines, '_id', data1[0]._id);
+									if(idx < 0){
+										$.webgis.data.lines.push(data1[0]);
+									}else{
+										$.webgis.data.lines[idx] = data1[0];
+									}
+									idx = _.findIndex($.webgis.data.geojsons, '_id', data1[0]._id);
+									if(idx < 0){
+										var line = {};
+										line._id =  data1[0]._id;
+										line.properties =  data1[0].properties;
+										$.webgis.data.geojsons.push(line);
+									}else{
+										$.webgis.data.geojsons[idx].properties = data1[0].properties;
+									}
+								});
 							},
 							function () {
 							    $(that).dialog("close");

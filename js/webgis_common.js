@@ -164,38 +164,35 @@ function InitWebGISFormDefinition()
 			var debug = true;
 			if($.fn.webgisform.options[this.attr('id')].debug) debug = $.fn.webgisform.options[this.attr('id')].debug;
 			
-			for(var i in fields)
+			var that = this;
+			_.forEach(fields, function(fld)
 			{
-				var fld = fields[i];
 				var fldid = prefix + fld.id;
 				if(fld.type == 'hidden')
 				{
-					this.append('<input type="hidden" id="' + fldid + '">');
+					that.append('<input type="hidden" id="' + fldid + '">');
 				}
 				if(fld.group)
 				{
-					if(this.groups.indexOf(fld.group) < 0)
+					if(that.groups.indexOf(fld.group) < 0)
 					{
-						this.groups.push(fld.group);
+						that.groups.push(fld.group);
 					}
 				}
-			}
-			
-			for(var j in this.groups)
+			});
+			_.forEach(that.groups, function(group)
 			{
-				var group = this.groups[j];
 				var uid = $.uuid();
-				var g = this.append('<fieldset id="fieldset_' + uid + '" style="min-height:50px;color:#00FF00;border:1px solid #00FF00;margin:' + this.options.groupmargin + 'px;"><legend style="font-weight:bolder;color:#00FF00;">' + group + '</legend>');
-				this.append('</fieldset>');
-				this.append('<p></p>');
+				var g = that.append('<fieldset id="fieldset_' + uid + '" style="min-height:50px;color:#00FF00;border:1px solid #00FF00;margin:' + that.options.groupmargin + 'px;"><legend style="font-weight:bolder;color:#00FF00;">' + group + '</legend>');
+				that.append('</fieldset>');
+				that.append('<p></p>');
 				
 				
-				for(var i in fields)
+				_.forEach(fields, function(fld)
 				{
-					var fld = fields[i];
 					var fldid = prefix + fld.id;
 					
-					if(fld.labelwidth) this.options.labelwidth = fld.labelwidth;
+					if(fld.labelwidth) that.options.labelwidth = fld.labelwidth;
 					var newline = '';
 					var stylewidth = '';
 					if(fld.newline === false)
@@ -215,7 +212,7 @@ function InitWebGISFormDefinition()
 					if(fld.type == 'spinner' && fld.group == group)
 					{
 						//console.log(fldid + ' ' + newlinepara);
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px; ">' + fld.display + ':' + '</label><input  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '">' + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px; ">' + fld.display + ':' + '</label><input  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '">' + required + '</' + divorspan + '>');
 						var spin = 	$('#' + fldid).spinner({
 							step: fld.step,
 							max:fld.max,
@@ -227,7 +224,7 @@ function InitWebGISFormDefinition()
 					}
 					if(fld.type == 'geographic' && fld.group == group)
 					{
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '">' + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '">' + required + '</' + divorspan + '>');
 						var spin = 	$('#' + fldid).spinner({
 							step: 0.00001,
 							max:179.0,
@@ -244,7 +241,7 @@ function InitWebGISFormDefinition()
 						{
 							readonly = ' readonly="readonly"';
 						}
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>' + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>' + required + '</' + divorspan + '>');
 						if(fld.defaultvalue) $('#' + fldid).val(fld.defaultvalue);
 					}
 					if(fld.type == 'password' && fld.group == group)
@@ -254,24 +251,18 @@ function InitWebGISFormDefinition()
 						{
 							readonly = ' readonly="readonly"';
 						}
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="password" class="ui-widget" style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>' + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="password" class="ui-widget" style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>' + required + '</' + divorspan + '>');
 						if(fld.defaultvalue) $('#' + fldid).val(fld.defaultvalue);
 					}
 					if(fld.type == 'select' && fld.group == group)
 					{
 						var source = [];
 						if(fld.editor && fld.editor.data) source = fld.editor.data;
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><select  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '"></select>' + required + '</' + divorspan + '>');
-						for(var ii in source)
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><select  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '"></select>' + required + '</' + divorspan + '>');
+						_.forEach(source, function(src)
 						{
-							$('#' + fldid).append('<option value="' + source[ii]['value'] + '">' + source[ii]['label'] + '</option>');
-						}
-						//var auto = $('#' + fldid).autocomplete({
-							////appendTo:'#' + fldid,
-							////position: { my: "left top", at: "left bottom", collision: "none" },
-							//autoFocus: false,
-							//source:source
-						//});
+							$('#' + fldid).append('<option value="' + src.value + '">' + src.label + '</option>');
+						});
 						var position = 'bottom';
 						var filter = false;
 						if(fld.editor && fld.editor.filter === true) filter = true;
@@ -307,18 +298,15 @@ function InitWebGISFormDefinition()
 						{
 							$('#' + fldid).multipleSelect("setSelects", [fld.defaultvalue]);
 						}
-						//$('#' + fldid).css('display', 'none');
 						auto.css('border', '1px #00FF00 solid');
-						//auto.css('display', 'inline-block');
 						auto.css('color', '#00FF00');
 						auto.css('background', '#000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat');
-						//auto.find('option').css('background', '#000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat');
 					}
 					if(fld.type == 'multiselect' && fld.group == group)
 					{
 						var source = [];
 						if(fld.editor && fld.editor.data) source = fld.editor.data;
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><select  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '"></select>' + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><select  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '"></select>' + required + '</' + divorspan + '>');
 						for(var ii in source)
 						{
 							$('#' + fldid).append('<option value="' + source[ii]['value'] + '">' + source[ii]['label'] + '</option>');
@@ -354,7 +342,7 @@ function InitWebGISFormDefinition()
 					{
 						var dateFormat = "yy-mm-dd";
 						if(fld.dateFormat) dateFormat = fld.dateFormat;
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="padding:7px 0px 0px 0px;width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>'  + required + '</' + divorspan + '>');
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="padding:7px 0px 0px 0px;width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>'  + required + '</' + divorspan + '>');
 						$('#' + fldid ).datepicker({
 							//appendText: "(yyyy-mm-dd)",
 							dateFormat:  dateFormat,
@@ -382,8 +370,8 @@ function InitWebGISFormDefinition()
 					}
 					if(fld.type == 'icon' && fld.group == group)
 					{
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline 
-						+ '"><label for="input_' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display 
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
+						+ '"><label for="input_' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display
 						+ ':' 
 						+ '</label><' + divorspan + ' style="display:inline-block;width:32px;height:32px;border:1px #00FF00 solid;" id="' + fldid + '" name="' + fldid + '" ></' + divorspan + '>' + required 
 						+ '<ol class="kmgd-icon-selectable"  id="ol_' + fldid + '"></ol></' + divorspan + '>');
@@ -427,10 +415,10 @@ function InitWebGISFormDefinition()
 							}
 						});
 						$('#' + fldid ).on('mouseenter', function(e){
-							$(this).css("background-color", "#005500");
+							$(that).css("background-color", "#005500");
 						});
 						$('#' + fldid ).on('mouseleave', function(e){
-							$(this).css("background-color", "#000000");
+							$(that).css("background-color", "#000000");
 						});
 						$('#ol_' + fldid ).on('mouseleave', function(e){
 							$('#ol_' + fldid3 ).css('display', 'none');
@@ -444,8 +432,8 @@ function InitWebGISFormDefinition()
 						if(fld.defaultvalue) colorarr = fld.defaultvalue;
 						var color = ColorArrayToRgba(colorarr);
 						//console.log(fldid + ' ' + color);
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline 
-						+ '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display 
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
+						+ '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display
 						+ ':</label>'
 						+ '<' + divorspan + '  style="display:inline-block;width:42px;height:32px;border:0px #00FF00 solid;">'
 						+ '<input type="color" id="' + fldid + '" name="' + fldid + '" >' + required 
@@ -481,11 +469,11 @@ function InitWebGISFormDefinition()
 					{
 						var checked = false;
 						if(fld.defaultvalue) checked = true;
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline + '">'
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '">'
 						+ '<' + divorspan + '  style="display:inline-block;width:24px;height:24px;border:0px #00FF00 solid;">'
 						+ '<input type="checkbox" id="' + fldid + '" name="' + fldid + '" >' + required 
 						+ '</' + divorspan + '>'
-						+ '<label for="' + fldid + '" style="display:inline-block;text-align:left;width:' + this.options.labelwidth + 'px;">' + fld.display + '</label>'
+						+ '<label for="' + fldid + '" style="display:inline-block;text-align:left;width:' + that.options.labelwidth + 'px;">' + fld.display + '</label>'
 						+ '</' + divorspan + '>');
 						var id = fldid;
 						$('#' + id).iCheck({
@@ -495,8 +483,8 @@ function InitWebGISFormDefinition()
 					}
 					if(fld.type == 'button' && fld.group == group)
 					{
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + this.options.margin + 'px;' + newline 
-						+ '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px;">' + fld.display + ':</label>' 
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
+						+ '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':</label>'
 						+ '<div id="' + fldid + '" name="' + fldid + '" style="display:inline-block;text-align:center;width:' + fld.width + 'px">'  + '</div>'
 						+ '</' + divorspan + '>');
 						var id = fldid;
@@ -510,8 +498,8 @@ function InitWebGISFormDefinition()
 					if(fld.type == 'slider' && fld.group == group)
 					{
 						if(fld.is_show === false)
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + ' margin:' + this.options.margin + 'px;' + newline 
-						+ '"><label for="' + fldid + '_title_" style="display:inline-block;text-align:right;width:' + this.options.labelwidth + 'px; ">' + fld.display + ':' 
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + ' margin:' + that.options.margin + 'px;' + newline
+						+ '"><label for="' + fldid + '_title_" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px; ">' + fld.display + ':'
 						+ '</label><label style="width:' + fld.width/4*1 + 'px"  name="' + fldid + '_title_"></label>' 
 						+ '<div id="' + fldid + '" style="float:right;width:' + fld.width/4*3 + 'px"></div>'
 						+  '</' + divorspan + '>');
@@ -546,8 +534,9 @@ function InitWebGISFormDefinition()
 							$('#' + fldid).parent().hide();
 						}
 					}
-				}
-			}
+				});
+			});
+
 			var hide = false;
 			var hideparentlist = [];
 			for(var i in this.fields)
