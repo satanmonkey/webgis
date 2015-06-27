@@ -3406,11 +3406,160 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				<form id="form_user_management"></form>\
 			</div>');
 		}
+		if (dlg_id === 'dlg_role_management') {
+			$(document.body).append('\
+			<div id="dlg_role_management" >\
+				<form id="form_role_management"></form>\
+			</div>');
+		}
 	}
 }
 
 function ShowRoleManagement(viewer){
+	var rolelist = [];
+	CreateDialogSkeleton(viewer, 'dlg_role_management');
+	$('#dlg_role_management').dialog({
+		width: 420,
+		height: 350,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'角色管理',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "新增",
+				click: function(e){
+					$('#form_role_management_rolelist').multipleSelect("setSelects", []);
+					$('#form_role_management_rolename').val("");
+					$('#form_role_management_displayname').val("");
+					$('#form_role_management_users').multipleSelect("setSelects", []);
+				}
+			},
+			{
+				text: "删除",
+				click: function(e){
+					var selectrolename = $('#form_role_management_rolelist').multipleSelect("getSelects", 'text');
+					var selectroleid = $('#form_role_management_rolelist').multipleSelect("getSelects");
+					if(selectroleid.length){
+						selectroleid = selectroleid[0];
+					}
+					ShowConfirm(null, 500, 200,
+						'删除确认',
+						'确认删除角色[' + selectrolename.join(',') + ']吗? ',
+						function () {
+							console.log('delete user:' + selectroleid);
+							DeleteRole(viewer, selectroleid, function(){
+								reload_role(function(list){
+									rolelist = list;
+									$('#form_role_management_rolelist').empty();
+									$('#form_role_management_rolelist').append($('<option />', {
+										'value': '',
+										'text': '(请选择)'
+									}));
+									_.forEach(list, function(n){
+										$('#form_role_management_rolelist').append( $('<option />',{'value': n._id, 'text': n.displayname}));
+									});
+									$('#form_role_management_rolelist').multipleSelect('refresh');
+									$('#form_role_management_rolelist').multipleSelect("setSelects", []);
+									$('#form_role_management_rolename').val("");
+									$('#form_role_management_displayname').val("");
+									$('#form_role_management_users').multipleSelect("setSelects", []);
+								});
+							});
+						},
+						function () {
+						}
+					);
+				}
+			},
+			{
+				text: "保存",
+				click: function(e){
+					if($('#form_role_management').valid())
+					{
+						var data = $('#form_role_management').webgisform('getdata');
+						var id = $('#form_role_management_rolelist').multipleSelect("getSelects");
+						var userid = $('#form_role_management_users').multipleSelect("getSelects");
+						if(id.length){
+							data._id = id[0];
+						}else{
+							data._id = null;
+						}
+						data.users = userid;
+						delete data.rolelist;
+						console.log(data);
 
+						var that = this;
+						ShowConfirm(null, 500, 200,
+							'保存确认',
+							'确认保存该角色吗? ',
+							function(){
+								var cond ;
+								if(data._id){
+									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{username:data.rolename, displayname:data.displayname}, '_id':data._id};
+								}else{
+									data.password = '123';
+									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'save','data':data};
+								}
+								ShowProgressBar(true, 670, 200, '保存角色信息', '正在保存角色信息，请稍候...');
+								MongoFind(cond, function(data1){
+									ShowProgressBar(false);
+									$.jGrowl("保存成功", {
+										life: 2000,
+										position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+										theme: 'bubblestylesuccess',
+										glue:'before'
+									});
+									if(!data._id) {
+										reload_user(function (list) {
+											userlist = list;
+											$('#form_role_management_userlist').empty();
+											$('#form_role_management_userlist').append($('<option />', {
+												'value': '',
+												'text': '(请选择)'
+											}));
+											_.forEach(list, function (n) {
+												$('#form_role_management_userlist').append($('<option />', {
+													'value': n._id,
+													'text': n.displayname
+												}));
+											});
+											$('#form_role_management_userlist').multipleSelect('refresh');
+											$('#form_role_management_userlist').multipleSelect("setSelects", []);
+											$('#form_role_management_username').val("");
+											$('#form_role_management_displayname').val("");
+										});
+									}
+							});
+						},function(){
+
+						});
+					}
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
 }
 function ShowUserManagement(viewer)
 {
