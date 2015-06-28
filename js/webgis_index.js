@@ -3140,7 +3140,7 @@ function InitToolPanel(viewer)
 		ClearPoi(viewer);
 	});
 	
-	$('#but_line_edit').button({label:'查看列表'});
+	$('#but_line_edit').button({label:'查看线路列表'});
 	$('#but_line_edit').on('click', function(){
 		if(!CheckPermission('line_edit'))
 		{
@@ -3148,7 +3148,7 @@ function InitToolPanel(viewer)
 		}
 		ShowLineDialog(viewer, 'edit');
 	});
-	$('#but_line_add').button({label:'新增'});
+	$('#but_line_add').button({label:'新增线路'});
 	$('#but_line_add').on('click', function(){
 		if(!CheckPermission('line_save'))
 		{
@@ -3187,7 +3187,11 @@ function InitToolPanel(viewer)
 			);
 		}
 	});
-	
+	$('#but_line_antibird_statistics').button({label:'驱鸟统计'});
+	$('#but_line_antibird_statistics').on('click', function(){
+
+	});
+
 	$('#but_dn_add').button({label:'新增配电网络'});
 	$('#but_dn_add').on('click', function(){
 		if(!CheckPermission('dn_save'))
@@ -3417,10 +3421,11 @@ function CreateDialogSkeleton(viewer, dlg_id)
 
 function ShowRoleManagement(viewer){
 	var rolelist = [];
+	var userlist = [];
 	CreateDialogSkeleton(viewer, 'dlg_role_management');
 	$('#dlg_role_management').dialog({
 		width: 420,
-		height: 350,
+		height: 360,
 		minWidth:200,
 		minHeight: 200,
 		draggable: true,
@@ -3445,7 +3450,7 @@ function ShowRoleManagement(viewer){
 				text: "新增",
 				click: function(e){
 					$('#form_role_management_rolelist').multipleSelect("setSelects", []);
-					$('#form_role_management_rolename').val("");
+					$('#form_role_management_name').val("");
 					$('#form_role_management_displayname').val("");
 					$('#form_role_management_users').multipleSelect("setSelects", []);
 				}
@@ -3453,17 +3458,17 @@ function ShowRoleManagement(viewer){
 			{
 				text: "删除",
 				click: function(e){
-					var selectrolename = $('#form_role_management_rolelist').multipleSelect("getSelects", 'text');
-					var selectroleid = $('#form_role_management_rolelist').multipleSelect("getSelects");
-					if(selectroleid.length){
-						selectroleid = selectroleid[0];
+					var selectname = $('#form_role_management_rolelist').multipleSelect("getSelects", 'text');
+					var selectid = $('#form_role_management_rolelist').multipleSelect("getSelects");
+					if(selectid.length){
+						selectid = selectid[0];
 					}
 					ShowConfirm(null, 500, 200,
 						'删除确认',
-						'确认删除角色[' + selectrolename.join(',') + ']吗? ',
+						'确认删除角色[' + selectname.join(',') + ']吗? ',
 						function () {
-							console.log('delete user:' + selectroleid);
-							DeleteRole(viewer, selectroleid, function(){
+							console.log('delete role:' + selectid);
+							DeleteRole(viewer, selectid, function(){
 								reload_role(function(list){
 									rolelist = list;
 									$('#form_role_management_rolelist').empty();
@@ -3476,7 +3481,7 @@ function ShowRoleManagement(viewer){
 									});
 									$('#form_role_management_rolelist').multipleSelect('refresh');
 									$('#form_role_management_rolelist').multipleSelect("setSelects", []);
-									$('#form_role_management_rolename').val("");
+									$('#form_role_management_name').val("");
 									$('#form_role_management_displayname').val("");
 									$('#form_role_management_users').multipleSelect("setSelects", []);
 								});
@@ -3494,13 +3499,11 @@ function ShowRoleManagement(viewer){
 					{
 						var data = $('#form_role_management').webgisform('getdata');
 						var id = $('#form_role_management_rolelist').multipleSelect("getSelects");
-						var userid = $('#form_role_management_users').multipleSelect("getSelects");
 						if(id.length){
 							data._id = id[0];
 						}else{
 							data._id = null;
 						}
-						data.users = userid;
 						delete data.rolelist;
 						console.log(data);
 
@@ -3511,10 +3514,11 @@ function ShowRoleManagement(viewer){
 							function(){
 								var cond ;
 								if(data._id){
-									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'update','data':{username:data.rolename, displayname:data.displayname}, '_id':data._id};
+									cond = {'db':$.webgis.db.db_name, 'collection':'sysrole', 'action':'update','data':{name:data.name, displayname:data.displayname, users:data.users}, '_id':data._id};
 								}else{
-									data.password = '123';
-									cond = {'db':$.webgis.db.db_name, 'collection':'userinfo', 'action':'save','data':data};
+									data.permission = [];
+									data.users = [];
+									cond = {'db':$.webgis.db.db_name, 'collection':'sysrole', 'action':'save','data':data};
 								}
 								ShowProgressBar(true, 670, 200, '保存角色信息', '正在保存角色信息，请稍候...');
 								MongoFind(cond, function(data1){
@@ -3525,29 +3529,29 @@ function ShowRoleManagement(viewer){
 										theme: 'bubblestylesuccess',
 										glue:'before'
 									});
-									if(!data._id) {
-										reload_user(function (list) {
-											userlist = list;
-											$('#form_role_management_userlist').empty();
-											$('#form_role_management_userlist').append($('<option />', {
-												'value': '',
-												'text': '(请选择)'
+									//if(!data._id) {
+									reload_role(function (list) {
+										rolelist = list;
+										$('#form_role_management_rolelist').empty();
+										$('#form_role_management_rolelist').append($('<option />', {
+											'value': '',
+											'text': '(请选择)'
+										}));
+										_.forEach(list, function (n) {
+											$('#form_role_management_rolelist').append($('<option />', {
+												'value': n._id,
+												'text': n.displayname
 											}));
-											_.forEach(list, function (n) {
-												$('#form_role_management_userlist').append($('<option />', {
-													'value': n._id,
-													'text': n.displayname
-												}));
-											});
-											$('#form_role_management_userlist').multipleSelect('refresh');
-											$('#form_role_management_userlist').multipleSelect("setSelects", []);
-											$('#form_role_management_username').val("");
-											$('#form_role_management_displayname').val("");
 										});
-									}
+										$('#form_role_management_rolelist').multipleSelect('refresh');
+										$('#form_role_management_rolelist').multipleSelect("setSelects", []);
+										$('#form_role_management_name').val("");
+										$('#form_role_management_displayname').val("");
+										$('#form_role_management_users').multipleSelect("setSelects", []);
+									});
+									//}
 							});
 						},function(){
-
 						});
 					}
 				}
@@ -3560,6 +3564,135 @@ function ShowRoleManagement(viewer){
 			}
 		]
 	});
+
+	var reload_role = function(callback){
+		ShowProgressBar(true, 670, 200, '获取角色信息', '正在获取角色信息，请稍候...');
+		var cond = {'db':$.webgis.db.db_name, 'collection':'sysrole'};
+		MongoFind(cond, function(data1){
+			ShowProgressBar(false);
+			if(data1.result){
+				ShowMessage(null, 400, 250, '获取数据出错', data1.result);
+			}else {
+				var list = _.filter(data1, function(n){
+					return n.name != 'admin';
+				});
+				if(callback) callback(list);
+			}
+		});
+	};
+	var fill_form = function(id){
+		if(!id){
+			$('#form_role_management_name').val("");
+			$('#form_role_management_displayname').val("");
+		}
+		var o = _.find(rolelist, {_id:id});
+		if(o){
+			_.forIn(o, function(v, k){
+				if(k === 'name' || k === 'displayname' || k === 'users'){
+					if(k === 'name' || k === 'displayname') {
+						$('#form_role_management_' + k).val(v);
+					}
+					if(k === 'users'){
+						if(v && v.length) {
+							$('#form_role_management_users').multipleSelect("setSelects", v);
+						}else{
+							$('#form_role_management_users').multipleSelect("setSelects", []);
+						}
+					}
+				}
+			});
+		}
+	};
+	var init_form = function(list) {
+		list = _.filter(list, function(n){
+			return n.name != 'admin';
+		});
+		var roles = _.map(list, function(n){
+			return {value: n._id, label: n.displayname};
+		});
+		roles.unshift({value:'',label:'(请选择)'});
+		var flds = [
+			{
+				display: "角色",
+				id: "rolelist",
+				newline: true,
+				type: "select",
+				editor: {data: roles},
+				group: '角色列表',
+				labelwidth: 130,
+				width: 200,
+				change: function (selected) {
+					fill_form(selected);
+				}
+			},
+			{
+				display: "角色名称",
+				id: "name",
+				newline: true,
+				type: "text",
+				group: '角色信息',
+				labelwidth: 130,
+				width: 200,
+				validate: {required: true}
+			},
+			{
+				display: "显示名称",
+				id: "displayname",
+				newline: true,
+				type: "text",
+				group: '角色信息',
+				labelwidth: 130,
+				width: 200,
+				validate: {required: true}
+			},
+			{
+				display: "用户列表",
+				id: "users",
+				newline: true,
+				type: "multiselect",
+				editor: {data: []},
+				group: '角色信息',
+				labelwidth: 130,
+				width: 200,
+				change: function (selected) {
+					fill_form(selected);
+				}
+			},
+		];
+		$('#form_role_management').webgisform(flds, {
+			//divorspan: "div",
+			prefix: "form_role_management_",
+			maxwidth: 370
+			//margin:10,
+			//groupmargin:10
+		});
+		ShowProgressBar(true, 670, 200, '获取用户信息', '正在获取用户信息，请稍候...');
+		var cond = {'db':$.webgis.db.db_name, 'collection':'userinfo'};
+		MongoFind(cond, function(data1){
+			ShowProgressBar(false);
+			if(data1.result){
+				ShowMessage(null, 400, 250, '获取数据出错', data1.result);
+			}else {
+				userlist = _.filter(data1, function(n){
+					return n.username != 'admin';
+				});
+				$('#form_role_management_users').empty();
+				_.forEach(userlist, function (n) {
+					$('#form_role_management_users').append($('<option />', {
+						'value': n._id,
+						'text': n.displayname
+					}));
+				});
+				$('#form_role_management_users').multipleSelect('refresh');
+				$('#form_role_management_users').multipleSelect("setSelects", []);
+			}
+		});
+	}
+	reload_role(function(list){
+		rolelist = list;
+		init_form(rolelist);
+	});
+
 }
 function ShowUserManagement(viewer)
 {
@@ -3645,7 +3778,7 @@ function ShowUserManagement(viewer)
 							data._id = null;
 						}
 						delete data.userlist;
-						console.log(data);
+						//console.log(data);
 
 						var that = this;
 						ShowConfirm(null, 500, 200,
@@ -5065,7 +5198,7 @@ function LoadSysRole(db_name, callback)
 		function(data){
 			ShowProgressBar(false);
 			$.webgis.data.sysrole = data;
-			console.log($.webgis.data.sysrole);
+			//console.log($.webgis.data.sysrole);
 			if (callback) callback();
 	});
 }
@@ -7216,6 +7349,28 @@ function CheckTowerInfoModified()
 		}
 	}
 	return false;
+}
+function DeleteRole(viewer, id, callback)
+{
+	var cond = {'db':$.webgis.db.db_name, 'collection':'sysrole', 'action':'remove', '_id':id};
+	ShowProgressBar(true, 670, 200, '删除中', '正在删除数据，请稍候...');
+	MongoFind(cond, function(data1){
+		ShowProgressBar(false);
+		if(data1.length>0)
+		{
+			if(data1[0]['ok'] === 0) {
+				ShowMessage(null, 400, 250, '删除失败', '');
+			} else {
+				$.jGrowl("删除成功", {
+					life: 2000,
+					position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+					theme: 'bubblestylesuccess',
+					glue: 'before'
+				});
+				if (callback) callback();
+			}
+		}
+	});
 }
 function DeleteUser(viewer, id, callback)
 {
