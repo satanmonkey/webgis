@@ -8584,9 +8584,6 @@ function AntiBirdHeatmap(viewer, dict)
 
 function ShowTowerInfoDialog(viewer, tower)
 {
-	//try{
-	//	$("#listbox_tower_info_metal").ligerListBox().setData([]);
-	//}catch(e){}
 
 	var title = '';
 	title = tower['properties']['name'];
@@ -8837,15 +8834,15 @@ function ShowTowerInfoDialog(viewer, tower)
 	{
 		var data = [];
 		var idx = 1;
-		for(var i in tower['properties']['metals'])
+		_.forEach( tower.properties.metals, function(item)
 		{
-			data.push({
-				'idx':idx, 
-				'type':tower['properties']['metals'][i]['type'],
-				'model':tower['properties']['metals'][i]['model']
-				});
-			idx += 1;
-		}
+            data.push({
+                'idx': idx,
+                'type': item.type,
+                'model': item.model
+            });
+            idx += 1;
+		});
 	}
 	
 	
@@ -8959,7 +8956,7 @@ function ShowTowerInfoDialog(viewer, tower)
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '超声波驱鸟装置')
+				if(o['type'].indexOf('驱鸟装置')>-1)
 				{
 					var metal = {};
 					if(tower['properties']['metals'] === undefined || tower['properties']['metals'].length == 0)
@@ -8999,7 +8996,8 @@ function UpdateBaseFields6(enable_imei_select)
 	
 	var get_flds6_default = function(){
 		var obj = {};
-		obj.type = '超声波驱鸟装置';
+		//obj.type = '超声波驱鸟装置';
+		obj.type = '多功能驱鸟装置';
 		obj.imei = '';
 		for(var i in $.webgis.form_fields.base_flds_6)
 		{
@@ -10296,20 +10294,13 @@ function AddMetal(e)
 			o['anchor_model'] = '';
 			o['depth'] = 0;
 		}
-		if(e.text == '超声波驱鸟装置')
+		if(e.text.indexOf('驱鸟装置')>-1 )
 		{
 			o['imei'] = '';
 			var get_model = function(){
 				var ret = '';
-				for(var i in $.webgis.form_fields.base_flds_6)
-				{
-					var item = $.webgis.form_fields.base_flds_6[i];
-					if(item.id === 'model')
-					{
-						ret = item.defaultvalue;
-						break;
-					}
-				}
+				ret = _.result(_.find($.webgis.form_fields.base_flds_6, {id:'model'}), 'defaultvalue');
+				if(!ret) ret = '';
 				return ret;
 			};
 			o['model'] = get_model();
@@ -10321,15 +10312,15 @@ function AddMetal(e)
 		$.webgis.select.selected_geojson['properties']['metals'].push(o);
 		var data = [];
 		var idx = 1;
-		for(var i in $.webgis.select.selected_geojson['properties']['metals'])
+		_.forEach($.webgis.select.selected_geojson.properties.metals, function(item)
 		{
-			data.push({
-				'idx':idx, 
-				'type':$.webgis.select.selected_geojson['properties']['metals'][i]['type'],
-				'model':$.webgis.select.selected_geojson['properties']['metals'][i]['model']
-				});
-			idx += 1;
-		}
+            data.push({
+                'idx': idx,
+                'type': item.type,
+                'model': item.model
+            });
+            idx += 1;
+		});
 		$.webgis.select.selected_metal_item = undefined;
 		$("#listbox_tower_info_metal").ligerListBox().setData(data);
 		$('#form_tower_info_metal').empty();
@@ -10357,22 +10348,20 @@ function DeleteMetal()
 					}
 					var data = [];
 					var idx = 1;
-					for(var i in $.webgis.select.selected_geojson['properties']['metals'])
+					_.forEach( $.webgis.select.selected_geojson.properties.metals, function(item)
 					{
-						data.push({
-							'idx':idx, 
-							'type':$.webgis.select.selected_geojson['properties']['metals'][i]['type'],
-							'model':$.webgis.select.selected_geojson['properties']['metals'][i]['model']
-							});
-						idx += 1;
-					}
+                        data.push({
+                            'idx': idx,
+                            'type': item.type,
+                            'model': item.model
+                        });
+                        idx += 1;
+					});
 					$.webgis.select.selected_metal_item = undefined;
 					$("#listbox_tower_info_metal").ligerListBox().setData(data);
 					if(data.length === 0)
 					{
-						//console.log(data);
 						var items = $("#listbox_tower_info_metal").ligerListBox().getSelectedItems();
-						//console.log(items);
 						$("#listbox_tower_info_metal").ligerListBox().removeItems(items);
 					}
 					
@@ -10383,30 +10372,6 @@ function DeleteMetal()
 			);
 		}
 	}
-	//if($.webgis.select.selected_geojson)
-	//{
-		//if($.webgis.select.selected_geojson['properties']['metals'] && $.webgis.select.selected_geojson['properties']['metals'].length>0)
-		//{
-			//if($.webgis.select.selected_metal_item )
-			//{
-				//var o = $.webgis.select.selected_metal_item;
-				//$.webgis.select.selected_geojson['properties']['metals'].splice(o['idx']-1, 1);
-			//}
-			//var data = [];
-			//var idx = 1;
-			//for(var i in $.webgis.select.selected_geojson['properties']['metals'])
-			//{
-				//data.push({
-					//'idx':idx, 
-					//'type':$.webgis.select.selected_geojson['properties']['metals'][i]['type'],
-					//'model':$.webgis.select.selected_geojson['properties']['metals'][i]['model']
-					//});
-				//idx += 1;
-			//}
-			//$.webgis.select.selected_metal_item = undefined;
-			//$("#listbox_tower_info_metal").ligerListBox().setData(data);
-		//}
-	//}
 }
 
 function CreateLineNamesSelectOption()

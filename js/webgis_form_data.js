@@ -80,8 +80,8 @@ $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置
 	{display: "类型", id: "type", newline: true,  type: "text", editor:{readonly:true}, group:'驱鸟装置',  width:350},
 	{display: "生产厂家", id: "manufacturer", newline: true,  type: "text", group:'驱鸟装置', width:350, defaultvalue:'昶丰科技有限公司', editor:{readonly:true}},
 	{display: "型号", id: "model", newline: true,  type: "text", group:'驱鸟装置', width:350, defaultvalue:'CFT-ANTIBIRD', editor:{readonly:true}},
-	//{display: "IMEI编号", id: "imei", newline: true,  type: "text", editor:{readonly:true}, group:'驱鸟装置', width:350},
 	{display: "IMEI编号", id: "imei", newline: true,  type: "select", editor:{data:[], filter:true}, group:'驱鸟装置', width:350, validate:{required:true}},
+	{display: "安装位置", id: "position", newline: true,  type: "select", editor:{data:[{'label':'上',value:'top'},{'label':'中',value:'middle'},{'label':'下',value:'bottom'}], filter:false}, group:'驱鸟装置', width:350, validate:{required:true}},
 	{display: "最新图片", id: "button_images", newline: true,  type: "button", group:'驱鸟装置', width:350, defaultvalue:'点击查看',
 		click:function( event, ui ){
 			var isOpen = false;
