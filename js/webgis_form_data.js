@@ -85,12 +85,15 @@ $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置
 	{display: "最新图片", id: "button_images", newline: true,  type: "button", group:'驱鸟装置', width:350, defaultvalue:'点击查看',
 		click:function( event, ui ){
 			var isOpen = false;
+			//console.log(typeof(isOpen));
 			try{
 				isOpen = $( "#dlg_anti_bird_info" ).dialog( "isOpen" );
 			}catch(e){
 			
 			}
-			if(isOpen)
+			//console.log(typeof(isOpen));
+			//console.log(isOpen);
+			if(typeof(isOpen)==='boolean' && isOpen )
 			{
 				$( "#dlg_anti_bird_info" ).dialog( "close" );
 			}else

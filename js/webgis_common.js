@@ -12,6 +12,7 @@ $.webgis.remote = {};
 $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
+$.webgis.data.anti_bird_towers = [];
 $.webgis.key_event = {};
 $.webgis.remote.localhost = 'yncaiyun1.com';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
@@ -368,6 +369,34 @@ function InitWebGISFormDefinition()
 						});
 						if(fld.defaultvalue) $('#' + fldid).datepicker("setDate", fld.defaultvalue);
 					}
+					if(fld.type == 'datetime' && fld.group == group)
+					{
+						var dateFormat = "yy-mm-dd";
+						var timeFormat = "HH:mm";
+						if(fld.dateFormat) dateFormat = fld.dateFormat;
+						if(fld.timeFormat) timeFormat = fld.timeFormat;
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="padding:7px 0px 0px 0px;width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>'  + required + '</' + divorspan + '>');
+						$('#' + fldid ).datetimepicker({
+							dateFormat:  dateFormat,
+							timeFormat:  timeFormat,
+							stepHour: 1,
+							stepMinute: 10,
+							autoSize: false,
+							buttonImage: "img/datepicker.png",
+							buttonImageOnly:true,
+							currentText: "今天",
+							monthNames: ['一月','二月','三月','四月','五月','六月','七月','八月','九月','十月','十一月','十二月'],
+							dayNames: ['星期日','星期一','星期二','星期三','星期四','星期五','星期六'],
+							dayNamesShort: ['周日','周一','周二','周三','周四','周五','周六'],
+							dayNamesMin: ['日','一','二','三','四','五','六'],
+							showOn: "button",
+							duration: "slow",
+							showButtonPanel: false,
+							showAnim:"slideDown",
+							yearSuffix: '年'
+						});
+						if(fld.defaultvalue) $('#' + fldid).datetimepicker("setDate", fld.defaultvalue);
+					}
 					if(fld.type == 'icon' && fld.group == group)
 					{
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
@@ -642,10 +671,7 @@ function InitWebGISFormDefinition()
 				}
 				else if(typ === 'color')
 				{
-					//if(data['style'] && data['style'][id])
-					//{
 						this.find('#' + prefix + id).spectrum("set", ColorArrayToRgba([255, 255, 255, 255]));
-					//}
 				}
 				else if(typ === 'date')
 				{
@@ -728,6 +754,13 @@ function InitWebGISFormDefinition()
 						this.find('#' + prefix + id).datepicker("setDate",  data[id]);
 					}
 				}
+				else if(typ === 'datetime')
+				{
+					if(data[id])
+					{
+						this.find('#' + prefix + id).datetimepicker("setDate",  data[id]);
+					}
+				}
 				else if(typ === 'select')
 				{
 					if(editor && editor.data && editor.data.length>0 && data[id])
@@ -806,6 +839,10 @@ function InitWebGISFormDefinition()
 				else if(typ === 'date')
 				{
 					ret[id] = this.find('#' + prefix + id).datepicker("getDate");
+				}
+				else if(typ === 'datetime')
+				{
+					ret[id] = this.find('#' + prefix + id).datetimepicker("getDate");
 				}
 				else if(typ === 'spinner')
 				{

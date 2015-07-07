@@ -3418,7 +3418,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 		}
 		if (dlg_id === 'dlg_anti_bird_info') {
 			$(document.body).append('\
-				<div id="dlg_anti_bird_info" style="display:none;">\
+				<div id="dlg_anti_bird_info"  >\
 					<div id="tabs_anti_bird_info">\
 						<ul>\
 							<li><a href="#anti_bird_info_pics">拍摄图片</a></li>\
@@ -4431,33 +4431,7 @@ function InitSearchBox(viewer)
 			//console.log(ui.item);
 			if(ui.item.value === 'anti_bird_towers')
 			{
-				var cond = {'db':$.webgis.db.db_name, 'collection':'features', 'action':'anti_bird_towers'};
-				ShowProgressBar(true, 670, 200, '载入中', '正在载入已安装驱鸟器杆塔数据，请稍候...');
-				MongoFind( cond, 
-					function(data){
-						ShowProgressBar(false);
-
-						$.webgis.data.geojsons =  _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
-						if($.webgis.config.map_backend === 'cesium') {
-							var czmls = _.map(data, function (n) {
-								return CreateCzmlFromGeojson(n);
-							});
-							$.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
-						}
-						_.forEach(data, function(item){
-							if($.webgis.config.map_backend === 'leaflet')
-							{
-								//console.log(item);
-								$.webgis.control.leaflet_geojson_layer.addData(item);
-							}
-						});
-						var extent = GetExtentByCzml();
-						FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
-						if($.webgis.config.map_backend === 'cesium')
-						{
-							ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
-						}
-				});
+				LoadAntiBirdTowers(viewer);
 			}
 			else if(ui.item.geojson && ui.item.geojson.geometry)
 			{
@@ -4537,7 +4511,57 @@ function InitSearchBox(viewer)
 
 }
 
-
+function LoadAntiBirdTowers(viewer)
+{
+	if($.webgis.data.anti_bird_towers.length === 0)
+	{
+		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'action': 'anti_bird_towers'};
+		ShowProgressBar(true, 670, 200, '载入中', '正在载入已安装驱鸟器杆塔数据，请稍候...');
+		MongoFind(cond,
+			function (data) {
+				ShowProgressBar(false);
+				$.webgis.data.anti_bird_towers = data;
+				$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+				if ($.webgis.config.map_backend === 'cesium') {
+					var czmls = _.map(data, function (n) {
+						return CreateCzmlFromGeojson(n);
+					});
+					$.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+				}
+				_.forEach(data, function (item) {
+					if ($.webgis.config.map_backend === 'leaflet') {
+						//console.log(item);
+						$.webgis.control.leaflet_geojson_layer.addData(item);
+					}
+				});
+				var extent = GetExtentByCzml();
+				FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+				if ($.webgis.config.map_backend === 'cesium') {
+					ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+				}
+			});
+	}else{
+		var data = $.webgis.data.anti_bird_towers;
+		$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+		if ($.webgis.config.map_backend === 'cesium') {
+			var czmls = _.map(data, function (n) {
+				return CreateCzmlFromGeojson(n);
+			});
+			$.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+		}
+		_.forEach(data, function (item) {
+			if ($.webgis.config.map_backend === 'leaflet') {
+				//console.log(item);
+				$.webgis.control.leaflet_geojson_layer.addData(item);
+			}
+		});
+		var extent = GetExtentByCzml();
+		FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+		if ($.webgis.config.map_backend === 'cesium') {
+			ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+		}
+	}
+}
 function BuildSearchItemList(data)
 {
 	var ret = $.map( data, function( item, idx ) {
@@ -8208,7 +8232,14 @@ function ShowAntiBirdStatisticsDialog(viewer)
 	CreateDialogSkeleton(viewer, 'dlg_anti_bird_statistics');
 	title = '统计信息:' + '驱鸟器';
 	var buttons = [];
-	buttons.push({
+	buttons.push(
+		{
+			text: "载入杆塔",
+			click: function(){
+				LoadAntiBirdTowers(viewer);
+			}
+		},
+		{
 		text: "关闭",
 		click: function(){
 			$( this ).dialog( "close" );
@@ -8477,35 +8508,111 @@ function BuildAntiBirdStatisticsForm()
 {
 	$('#form_anti_bird_statistics_chart').empty();
 	$('#div_anti_bird_statistics_chart').empty();
-	var flds = [
-		{display: "统计类型", id:"type", newline: true,  type: "select", group:'统计参数',  width:350, defaultvalue:'LINE',
-			editor:{data:[{'value':'LINE','label':'按线路统计'},{'value':'ALTITUDE','label':'按海拔统计'}]},
-			change:function(value)
+	var build = function(towers) {
+		var flds = [
 			{
+				display: "杆塔",
+				id: "towers",
+				newline: true,
+				type: "multiselect",
+				group: '统计杆塔',
+				width: 350,
+				selectall: true,
+				editor: {data: towers, filter: true}
+				//change:function(value)
+				//{
+				//}
+			},
+			{
+				display: "统计类型",
+				id: "type",
+				newline: true,
+				type: "select",
+				group: '统计参数',
+				width: 350,
+				defaultvalue: 'LINE',
+				editor: {data: [{'value': 'LINE', 'label': '按线路统计'}, {'value': 'ALTITUDE', 'label': '按海拔统计'}]},
+				change: function (value) {
+				}
+			},
+			{
+				display: "起始日期时间",
+				id: "start_date",
+				dateFormat: "yymmdd",
+				timeFormat: "HH:mm",
+				newline: true,
+				is_range: true,
+				type: "datetime",
+				group: '统计参数',
+				width: 300,
+				validate: {required: true}
+			},
+			{
+				display: "结束日期时间",
+				id: "end_date",
+				dateFormat: "yymmdd",
+				timeFormat: "HH:mm",
+				newline: true,
+				is_range: true,
+				type: "datetime",
+				group: '统计参数',
+				width: 300,
+				validate: {required: true}
+			},
+			{
+				display: "生成统计图",
+				id: "button_create",
+				newline: true,
+				type: "button",
+				group: '操作',
+				labelwidth: 120,
+				width: 300,
+				defaultvalue: '点击生成统计图',
+				click: function () {
+					var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
+					//console.log(data);
+					DrawAntiBirdStatisticsChart({
+						imei: imei,
+						YMD: data.type,
+						beginTime: moment(data.start_date).local().format('YYYYMMDD'),
+						endTime: moment(data.end_date).local().format('YYYYMMDD'),
+						minSpeed: '1',
+						maxSpeed: '15'
+					});
+				}
 			}
-		},
-		{display: "起始日期", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'统计参数',  width:300, validate:{required:true}},
-		{display: "结束日期", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'统计参数',  width:300, validate:{required:true}},
-		{display: "生成统计图", id: "button_create", newline: true,  type: "button", group:'操作', labelwidth:120, width:300, defaultvalue:'点击生成统计图', click:function(){
-			var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
-			//console.log(data);
-			DrawAntiBirdStatisticsChart({
-				imei: imei,
-				YMD: data.type,
-				beginTime: moment(data.start_date).local().format('YYYYMMDD'),
-				endTime: moment(data.end_date).local().format('YYYYMMDD'),
-				minSpeed: '1',
-				maxSpeed: '15'
+		];
+		var form = $('#form_anti_bird_statistics_chart').webgisform(flds,
+			{
+				prefix: 'form_anti_bird_statistics_chart_',
+				maxwidth: 520
 			});
-		}}
-	];
-	var form = $('#form_anti_bird_statistics_chart').webgisform(flds,
-	{
-		prefix:'form_anti_bird_statistics_chart_',
-		maxwidth:520
-	});
-	$('#form_anti_bird_statistics_chart').webgisform('setdata',{type:'D', start_date:moment().local().format('YYYYMMDD'), end_date:moment().local().format('YYYYMMDD')});
+		$('#form_anti_bird_statistics_chart').webgisform('setdata', {
+			type: 'D',
+			start_date: moment().local().format('YYYYMMDD'),
+			end_date: moment().local().format('YYYYMMDD')
+		});
+	};
 
+	if($.webgis.data.anti_bird_towers.length === 0)
+	{
+		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'action': 'anti_bird_towers'};
+		ShowProgressBar(true, 670, 200, '载入中', '正在载入已安装驱鸟器杆塔数据，请稍候...');
+		MongoFind(cond,
+			function (data) {
+				ShowProgressBar(false);
+				$.webgis.data.anti_bird_towers = data;
+				var towers = _.map($.webgis.data.anti_bird_towers, function (n) {
+					return {label: n.properties.name.replace('T接',''), value: n._id};
+				});
+				build(towers);
+			});
+	}else{
+		var towers = _.map($.webgis.data.anti_bird_towers, function (n) {
+			return {label: n.properties.name, value: n._id};
+		});
+		build(towers);
+	}
 }
 
 function BuildAntiBirdInfoChartForm(imei)
@@ -8887,8 +8994,8 @@ function ShowTowerInfoDialog(viewer, tower)
 		//readonly:true,
 		columns: [
 			{ header: 'ID', name: 'idx', width: 20 },
-			{ header: '金具类型', name: 'type' },
-			{ header: '金具型号', name: 'model' }
+			{ header: '类型', name: 'type' },
+			{ header: '型号', name: 'model' }
 		],
 		isMultiSelect: false,
 		isShowCheckBox: false,
