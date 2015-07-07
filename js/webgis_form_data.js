@@ -77,7 +77,7 @@ $.webgis.form_fields.base_flds_5 = [ //雷电计数器
 	{display: "组装图号", id: "assembly_graph", newline: true,  type: "text", group:'雷电计数器', width:350}
 ];
 $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置 多功能驱鸟装置
-	{display: "类型", id: "type", newline: true,  type: "text", editor:{readonly:true}, group:'驱鸟装置',  width:350},
+	{display: "类型", id: "type", newline: true,  type: "text", editor:{readonly:true}, group:'驱鸟装置',  width:350, defaultvalue:'多功能驱鸟装置'},
 	//{display: "生产厂家", id: "manufacturer", newline: true,  type: "text", group:'驱鸟装置', width:350, defaultvalue:'昶丰科技有限公司', editor:{readonly:true}},
 	{display: "型号", id: "model", newline: true,  type: "text", group:'驱鸟装置', width:350, defaultvalue:'CFT-ANTIBIRD', editor:{readonly:true}},
 	{display: "IMEI编号", id: "imei", newline: true,  type: "select", editor:{data:[], filter:true}, group:'驱鸟装置', width:350, validate:{required:true}},
@@ -85,12 +85,15 @@ $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置 多功能驱鸟装�
 	{display: "最新图片", id: "button_images", newline: true,  type: "button", group:'驱鸟装置', width:350, defaultvalue:'点击查看',
 		click:function( event, ui ){
 			var isOpen = false;
+			//console.log(typeof(isOpen));
 			try{
 				isOpen = $( "#dlg_anti_bird_info" ).dialog( "isOpen" );
 			}catch(e){
 			
 			}
-			if(isOpen)
+			//console.log(typeof(isOpen));
+			//console.log(isOpen);
+			if(typeof(isOpen)==='boolean' && isOpen )
 			{
 				$( "#dlg_anti_bird_info" ).dialog( "close" );
 			}else
