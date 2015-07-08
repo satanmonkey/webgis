@@ -10065,10 +10065,11 @@ function AddToCzml(ellipsoid, type, positions)
 		var carto_0;
 		_.forEach(positions, function(cart3)
 		{
+			var i = _.indexOf(positions, cart3);
 			if($.webgis.config.map_backend === 'cesium')
 			{
 				var carto = ellipsoid.cartesianToCartographic(cart3);
-				if(i == 0)
+				if(i === 0)
 				{
 					carto_0 = carto;
 				}
@@ -10076,7 +10077,7 @@ function AddToCzml(ellipsoid, type, positions)
 			}
 			if($.webgis.config.map_backend === 'leaflet')
 			{
-				if(i == 0)
+				if(i === 0)
 				{
 					carto_0 = cart3;
 				}
