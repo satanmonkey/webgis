@@ -8785,6 +8785,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 					if(data.towers.length>0){
 						DrawAntiBirdStatisticsTable({
 							type: data.type,
+							towers:data.towers,
 							imei: get_imei(data.towers),
 							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
 							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
@@ -8874,6 +8875,50 @@ function DrawAntiBirdStatisticsChart(option)
 function DrawAntiBirdStatisticsTable(option)
 {
 	console.log(option);
+	//if(true) return;
+
+	var build_towerdata = function(towerlist)
+	{
+		var towersdata = {Rows:[]};
+		_.forEach(towerlist, function (item) {
+			var o = {};
+			o._id = item._id;
+			o.name = item.properties.name;
+			o.imei = '';
+			o.children = [];
+			var arr = _.filter(item.properties.metals, function (item1) {
+				return item1.type.indexOf('驱鸟装置') > -1;
+			});
+			if (arr.length === 1) {
+				o.imei = arr[0].imei;
+				delete o.children;
+			}
+			else {
+				var imeis = [];
+				_.forEach(arr, function (item1) {
+					var o1 = {};
+					var position = '';
+					if (item1.position) {
+						if (item1.position === 'top') position = '上';
+						if (item1.position === 'middle') position = '中';
+						if (item1.position === 'bottom') position = '下';
+					}
+					o1.name = item.properties.name + '-' + position;
+					o1.imei = item1.imei;
+					o1._id = item._id;
+					imeis.push('...' + item1.imei.substr(11));
+					o.children.push(o1);
+				});
+				o.imei = '(' + imeis.join(',') + ')';
+			}
+			towersdata.Rows.push(o);
+		});
+		return towersdata;
+	};
+	var towers = _.filter($.webgis.data.anti_bird_towers, function(item){
+		return _.indexOf(option.towers, item._id) > -1;
+	});
+
 }
 
 function DrawAntiBirdInfoChart(option)
