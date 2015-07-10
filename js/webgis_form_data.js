@@ -98,7 +98,7 @@ $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置 多功能驱鸟装�
 				$( "#dlg_anti_bird_info" ).dialog( "close" );
 			}else
 			{
-				ShowAntiBirdInfoDialog($.webgis.viewer, $.webgis.select.selected_imei);
+				ShowAntiBirdInfoDialog($.webgis.viewer, $.webgis.select.selected_imei, 200);
 			}
 		}
 	}

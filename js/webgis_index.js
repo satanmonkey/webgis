@@ -308,7 +308,6 @@ function LoadEdgeByLineId(viewer, db_name, lineid, callback)
 {
 	console.log(lineid);
 	var cond = {'db':db_name, 'collection':'-', action:'loadtoweredge', 'lineid':lineid};
-	//console.log('000   ' + moment().local().format('YYYY-MM-DD HH:mm:ss'));
 	MongoFind(cond, function(data){
 		if(data.length>0)
 		{
@@ -2425,7 +2424,7 @@ function InitAntiBirdEquipListData(viewer)
 	$.ajax({
 		type:'GET',
 		url:url,
-		data:JSON.stringify({is_filter_used:true}),
+		data:JSON.stringify({is_filter_used:false}),
 		dataType: 'text',
 	})
 	.done(function( data1 ){
@@ -3443,9 +3442,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				<div id="dlg_anti_bird_statistics" >\
 					<div id="tabs_anti_bird_statistics">\
 						<ul>\
+							<li><a href="#anti_bird_statistics_towerlist">设备列表</a></li>\
 							<li><a href="#anti_bird_statistics_chart">统计图表</a></li>\
-							<li><a href="#anti_bird_statistics_heatmap">热度图</a></li>\
+							<li><a href="#anti_bird_statistics_heatmap">地理热度图</a></li>\
 						</ul>\
+						<div id="anti_bird_statistics_towerlist">\
+							<div id="div_anti_bird_statistics_towerlist_toolbar"><div id="export_towerlist"></div></div>\
+							<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
+						</div>\
 						<div id="anti_bird_statistics_chart">\
 							<form id="form_anti_bird_statistics_chart">\
 							</form>\
@@ -4521,6 +4525,21 @@ function LoadAntiBirdTowers(viewer)
 			function (data) {
 				ShowProgressBar(false);
 				$.webgis.data.anti_bird_towers = data;
+				//var imei = _.pluck($.webgis.data.antibird.anti_bird_equip_list, 'imei');
+				////console.log(imei);
+				//console.log(imei.length);
+				//var l = [];
+				//var arr = _.forEach($.webgis.data.anti_bird_towers, function(item){
+				//	l.push(item.properties.metals);
+				//});
+				//arr = _.flatten(l, true);
+				//arr = _.filter(arr, function(n){
+				//	return n.imei != undefined;
+				//});
+				//var imei1  = _.pluck(arr, 'imei');
+				////console.log(imei1);
+				//console.log(imei1.length);
+				//console.log(_.difference(imei, imei1));
 				$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
 				if ($.webgis.config.map_backend === 'cesium') {
 					var czmls = _.map(data, function (n) {
@@ -7580,25 +7599,26 @@ function SaveTower(viewer)
 					continue;
 				}
 			}
-			if($.webgis.select.selected_geojson['properties'][k] === undefined)
+			if($.webgis.select.selected_geojson.properties[k] === undefined)
 			{}
 			else
 			{
-				$.webgis.select.selected_geojson['properties'][k] = data[k];
+				$.webgis.select.selected_geojson.properties[k] = data[k];
 			}
 		}
-		//if($.webgis.select.selected_geojson['properties']['model'])
-		//{
-			//$.webgis.select.selected_geojson['properties']['denomi_height'] = GetDenomiHeightByModelCode($.webgis.select.selected_geojson['properties']['model']['model_code_height']);
-		//}
 		var items = $("#listbox_tower_info_metal").ligerListBox().getSelectedItems();
 		if(items && items[0])
 		{
 			var formdata = $('#form_tower_info_metal').webgisform('getdata');
 			//console.log(formdata);
-			var idx = items[0].idx - 1;
-			if($.webgis.select.selected_geojson.properties.metals && $.webgis.select.selected_geojson.properties.metals.length>idx)
-			{
+			//var idx = items[0].idx - 1;
+			//if($.webgis.select.selected_geojson.properties.metals && $.webgis.select.selected_geojson.properties.metals.length>idx)
+			//{
+			//	$.webgis.select.selected_geojson.properties.metals[idx] = formdata;
+			//}
+			var m = _.find($.webgis.select.selected_geojson.properties.metals, {imei:formdata.imei});
+			var idx = _.indexOf($.webgis.select.selected_geojson.properties.metals, m);
+			if(m && idx>-1){
 				$.webgis.select.selected_geojson.properties.metals[idx] = formdata;
 			}
 		}
@@ -8041,30 +8061,31 @@ function BuildAntiBirdImageSlide(data1)
 		return;
 	}
 	var idx = 1;
-	for (var i in data1)
+	_.forEach(data1, function(item)
 	{
-		var localtime = moment(data1[i].time).local().format('YYYY-MM-DD HH:mm:ss');
-		for (var j in data1[i].picture)
+		var localtime = moment(item.time).local().format('YYYY-MM-DD HH:mm:ss');
+		_.forEach(item.picture,  function(item1)
 		{
-			var pic_url = data1[i].picture[j];
+			var j = _.indexOf(item.picture, item1);
+			var pic_url = item1;
 			var thumb_url = pic_url + '/thumbnail';
-			var item = { 
-				id: data1[i]._id + '_' + j, 
-				_id: data1[i]._id + '_' + j, 
+			var item2 = {
+				id: item._id + '_' + j,
+				_id: item._id + '_' + j,
 				img:pic_url , 
 				full:pic_url , 
 				thumb:thumb_url, 
 				//caption: '第' + idx + '张 拍摄日期:' + localtime + ' 环境温度:' + data1[i].envTemp + '℃',
-				caption: '拍摄日期:' + localtime + ' 环境温度:' + data1[i].envTemp + '℃',
-				filename:data1[i].imei + '_' + j + '_' + localtime + '.jpg',
-				data:data1[i],
+				caption: '拍摄日期:' + localtime + ' 环境温度:' + item.envTemp + '℃',
+				filename:item.imei + '_' + j + '_' + localtime + '.jpg',
+				data:item,
 				mimetype:'image/jpeg',
-				description:'日期:' + localtime + ' 环境温度:' + data1[i].envTemp + '℃'
+				description:'日期:' + localtime + ' 环境温度:' + item.envTemp + '℃'
 			};
-			img_data.push(item);
+			img_data.push(item2);
 			idx += 1;
-		}
-	}
+		});
+	});
 	
 	var options = {
 		allowfullscreen: true,
@@ -8097,9 +8118,6 @@ function BuildAntiBirdImageSlide(data1)
 	var $fotoramaAntiBirdPicsDiv = $('#div_container_anti_bird_info_pics' ).fotorama(options);
 	$fotoramaAntiBirdPicsDiv.on('fotorama:load fotorama:showend', function(e, fotorama, extra){
 		var hasBird = GetAntiBirdPicFlag(fotorama.activeFrame);
-		//console.log(fotorama.activeFrame.data._id);
-		//console.log(fotorama.activeFrame.img);
-		//hasBird = true;
 		SetAntiBirdPicFlagDom(hasBird);
 	});
 	$fotoramaAntiBirdPicsDiv.on('fotorama:show', function(e, fotorama, extra){
@@ -8137,7 +8155,10 @@ function BuildAntiBirdImageSlide(data1)
 			title:'设置鸟类活动标记', 
 			className:'anti_bird_pic_toolbutton_set_flag',
 			click:function(active_frame){
-				var hasBird = active_frame.data.hasBird;
+				var hasBird = false;
+				if(active_frame.data){
+					hasBird = active_frame.data.hasBird;
+				}
 				var msg = '标记为鸟类活动依据';
 				if(hasBird)
 				{
@@ -8151,6 +8172,9 @@ function BuildAntiBirdImageSlide(data1)
 					'确定将该图片' + msg + '吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
 					function(){
 						SetAntiBirdPicFlag(active_frame, !hasBird);
+						if(!active_frame.data){
+							active_frame.data = {};
+						}
 						active_frame.data.hasBird = !hasBird;
 					},
 					function(){
@@ -8183,7 +8207,11 @@ function SetAntiBirdPicFlagDom(hasBird)
 }
 function GetAntiBirdPicFlag(active_frame)
 {
-	return active_frame.data.hasBird;
+	var ret = false;
+	if(active_frame.data){
+		ret = active_frame.data.hasBird;
+	}
+	return ret;
 }
 function SetAntiBirdPicFlag(active_frame,  hasBird)
 {
@@ -8278,14 +8306,14 @@ function ShowAntiBirdStatisticsDialog(viewer)
 				$('#form_anti_bird_statistics_heatmap').webgisform('setdata',{slider_distinguish_speed:value});
 			}
 		},
-		{display: "起始日期", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'分布参数',  width:300, validate:{required:true}},
-		{display: "结束日期", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'分布参数',  width:300, validate:{required:true}},
-		{display: "生成热图", id: "button_create", newline: true,  type: "button", group:'操作', width:350, defaultvalue:'点击生成热度图', click:function(){
+		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
+		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
+		{display: "生成地理热图", id: "button_create", newline: true,  type: "button", group:'操作', width:350, defaultvalue:'点击生成热度图', click:function(){
 			var data = $('#form_anti_bird_statistics_heatmap').webgisform('getdata');
 			AntiBirdHeatmap(viewer, {
 				speed:data.slider_distinguish_speed,
-				start:moment(data.start_date).local().format('YYYYMMDD'),
-				end:moment(data.end_date).local().format('YYYYMMDD')
+				start:moment(data.start_date).local().format('YYYYMMDDHHmm'),
+				end:moment(data.end_date).local().format('YYYYMMDDHHmm')
 			});
 		}}
 	];
@@ -8302,11 +8330,10 @@ function ShowAntiBirdStatisticsDialog(viewer)
 			var title = ui.newTab.context.innerText;
 			if(title === '统计图表')
 			{
-				//BuildAntiBirdStatisticsForm();
 			}
 		}
 	});
-	BuildAntiBirdStatisticsForm();
+	BuildAntiBirdStatisticsForm(viewer);
 }
 
 function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
@@ -8490,7 +8517,6 @@ function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 		records_num = 10;
 	}
 	var url = '/anti_bird_get_latest_records_by_imei?imei=' + imei + '&records_num=' + records_num;
-	//console.log(url);
 	ShowProgressBar(true, 670, 200, '载入中', '正在载入最新' + records_num + '张图片数据，请稍候...');
 	$.get(url, {is_filter_used:true}, function( data1 ){
 		if($.webgis.websocket.antibird.latest_records === undefined)
@@ -8504,8 +8530,168 @@ function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 	
 }
 
-function BuildAntiBirdStatisticsForm()
+function BuildAntiBirdStatisticsForm(viewer)
 {
+	var get_imei = function (towers) {
+		var ts = _.filter($.webgis.data.anti_bird_towers, function(n){
+			return _.indexOf(towers, n._id)>-1;
+		});
+		var l = [];
+		var arr = _.forEach(ts, function(item){
+			l.push(item.properties.metals);
+		});
+		arr = _.flatten(l, true);
+		arr = _.filter(arr, function(n){
+			return n.imei != undefined;
+		});
+		var imei  = _.pluck(arr, 'imei');
+		return imei;
+	};
+	//var TreeDeptData = { Rows : [
+	//		{ id: '01', name: "企划部",   remark: "1989-01-12",
+	//			children: [
+	//			{ id: '0101', name: "企划分部一", remark: "企划分部一"
+	//			},
+	//			{ id: '0102', name: "企划分部二", remark: "企划分部二", children:
+	//				[
+	//					{ id: '010201', name: "企划分部二 A组", remark: "企划分部二 A组" },
+	//					{ id: '010202', name: "企划分部二 B组", remark: "企划分部二 B组" }
+	//				]
+	//			},
+	//			{ id: '0103', name: "企划分部三", remark: "企划分部三" }
+	//		]
+	//		},
+	//		{ id: '02', name: "研发部", remark: "研发部" },
+	//		{ id: '03', name: "产品部", remark: "产品部" }
+	//	]
+	//};
+
+	var build_tree = function(viewer){
+		var bind_event = function(viewer){
+			$('a[id^=towerlist_towerid_]').off();
+			$('a[id^=towerlist_towerid_]').on('click', function(){
+				var tower_id = $(this).attr('id').replace('towerlist_towerid_', '');
+				//console.log(tower_id);
+				var tower = _.find($.webgis.data.anti_bird_towers, {_id:tower_id});
+				if(tower)
+				{
+					var idx = _.findIndex($.webgis.data.geojsons, '_id', tower_id);
+					if (idx > -1) {
+						$.webgis.data.geojsons[idx] = tower;
+					} else {
+						$.webgis.data.geojsons.push(tower);
+					}
+					if ($.webgis.config.map_backend === 'cesium') {
+						idx = _.findIndex($.webgis.data.czmls, 'id', tower_id);
+						if (idx > -1) {
+							$.webgis.data.czmls[idx] = CreateCzmlFromGeojson(tower);
+						} else {
+							$.webgis.data.czmls.push(CreateCzmlFromGeojson(tower));
+						}
+						ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+					}
+					if ($.webgis.config.map_backend === 'leaflet') {
+					}
+					FlyToPoint(viewer, tower.geometry.coordinates[0], tower.geometry.coordinates[1], 6000, 1.05, 4000);
+				}
+			});
+			$('a[id^=towerlist_imei_]').off();
+			$('a[id^=towerlist_imei_]').on('click', function(){
+				var imei = $(this).attr('id').replace('towerlist_imei_', '');
+				//console.log(imei);
+				ShowAntiBirdInfoDialog(viewer, imei, 200);
+			});
+		};
+		var get_lasttime = function(imei){
+			var ret = '';
+			var s = _.result(_.find($.webgis.data.antibird.anti_bird_equip_list, {imei:imei}), 'lastTime');
+			if(s && s.length){
+				ret = moment(s).local().format('YYYY-MM-DD HH:mm:ss');
+			}else{
+				ret = '(无)';
+			}
+			return ret;
+		};
+		var towers = {Rows:[]};
+		_.forEach($.webgis.data.anti_bird_towers, function(item){
+			var o = {};
+			o._id = item._id;
+			o.name = '<a href="javascript:void(0);" id="towerlist_towerid_' + item._id + '">' + item.properties.name + '</a>';
+			o.imei = '';
+			o.timestamp = '';
+			o.children = [];
+			var arr = _.filter(item.properties.metals, function(item1) {
+				return item1.type.indexOf('驱鸟装置') > -1;
+			});
+			if(arr.length === 1){
+				o.imei = '<a href="javascript:void(0);" id="towerlist_imei_' + arr[0].imei + '">' + arr[0].imei + '</a>';
+				o.timestamp = get_lasttime(arr[0].imei);
+				delete o.children;
+			}
+			else {
+				var imeis = [];
+				_.forEach(arr, function (item1) {
+					var o1 = {};
+					var position = '';
+					if (item1.position) {
+						if(item1.position === 'top') position = '上';
+						if(item1.position === 'middle') position = '中';
+						if(item1.position === 'bottom') position = '下';
+					}
+					o1.name = '&nbsp;&nbsp;&nbsp;&nbsp;<a href="javascript:void(0);" id="towerlist_imei_' + item1.imei + '">' + item.properties.name + '-' + position + '</a>';
+					o1.imei = '<a href="javascript:void(0);" id="towerlist_imei_' + item1.imei + '">' + item1.imei + '</a>';
+					o1._id = item._id;
+					imeis.push('...' + item1.imei.substr(11));
+					o1.timestamp = get_lasttime(item1.imei);
+					o.children.push(o1);
+				});
+				o.imei = '(' + imeis.join(',') + ')';
+			}
+			towers.Rows.push(o);
+		});
+		//console.log(towers);
+
+		$('#anti_bird_statistics_towerlist').empty();
+		$('#anti_bird_statistics_towerlist').append('\
+			<div id="div_anti_bird_statistics_towerlist_toolbar"><div id="export_towerlist"></div></div>\
+			<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
+		');
+
+		$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').button({'label':"导出为Excel"});
+		$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').on('click',function(){
+			console.log('导出为Excel');
+		});
+
+		$('#div_anti_bird_statistics_towerlist_treegrid').ligerGrid({
+			columns: [
+				{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
+				{ display: '杆塔名称', name: 'name', align: 'left',  width:150 },
+				{ display: '设备IMEI', name: 'imei', id:'imei1', align: 'left',  width:200},
+				{ display: '最新触发时间', name:'timestamp',   align: 'left',  width:160 }
+			],
+			width: '100%',
+			height: '80%',
+			data: towers,
+			alternatingRow: false,
+			usePager: false,
+			tree: { columnId: 'imei1' }
+		});
+		bind_event(viewer);
+	};
+	if($.webgis.data.anti_bird_towers.length === 0)
+	{
+		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'action': 'anti_bird_towers'};
+		ShowProgressBar(true, 670, 200, '载入中', '正在载入已安装驱鸟器杆塔数据，请稍候...');
+		MongoFind(cond,
+			function (data) {
+				ShowProgressBar(false);
+				$.webgis.data.anti_bird_towers = data;
+				build_tree(viewer);
+			}
+		);
+	}else{
+		build_tree(viewer);
+	}
 	$('#form_anti_bird_statistics_chart').empty();
 	$('#div_anti_bird_statistics_chart').empty();
 	var build = function(towers) {
@@ -8515,7 +8701,7 @@ function BuildAntiBirdStatisticsForm()
 				id: "towers",
 				newline: true,
 				type: "multiselect",
-				group: '统计杆塔',
+				group: '安装驱鸟器的杆塔',
 				width: 350,
 				selectall: true,
 				editor: {data: towers, filter: true}
@@ -8530,8 +8716,9 @@ function BuildAntiBirdStatisticsForm()
 				type: "select",
 				group: '统计参数',
 				width: 350,
-				defaultvalue: 'LINE',
-				editor: {data: [{'value': 'LINE', 'label': '按线路统计'}, {'value': 'ALTITUDE', 'label': '按海拔统计'}]},
+				defaultvalue: 'TOWER',
+				editor: {data: [{'value': 'TOWER', 'label': '按杆塔统计'},{'value': 'LINE', 'label': '按杆塔所在线路统计'}, {'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'}, {'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}]},
+				validate: {required: true},
 				change: function (value) {
 				}
 			},
@@ -8570,15 +8757,43 @@ function BuildAntiBirdStatisticsForm()
 				defaultvalue: '点击生成统计图',
 				click: function () {
 					var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
-					//console.log(data);
-					DrawAntiBirdStatisticsChart({
-						imei: imei,
-						YMD: data.type,
-						beginTime: moment(data.start_date).local().format('YYYYMMDD'),
-						endTime: moment(data.end_date).local().format('YYYYMMDD'),
-						minSpeed: '1',
-						maxSpeed: '15'
-					});
+					if(data.towers.length>0){
+						DrawAntiBirdStatisticsChart({
+							type: data.type,
+							imei: get_imei(data.towers),
+							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
+							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
+							minSpeed: '1',
+							maxSpeed: '15'
+						});
+					}else{
+						ShowMessage(null, 400, 250, '缺少参数', '请选择至少一个杆塔');
+					}
+				}
+			},
+			{
+				display: "生成统计表",
+				id: "button_create_table",
+				newline: true,
+				type: "button",
+				group: '操作',
+				labelwidth: 120,
+				width: 300,
+				defaultvalue: '点击生成统计表',
+				click: function () {
+					var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
+					if(data.towers.length>0){
+						DrawAntiBirdStatisticsTable({
+							type: data.type,
+							imei: get_imei(data.towers),
+							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
+							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
+							minSpeed: '1',
+							maxSpeed: '15'
+						});
+					}else{
+						ShowMessage(null, 400, 250, '缺少参数', '请选择至少一个杆塔');
+					}
 				}
 			}
 		];
@@ -8588,9 +8803,9 @@ function BuildAntiBirdStatisticsForm()
 				maxwidth: 520
 			});
 		$('#form_anti_bird_statistics_chart').webgisform('setdata', {
-			type: 'D',
-			start_date: moment().local().format('YYYYMMDD'),
-			end_date: moment().local().format('YYYYMMDD')
+			type: '',
+			start_date: moment().local().format('YYYYMMDD HH:mm'),
+			end_date: moment().local().format('YYYYMMDD HH:mm')
 		});
 	};
 
@@ -8629,8 +8844,8 @@ function BuildAntiBirdInfoChartForm(imei)
 			{
 			}
 		},
-		{display: "起始日期", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'统计参数',  width:300, validate:{required:true}},
-		{display: "结束日期", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "date", group:'统计参数',  width:300, validate:{required:true}},
+		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
+		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
 		{display: "生成统计图", id: "button_create", newline: true,  type: "button", group:'操作', labelwidth:120, width:300, defaultvalue:'点击生成统计图', click:function(){
 			var data = $('#form_anti_bird_info_chart').webgisform('getdata');
 			//console.log(data);
@@ -8654,8 +8869,13 @@ function BuildAntiBirdInfoChartForm(imei)
 }
 function DrawAntiBirdStatisticsChart(option)
 {
-
+	console.log(option);
 }
+function DrawAntiBirdStatisticsTable(option)
+{
+	console.log(option);
+}
+
 function DrawAntiBirdInfoChart(option)
 {
 	$('#div_anti_bird_info_chart').drawChart(option.imei,option.YMD, option.beginTime,option.endTime,option.minSpeed,option.maxSpeed);
@@ -8811,7 +9031,6 @@ function ShowTowerInfoDialog(viewer, tower)
 				{
 					url = GetModelUrl(tower['properties']['model']['model_code_height'], true);
 				}
-				//console.log('threejs=' + url);
 				$('#tower_info_model_list_toggle').find('a').html('>>显示列表');
 				$('#tower_info_model_list').css('display', 'none');
 				$('#tower_info_model').find('iframe').css('width', '99%');
@@ -8900,15 +9119,15 @@ function ShowTowerInfoDialog(viewer, tower)
 			}
 		}
 	});
-	for(var i in $.webgis.form_fields.tower_baseinfo_fields)
+	_.forEach($.webgis.form_fields.tower_baseinfo_fields, function(fld)
 	{
-		var fld = $.webgis.form_fields.tower_baseinfo_fields[i];
+		var i = _.indexOf($.webgis.form_fields.tower_baseinfo_fields, fld);
 		if(fld.id === 'line_names' && fld.type === 'multiselect')
 		{
 			$.webgis.form_fields.tower_baseinfo_fields[i].editor.data = CreateLineNamesSelectOption();
 			$.webgis.form_fields.tower_baseinfo_fields[i].editor.position = 'top';
 		}
-	}
+	});
 	var form = $('#form_tower_info_base').webgisform($.webgis.form_fields.tower_baseinfo_fields,
 	{
 		prefix:'tower_baseinfo_',
@@ -8943,11 +9162,12 @@ function ShowTowerInfoDialog(viewer, tower)
 		var idx = 1;
 		_.forEach( tower.properties.metals, function(item)
 		{
-			if(item.type.indexOf('驱鸟装置')>-1) {
+			if(item.type.indexOf('驱鸟装置') > -1) {
 				data.push({
 					'idx': idx,
 					'type': item.type,
-					'model': item.model
+					'model': item.model,
+					'imei':item.imei
 				});
 				idx += 1;
 			}
@@ -8991,11 +9211,19 @@ function ShowTowerInfoDialog(viewer, tower)
 		});
 	}
 	
-	$("#listbox_tower_info_metal").bind("contextmenu", function (e)
-	{
-		$.webgis.control.contextmenu_metal.show({ top: e.pageY, left: e.pageX });
-		return false;
-	});
+	try{
+		$("#listbox_tower_info_metal").ligerListBox().destroy();
+		$('#form_tower_info_metal').empty();
+		$('#tower_info_metal').empty();
+		$('#tower_info_metal').append('\
+			<div id="listbox_tower_info_metal">\
+			</div>\
+			<form id="form_tower_info_metal">\
+			</form>\
+		');
+	}catch(e){
+		console.log(e);
+	}
 	var listbox_tower_info_metal = $("#listbox_tower_info_metal").ligerListBox({
 		data: data,
 		valueField:'idx',
@@ -9018,68 +9246,69 @@ function ShowTowerInfoDialog(viewer, tower)
 				var o = obj;
 				var flds = [];
 				var formdata = {};
-				if(o['type'] == '绝缘子串')
+				if(o.type === '绝缘子串')
 				{
 					flds = $.webgis.form_fields.insulator_flds;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '防振锤')
+				if(o.type === '防振锤')
 				{
 					flds = $.webgis.form_fields.damper_flds;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '接地装置')
+				if(o.type === '接地装置')
 				{
 					flds = $.webgis.form_fields.grd_flds;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '基础')
+				if(o.type === '基础')
 				{
 					flds = $.webgis.form_fields.base_flds_1;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '拉线' || o['type'] == '防鸟刺' || o['type'] == '在线监测装置' )
+				if(o.type === '拉线' || o.type === '防鸟刺' || o.type === '在线监测装置' )
 				{
 					flds = $.webgis.form_fields.base_flds_2_3_4;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'] == '雷电计数器' )
+				if(o.type === '雷电计数器' )
 				{
 					flds = $.webgis.form_fields.base_flds_5;
-					var metal = tower['properties']['metals'][o['idx']-1];
+					var metal = tower.properties.metals[o.idx-1];
 					for(var k in metal)
 					{
 						formdata[k] = metal[k];
 					}
 				}
-				if(o['type'].indexOf('驱鸟装置')>-1)
+				if(o.type.indexOf('驱鸟装置') > -1)
 				{
 					var metal = {};
-					if(tower['properties']['metals'] === undefined || tower['properties']['metals'].length == 0)
+					if(tower.properties.metals === undefined || tower.properties.metals.length === 0)
 					{
 					}else
 					{
-						metal = tower['properties']['metals'][o['idx']-1];
+						metal = _.find(tower.properties.metals, {imei: o.imei});
+						//metal = tower.properties.metals[o.idx-1];
 					}
 					var enable_imei_select = true;
 					if(metal && metal.imei && metal.imei.length>0)
@@ -9092,7 +9321,7 @@ function ShowTowerInfoDialog(viewer, tower)
 					{
 						formdata[k] = metal[k];
 					}
-					formdata['type'] = o['type'];
+					formdata.type = o.type;
 				}
 				
 				$('#form_tower_info_metal').webgisform(flds, {
@@ -9103,7 +9332,12 @@ function ShowTowerInfoDialog(viewer, tower)
 			}
 		}
 	});
-	
+	$("#listbox_tower_info_metal").bind("contextmenu", function (e)
+	{
+		$.webgis.control.contextmenu_metal.show({ top: e.pageY, left: e.pageX });
+		return false;
+	});
+
 }
 
 function UpdateBaseFields6(enable_imei_select)
@@ -9112,12 +9346,10 @@ function UpdateBaseFields6(enable_imei_select)
 	
 	var get_flds6_default = function(){
 		var obj = {};
-		//obj.type = '超声波驱鸟装置';
 		obj.type = '多功能驱鸟装置';
 		obj.imei = '';
-		for(var i in $.webgis.form_fields.base_flds_6)
+		_.forEach($.webgis.form_fields.base_flds_6, function(item)
 		{
-			var item = $.webgis.form_fields.base_flds_6[i];
 			if(item.id === 'manufacturer' && item.defaultvalue)
 			{
 				obj.manufacturer = item.defaultvalue;
@@ -9126,13 +9358,13 @@ function UpdateBaseFields6(enable_imei_select)
 			{
 				obj.model = item.defaultvalue;
 			}
-		}
+		});
 		return obj;
 	};
 	
-	for(var i in $.webgis.form_fields.base_flds_6)
+	_.forEach( $.webgis.form_fields.base_flds_6, function(fld)
 	{
-		var fld =  $.webgis.form_fields.base_flds_6[i];
+		var i = _.indexOf($.webgis.form_fields.base_flds_6, fld);
 		if(fld.id === 'imei')
 		{
 			var filter = false;
@@ -9159,7 +9391,7 @@ function UpdateBaseFields6(enable_imei_select)
 				delete ret[i].validate;
 			}
 		}
-	}
+	});
 	return ret;
 }
 
@@ -10411,7 +10643,7 @@ function AddMetal(e)
 			o['anchor_model'] = '';
 			o['depth'] = 0;
 		}
-		if(e.text.indexOf('驱鸟装置')>-1 )
+		if(e.text.indexOf('驱鸟装置') > -1 )
 		{
 			o['imei'] = '';
 			var get_model = function(){
@@ -10431,11 +10663,12 @@ function AddMetal(e)
 		var idx = 1;
 		_.forEach($.webgis.select.selected_geojson.properties.metals, function(item)
 		{
-			if(item.type.indexOf('驱鸟装置')>-1) {
+			if(item.type.indexOf('驱鸟装置') > -1) {
 				data.push({
 					'idx': idx,
 					'type': item.type,
-					'model': item.model
+					'model': item.model,
+					'imei':item.imei
 				});
 				idx += 1;
 			}
@@ -10462,18 +10695,19 @@ function DeleteMetal()
 						var o = $.webgis.select.selected_metal_item;
 						//console.log(o);
 						//console.log($.webgis.select.selected_geojson['properties']['metals']);
-						$.webgis.select.selected_geojson['properties']['metals'].splice(o['idx']-1, 1);
+						$.webgis.select.selected_geojson['properties']['metals'].splice(o.idx-1, 1);
 						//console.log($.webgis.select.selected_geojson['properties']['metals']);
 					}
 					var data = [];
 					var idx = 1;
 					_.forEach( $.webgis.select.selected_geojson.properties.metals, function(item)
 					{
-						if(item.type.indexOf('驱鸟装置')>-1) {
+						if(item.type.indexOf('驱鸟装置') > -1) {
 							data.push({
 								'idx': idx,
 								'type': item.type,
-								'model': item.model
+								'model': item.model,
+								'imei':item.imei
 							});
 							idx += 1;
 						}
