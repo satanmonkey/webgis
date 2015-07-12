@@ -3447,7 +3447,6 @@ function CreateDialogSkeleton(viewer, dlg_id)
 							<li><a href="#anti_bird_statistics_heatmap">地理热度图</a></li>\
 						</ul>\
 						<div id="anti_bird_statistics_towerlist">\
-							<div id="div_anti_bird_statistics_towerlist_toolbar"><div id="export_towerlist"></div></div>\
 							<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
 						</div>\
 						<div id="anti_bird_statistics_chart">\
@@ -3458,6 +3457,25 @@ function CreateDialogSkeleton(viewer, dlg_id)
 						<div id="anti_bird_statistics_heatmap">\
 							<form id="form_anti_bird_statistics_heatmap">\
 							</form>\
+						</div>\
+					</div>\
+				</div>\
+			');
+		}
+		if(dlg_id === 'dlg_anti_bird_statistics_result')
+		{
+			$(document.body).append('\
+				<div id="dlg_anti_bird_statistics_result" >\
+					<div id="tabs_anti_bird_statistics_result">\
+						<ul>\
+							<li><a href="#anti_bird_statistics_result_table">统计表</a></li>\
+							<li><a href="#anti_bird_statistics_result_chart">统计图</a></li>\
+						</ul>\
+						<div id="anti_bird_statistics_result_table">\
+							<div id="div_anti_bird_statistics_result_table"></div>\
+						</div>\
+						<div id="anti_bird_statistics_result_chart">\
+							<div id="div_anti_bird_statistics_result_chart"></div>\
 						</div>\
 					</div>\
 				</div>\
@@ -8262,6 +8280,17 @@ function ShowAntiBirdStatisticsDialog(viewer)
 	var buttons = [];
 	buttons.push(
 		{
+			text: "导出设备列表",
+			click: function(){
+				var table = $('#div_anti_bird_statistics_tablegrid .l-grid-body-table');
+				var table1 = table.clone();
+				var tableheader  = '<thead><tr><td>杆塔名称</td><td>设备IMEI</td><td>最新触发时间</td></tr></thead>';
+				table1.html(tableheader + table1.html());
+				var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
+				window.open(href, '_blank');
+			}
+		},
+		{
 			text: "载入杆塔",
 			click: function(){
 				LoadAntiBirdTowers(viewer);
@@ -8653,14 +8682,13 @@ function BuildAntiBirdStatisticsForm(viewer)
 
 		$('#anti_bird_statistics_towerlist').empty();
 		$('#anti_bird_statistics_towerlist').append('\
-			<div id="div_anti_bird_statistics_towerlist_toolbar"><div id="export_towerlist"></div></div>\
 			<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
 		');
 
-		$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').button({'label':"导出为Excel"});
-		$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').on('click',function(){
-			console.log('导出为Excel');
-		});
+		//$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').button({'label':"导出为Excel"});
+		//$('#div_anti_bird_statistics_towerlist_toolbar').find('#export_towerlist').on('click',function(){
+		//	console.log('导出为Excel');
+		//});
 
 		$('#div_anti_bird_statistics_towerlist_treegrid').ligerGrid({
 			columns: [
@@ -8697,7 +8725,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 	var build = function(towers) {
 		var flds = [
 			{
-				display: "杆塔",
+				display: "杆塔过滤",
 				id: "towers",
 				newline: true,
 				type: "multiselect",
@@ -8716,8 +8744,8 @@ function BuildAntiBirdStatisticsForm(viewer)
 				type: "select",
 				group: '统计参数',
 				width: 350,
-				defaultvalue: 'TOWER',
-				editor: {data: [{'value': 'TOWER', 'label': '按杆塔统计'},{'value': 'LINE', 'label': '按杆塔所在线路统计'}, {'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'}, {'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}]},
+				defaultvalue: 'DEVICE',
+				editor: {data: [{'value': 'DEVICE', 'label': '按设备统计'},{'value': 'TOWER', 'label': '按杆塔统计'},{'value': 'LINE', 'label': '按杆塔所在线路统计'}, {'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'}, {'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}]},
 				validate: {required: true},
 				change: function (value) {
 				}
@@ -8758,8 +8786,10 @@ function BuildAntiBirdStatisticsForm(viewer)
 				click: function () {
 					var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
 					if(data.towers.length>0){
-						DrawAntiBirdStatisticsChart({
+						DrawAntiBirdStatisticsResult(viewer, {
 							type: data.type,
+							resultType:'chart',
+							towers:data.towers,
 							imei: get_imei(data.towers),
 							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
 							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
@@ -8783,8 +8813,9 @@ function BuildAntiBirdStatisticsForm(viewer)
 				click: function () {
 					var data = $('#form_anti_bird_statistics_chart').webgisform('getdata');
 					if(data.towers.length>0){
-						DrawAntiBirdStatisticsTable({
+						DrawAntiBirdStatisticsResult(viewer, {
 							type: data.type,
+							resultType:'table',
 							towers:data.towers,
 							imei: get_imei(data.towers),
 							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
@@ -8868,55 +8899,256 @@ function BuildAntiBirdInfoChartForm(imei)
 	$('#form_anti_bird_info_chart').webgisform('setdata',{type:'D', start_date:moment().local().format('YYYYMMDD'), end_date:moment().local().format('YYYYMMDD')});
 
 }
-function DrawAntiBirdStatisticsChart(option)
+
+function DrawAntiBirdStatisticsResult(viewer, option)
 {
-	console.log(option);
-}
-function DrawAntiBirdStatisticsTable(option)
-{
-	console.log(option);
+	//console.log(option);
 	//if(true) return;
 
-	var build_towerdata = function(towerlist)
+	var build_tabledata = function(towerlist, type, data1)
 	{
 		var towersdata = {Rows:[]};
-		_.forEach(towerlist, function (item) {
-			var o = {};
-			o._id = item._id;
-			o.name = item.properties.name;
-			o.imei = '';
-			o.children = [];
-			var arr = _.filter(item.properties.metals, function (item1) {
-				return item1.type.indexOf('驱鸟装置') > -1;
-			});
-			if (arr.length === 1) {
-				o.imei = arr[0].imei;
-				delete o.children;
-			}
-			else {
-				var imeis = [];
-				_.forEach(arr, function (item1) {
-					var o1 = {};
-					var position = '';
-					if (item1.position) {
-						if (item1.position === 'top') position = '上';
-						if (item1.position === 'middle') position = '中';
-						if (item1.position === 'bottom') position = '下';
-					}
-					o1.name = item.properties.name + '-' + position;
-					o1.imei = item1.imei;
-					o1._id = item._id;
-					imeis.push('...' + item1.imei.substr(11));
-					o.children.push(o1);
+		if(type === 'DEVICE')
+		{
+			_.forEach(towerlist, function (item) {
+				var o = {};
+				o._id = item._id;
+				o.name = item.properties.name;
+				o.imei = '';
+				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.count = '';
+				o.children = [];
+				var arr = _.filter(item.properties.metals, function (item1) {
+					return item1.type.indexOf('驱鸟装置') > -1;
 				});
-				o.imei = '(' + imeis.join(',') + ')';
-			}
-			towersdata.Rows.push(o);
-		});
+				if (arr.length === 1) {
+					o.imei = arr[0].imei;
+					delete o.children;
+					o.count = _.result(_.find(data1, {imei:o.imei}), 'count');
+					if(o.count === undefined) o.count = '';
+				}
+				else {
+					var imeis = [];
+					_.forEach(arr, function (item1) {
+						var o1 = {};
+						var position = '';
+						if (item1.position) {
+							if (item1.position === 'top') position = '上';
+							if (item1.position === 'middle') position = '中';
+							if (item1.position === 'bottom') position = '下';
+						}
+						o1.name = item.properties.name + '-' + position;
+						o1.imei = item1.imei;
+						o1._id = item._id;
+						o1.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+						o1.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+						o1.count = _.result(_.find(data1, {imei:o1.imei}), 'count');
+						if(o1.count === undefined) o1.count = '';
+						imeis.push('...' + item1.imei.substr(11));
+						o.children.push(o1);
+					});
+					o.imei = '(' + imeis.join(',') + ')';
+					o.beginTime = '';
+					o.endTime = '';
+					o.count = '';
+				}
+				towersdata.Rows.push(o);
+			});
+		}
+		if(type === 'TOWER')
+		{
+			_.forEach(towerlist, function (item) {
+				var o = {};
+				o._id = item._id;
+				o.name = item.properties.name;
+				o.imei = '';
+				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
+					return item1.type.indexOf('驱鸟装置') > -1;
+				}), 'imei');
+				var countsum = 0;
+				_.forEach(imeiarr, function (item1) {
+					var c = _.result(_.find(data1, {imei:item1}), 'count');
+					if(c != undefined) {
+						countsum += c;
+					}
+				});
+				o.count = countsum;
+				towersdata.Rows.push(o);
+			});
+		}
+		if(type === 'LINE')
+		{
+			var lines = [];
+			_.forEach(towerlist, function(item){
+				if(item.properties.name.indexOf('#') > -1)
+				{
+					var linename = item.properties.name.split('#')[0];
+					var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
+						return item1.type.indexOf('驱鸟装置') > -1;
+					}), 'imei');
+
+					var idx = _.findIndex(lines, 'name', linename);
+					if(idx < 0){
+						lines.push({name:linename, imei:imeiarr});
+					}else{
+						lines[idx].imei = _.union(lines[idx].imei, imeiarr);
+					}
+				}
+			});
+
+			_.forEach(lines, function (item) {
+				var o = {};
+				o.name = item.name;
+				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				var countsum = 0;
+				_.forEach(item.imei, function (item1) {
+					var c = _.result(_.find(data1, {imei:item1}), 'count');
+					if(c != undefined) {
+						countsum += c;
+					}
+				});
+				o.count = countsum;
+				towersdata.Rows.push(o);
+			});
+		}
 		return towersdata;
 	};
 	var towers = _.filter($.webgis.data.anti_bird_towers, function(item){
 		return _.indexOf(option.towers, item._id) > -1;
+	});
+	var tabledata = build_tabledata(towers, option.type, []);
+	var buttons = [];
+	buttons.push(
+		{
+			text: "导出",
+			click: function () {
+				var table = $('#div_anti_bird_statistics_result_tablegrid .l-grid-body-table');
+				var table1 = table.clone();
+				var tableheader = '';
+				if(option.type === 'DEVICE'){
+					tableheader = '<thead><tr><td>杆塔名称</td><td>设备IMEI</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				if(option.type === 'TOWER'){
+					tableheader = '<thead><tr><td>杆塔名称</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				if(option.type === 'LINE'){
+					tableheader = '<thead><tr><td>线路名称</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				if(option.type === 'ALTITUDE'){
+					tableheader = '<thead><tr><td>海拔范围</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				if(option.type === 'WEATHER'){
+					tableheader = '<thead><tr><td>天气类型</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				table1.html(tableheader + table1.html());
+				var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
+				window.open(href, '_blank');
+			}
+		},
+		{
+			text: "关闭",
+			click: function () {
+				$(this).dialog("close");
+			}
+		}
+	);
+	CreateDialogSkeleton(viewer, 'dlg_anti_bird_statistics_result');
+	$('#dlg_anti_bird_statistics_result').dialog({
+		width: 860,
+		height: 630,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		//position:{at: "right center"},
+		position:{at: "center"},
+		title:'统计结果',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "slide",
+			direction: "right",
+			duration: 500
+		},
+		hide: {
+			effect: "slide",
+			direction: "right",
+			duration: 500
+		},
+		buttons:buttons
+	});
+	$('#tabs_anti_bird_statistics_result').tabs({
+		collapsible: false,
+		active: 0,
+		beforeActivate: function( event, ui ) {
+			var title = ui.newTab.context.innerText;
+			if(title === '统计表')
+			{
+			}
+			if(title === '统计图')
+			{
+			}
+		}
+	});
+
+	$('#anti_bird_statistics_result_table').empty();
+	$('#anti_bird_statistics_result_table').append('<div id="div_anti_bird_statistics_result_table"></div>');
+	var columns = [];
+	if(option.type === 'DEVICE'){
+		columns = [
+			//{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
+			{ display: '杆塔名称', name: 'name', align: 'left',  width:160 },
+			{ display: '设备IMEI', name: 'imei', id:'imei1', align: 'left',  width:200},
+			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
+			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
+			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
+		];
+	}
+	if(option.type === 'TOWER'){
+		columns = [
+			{ display: '杆塔名称', name: 'name', align: 'left',  width:160 },
+			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
+			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
+			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
+		];
+	}
+	if(option.type === 'LINE'){
+		columns = [
+			{ display: '线路名称', name: 'name', align: 'left',  width:160 },
+			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
+			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
+			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
+		];
+	}
+	if(option.type === 'ALTITUDE'){
+		columns = [
+			{ display: '海拔范围', name: 'name', align: 'left',  width:160 },
+			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
+			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
+			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
+		];
+	}
+	if(option.type === 'WEATHER'){
+		columns = [
+			{ display: '天气类型', name: 'name', align: 'left',  width:160 },
+			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
+			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
+			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
+		];
+	}
+	$('#div_anti_bird_statistics_result_table').ligerGrid({
+			columns: columns,
+			width: '100%',
+			height: '70%',
+			data: tabledata,
+			alternatingRow: false,
+			usePager: false,
+			tree: { columnId: 'imei1' }
 	});
 
 }
