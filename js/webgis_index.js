@@ -141,6 +141,7 @@ $(function() {
 			InitKeyboardEvent(viewer);
 			load_init_data();
 			InitAntiBird(viewer);
+			InitScreenSize(viewer);
 		});
 	}
 	
@@ -3403,6 +3404,12 @@ function CreateDialogSkeleton(viewer, dlg_id)
 {
 	if($('#' + dlg_id).length === 0)
 	{
+		if (dlg_id === 'dlg_antibird_birdfamily') {
+			$(document.body).append('\
+			<div id="dlg_antibird_birdfamily" >\
+				<div id="div_container_anti_bird_birdfamily_pics"></div>\
+			</div>');
+		}
 		if (dlg_id === 'dlg_user_management') {
 			$(document.body).append('\
 			<div id="dlg_user_management" >\
@@ -8065,7 +8072,7 @@ function DestroyFileUploader(div_id)
 	$.webgis.select.selected_geojson = undefined;
 }
 
-function BuildAntiBirdImageSlide(data1)
+function BuildAntiBirdImageSlide(viewer, data1)
 {
 	$('#div_anti_bird_info_pics' ).empty();
 	var img_data = [];
@@ -8132,7 +8139,7 @@ function BuildAntiBirdImageSlide(data1)
 		hash:true,
 		data:img_data
 	};
-	$('#div_anti_bird_info_pics' ).append('<div id="div_container_anti_bird_info_pics"></div>');
+	$('#div_anti_bird_info_pics' ).append('<div  id="div_container_anti_bird_info_pics"></div>');
 	var $fotoramaAntiBirdPicsDiv = $('#div_container_anti_bird_info_pics' ).fotorama(options);
 	$fotoramaAntiBirdPicsDiv.on('fotorama:load fotorama:showend', function(e, fotorama, extra){
 		var hasBird = GetAntiBirdPicFlag(fotorama.activeFrame);
@@ -8145,7 +8152,15 @@ function BuildAntiBirdImageSlide(data1)
 	AddButtonToFotorama('div_container_anti_bird_info_pics',
 		$.webgis.control.image_slider_anti_bird_pics,
 		[{
-			title:'下载', 
+			title:'查看鸟类图谱',
+			className:'anti_bird_pic_toolbutton_bird_family',
+			click:function(v)
+			{
+				ShowBirdFamilyDialog(viewer);
+			}
+		},
+		{
+			title:'下载',
 			className:'anti_bird_pic_toolbutton_download',
 			click:function(v){
 				var frame = $(".fotorama__active");
@@ -8166,7 +8181,7 @@ function BuildAntiBirdImageSlide(data1)
 				canvas[0].toBlob(function(blob) {
 					saveAs(blob, filename);
 					canvas.remove();
-				});				
+				});
 			}
 		},
 		{
@@ -8209,7 +8224,85 @@ function BuildAntiBirdImageSlide(data1)
 		}
 	]);
 }	
-
+function ShowBirdFamilyDialog(viewer){
+	CreateDialogSkeleton(viewer, 'dlg_antibird_birdfamily');
+	var wgt;
+	try {
+		wgt = $("#dlg_antibird_birdfamily").dialog("widget");
+	}catch(e){
+		wgt = undefined;
+	}
+	if(wgt){
+		if($( "#dlg_antibird_birdfamily" ).dialog( "isOpen" )) {
+			$("#dlg_antibird_birdfamily").dialog("close");
+		}else{
+			$( "#dlg_antibird_birdfamily" ).dialog( "open" );
+		}
+	}else
+	{
+		var buttons = [];
+		buttons.push(
+			{
+				text: "关闭",
+				click: function () {
+					$(this).dialog("close");
+				}
+			});
+		$('#dlg_antibird_birdfamily').dialog({
+			width: 370,
+			height: 590,
+			minWidth: 200,
+			minHeight: 200,
+			draggable: true,
+			resizable: true,
+			modal: false,
+			//position:{at: "right center"},
+			position: {at: "right"},
+			title: '常见鸟类图谱',
+			close: function (event, ui) {
+			},
+			show: {
+				effect: "slide",
+				direction: "right",
+				duration: 500
+			},
+			hide: {
+				effect: "slide",
+				direction: "right",
+				duration: 500
+			},
+			buttons: buttons
+		});
+		var options = {
+			allowfullscreen: false,
+			width: 320,
+			height: 380,
+			margin: 0,
+			nav: 'thumbs',//dots, thumbs, false
+			navposition: 'bottom',
+			thumbwidth: 64,
+			thumbheight: 64,
+			thumbmargin: 0,
+			thumbborderwidth: 0,
+			fit: 'scaledown', //contain, cover, scaledown, none
+			thumbfit: 'scaledown', //contain, cover, scaledown, none
+			transition: 'slide', //slide, crossfade, dissolve
+			clicktransition: 'slide',
+			transitionduration: 200,
+			startindex: 0,
+			loop: false,
+			autoplay: false,//10000,
+			stopautoplayontouch: true,
+			keyboard: false,
+			arrows: true,
+			click: false,
+			direction: 'ltr',
+			hash: true,
+			data: $.webgis.data.antibird.bird_family
+		};
+		var $fotoramaAntiBirdBirdFamilyDiv = $('#div_container_anti_bird_birdfamily_pics').fotorama(options);
+	}
+}
 function SetAntiBirdPicFlagDom(hasBird)
 {
 	var div = $('#div_container_anti_bird_info_pics' ).find('div[class=fotorama__stage]').find('div.' + 'anti_bird_pic_toolbutton_get_flag' );
@@ -8282,8 +8375,9 @@ function ShowAntiBirdStatisticsDialog(viewer)
 		{
 			text: "导出设备列表",
 			click: function(){
-				var table = $('#div_anti_bird_statistics_tablegrid .l-grid-body-table');
+				var table = $('#div_anti_bird_statistics_towerlist_treegridgrid .l-grid-body-table');
 				var table1 = table.clone();
+				console.log(table1);
 				var tableheader  = '<thead><tr><td>杆塔名称</td><td>设备IMEI</td><td>最新触发时间</td></tr></thead>';
 				table1.html(tableheader + table1.html());
 				var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
@@ -8303,7 +8397,7 @@ function ShowAntiBirdStatisticsDialog(viewer)
 		}
 	});
 	$('#dlg_anti_bird_statistics').dialog({
-		width: 630,
+		width: 730,
 		height: 730,
 		minWidth:200,
 		minHeight: 200,
@@ -8554,7 +8648,7 @@ function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 		}
 		$.webgis.websocket.antibird.latest_records[imei] = data1;
 		ShowProgressBar(false);
-		BuildAntiBirdImageSlide(data1);
+		BuildAntiBirdImageSlide(viewer, data1);
 	}, 'json');
 	
 }
@@ -8575,6 +8669,24 @@ function BuildAntiBirdStatisticsForm(viewer)
 		});
 		var imei  = _.pluck(arr, 'imei');
 		return imei;
+	};
+	var get_imei_obj_arr = function (towers) {
+		var ret = [];
+		_.forEach(towers, function(towerid) {
+			var item = _.find($.webgis.data.anti_bird_towers, {_id:towerid});
+			if (item.properties.name.indexOf('#') > -1) {
+				var linename = item.properties.name.split('#')[0];
+				var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
+					return item1.type.indexOf('驱鸟装置') > -1;
+				}), 'imei');
+				_.forEach(imeiarr, function(imei) {
+					if (_.findIndex(ret, 'imei', imei) < 0){
+						ret.push({imei:imei, tower_name:item.properties.name, line_name:linename})
+					}
+				});
+			}
+		});
+		return ret;
 	};
 	//var TreeDeptData = { Rows : [
 	//		{ id: '01', name: "企划部",   remark: "1989-01-12",
@@ -8630,6 +8742,22 @@ function BuildAntiBirdStatisticsForm(viewer)
 				//console.log(imei);
 				ShowAntiBirdInfoDialog(viewer, imei, 200);
 			});
+			$('a[id^=towerlist_phone_close_sound_]').off();
+			$('a[id^=towerlist_phone_close_sound_]').on('click', function(){
+				var phone = $(this).attr('id').replace('towerlist_phone_close_sound_', '');
+				var s = '##123456#CUSC#';
+				var s1 = '##123456#CSOD#';
+				msg =  '请用任意手机至对号码[' + phone + ']发送以下短信内容:<br/>[' + s + '0' + ']关闭超声波;<br/>[' + s + '1' + ']打开超声波;<br/>';
+				msg +=  '[' + s1 + '0' + ']关闭语音;<br/>[' + s1 + '1' + ']打开语音;';
+				ShowMessage(null, 400, 300, '声音控制', msg);
+			});
+			$('a[id^=towerlist_phone_detect_]').off();
+			$('a[id^=towerlist_phone_detect_]').on('click', function(){
+				var phone = $(this).attr('id').replace('towerlist_phone_detect_', '');
+				var msg = '##123456#TCAM';
+				ShowMessage(null, 400, 250, '探测设备', '请用任意手机发送短信[' + msg + ']至号码[' + phone + ']即可测试摄像头,激活一次拍照上传过程.');
+			});
+
 		};
 		var get_lasttime = function(imei){
 			var ret = '';
@@ -8639,6 +8767,16 @@ function BuildAntiBirdStatisticsForm(viewer)
 			}else{
 				ret = '(无)';
 			}
+			return ret;
+		};
+		var get_phone = function(imei){
+			var ret = '';
+			ret = _.result(_.find($.webgis.data.antibird.anti_bird_equip_list, {imei:imei}), 'phone_number');
+			//if(s && s.length){
+			//	ret = moment(s).local().format('YYYY-MM-DD HH:mm:ss');
+			//}else{
+			//	ret = '(无)';
+			//}
 			return ret;
 		};
 		var towers = {Rows:[]};
@@ -8656,6 +8794,8 @@ function BuildAntiBirdStatisticsForm(viewer)
 				o.imei = '<a href="javascript:void(0);" id="towerlist_imei_' + arr[0].imei + '">' + arr[0].imei + '</a>';
 				o.timestamp = get_lasttime(arr[0].imei);
 				delete o.children;
+				o.action = '&nbsp;<a id="towerlist_phone_close_sound_' + get_phone(arr[0].imei) + '" href="javascript:void(0);">声音控制</a>&nbsp;';
+				o.action += '&nbsp;<a id="towerlist_phone_detect_' + get_phone(arr[0].imei) + '" href="javascript:void(0);" >探测</a>&nbsp;';
 			}
 			else {
 				var imeis = [];
@@ -8672,6 +8812,8 @@ function BuildAntiBirdStatisticsForm(viewer)
 					o1._id = item._id;
 					imeis.push('...' + item1.imei.substr(11));
 					o1.timestamp = get_lasttime(item1.imei);
+					o1.action = '&nbsp;<a id="towerlist_phone_close_sound_' + get_phone(item1.imei) + '" href="javascript:void(0);">声音控制</a>&nbsp;';
+					o1.action += '&nbsp;<a id="towerlist_phone_detect_' + get_phone(item1.imei) + '" href="javascript:void(0);" >探测</a>&nbsp;';
 					o.children.push(o1);
 				});
 				o.imei = '(' + imeis.join(',') + ')';
@@ -8692,10 +8834,11 @@ function BuildAntiBirdStatisticsForm(viewer)
 
 		$('#div_anti_bird_statistics_towerlist_treegrid').ligerGrid({
 			columns: [
-				{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
+				//{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
 				{ display: '杆塔名称', name: 'name', align: 'left',  width:150 },
 				{ display: '设备IMEI', name: 'imei', id:'imei1', align: 'left',  width:200},
-				{ display: '最新触发时间', name:'timestamp',   align: 'left',  width:160 }
+				{ display: '最新触发时间', name:'timestamp',   align: 'left',  width:160 },
+				{ display: '操作', name:'action',   align: 'left',  width:100 }
 			],
 			width: '100%',
 			height: '80%',
@@ -8790,7 +8933,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 							type: data.type,
 							resultType:'chart',
 							towers:data.towers,
-							imei: get_imei(data.towers),
+							imei: get_imei_obj_arr(data.towers),
 							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
 							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
 							minSpeed: '1',
@@ -8817,7 +8960,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 							type: data.type,
 							resultType:'table',
 							towers:data.towers,
-							imei: get_imei(data.towers),
+							imei: get_imei_obj_arr(data.towers),
 							beginTime: moment(data.start_date).local().format('YYYYMMDDHHmm'),
 							endTime: moment(data.end_date).local().format('YYYYMMDDHHmm'),
 							minSpeed: '1',
@@ -8902,9 +9045,6 @@ function BuildAntiBirdInfoChartForm(imei)
 
 function DrawAntiBirdStatisticsResult(viewer, option)
 {
-	//console.log(option);
-	//if(true) return;
-
 	var build_tabledata = function(towerlist, type, data1)
 	{
 		var towersdata = {Rows:[]};
@@ -9150,7 +9290,11 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 			usePager: false,
 			tree: { columnId: 'imei1' }
 	});
+	//delete option.type;
+	delete option.resultType;
+	delete option.towers;
 
+	console.log(JSON.stringify(option));
 }
 
 function DrawAntiBirdInfoChart(option)
@@ -11209,10 +11353,16 @@ function OnSelect(viewer, e, selectedEntity)
 		$('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
 		if($.webgis.select.selected_obj && $.webgis.select.selected_obj.id)
 		{
-			if(typeof($.webgis.select.selected_obj.id) === 'string' && typeof($.webgis.select.prev_selected_obj.id) === 'string')
+			//console.log($.webgis.select.selected_obj);
+			//console.log($.webgis.select.prev_selected_obj);
+			var g, gprev;
+			if(typeof($.webgis.select.selected_obj.id) === 'string' )
 			{
-				var g = _.find($.webgis.data.geojsons, {_id:$.webgis.select.selected_obj.id});
-				var gprev = _.find($.webgis.data.geojsons, {_id:$.webgis.select.prev_selected_obj.id});
+				g = _.find($.webgis.data.geojsons, {_id:$.webgis.select.selected_obj.id});
+				if($.webgis.select.prev_selected_obj && $.webgis.select.prev_selected_obj.id && typeof($.webgis.select.prev_selected_obj.id) === 'string')
+				{
+					gprev = _.find($.webgis.data.geojsons, {_id: $.webgis.select.prev_selected_obj.id});
+				}
 				var id = $.webgis.select.selected_obj.id;
 				if(g && g.properties && g.properties.webgis_type == 'point_tower')
 				{
@@ -11241,7 +11391,6 @@ function OnSelect(viewer, e, selectedEntity)
 						ShowPoiInfoDialog(viewer, '编辑', 'point', [], id);
 					}
 				}
-
 				if(g  && gprev && gprev.properties.webgis_type === g.properties.webgis_type)
 				{
 					var edgeexist = CheckSegmentsExist($.webgis.select.prev_selected_obj, $.webgis.select.selected_obj);
@@ -11278,8 +11427,6 @@ function OnSelect(viewer, e, selectedEntity)
 						}
 					}
 				}
-				
-				
 			}
 			else
 			{
