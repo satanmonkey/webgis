@@ -68,7 +68,7 @@ $(function() {
 					LoadModelsList($.webgis.db.db_name, function(){
 						ShowProgressBar(true, 670, 200, '载入中', '正在载入3D模型信息，请稍候...');
 						LoadModelsMapping($.webgis.db.db_name, function(){
-							if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
+							//if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
 							var extent = GetDefaultExtent($.webgis.db.db_name);
 							FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
 							LoadSysRole($.webgis.db.db_name, function(){
@@ -109,7 +109,7 @@ $(function() {
 		InitModelList(viewer);
 		InitKeyboardEvent(viewer);
 		load_init_data();
-		InitAntiBird(viewer);
+		//InitAntiBird(viewer);
 		InitScreenSize(viewer);
 	}catch(ex)
 	{
@@ -140,7 +140,7 @@ $(function() {
 			InitModelList(viewer);
 			InitKeyboardEvent(viewer);
 			load_init_data();
-			InitAntiBird(viewer);
+			//InitAntiBird(viewer);
 			InitScreenSize(viewer);
 		});
 	}
