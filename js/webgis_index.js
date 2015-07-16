@@ -70,7 +70,7 @@ $(function() {
 						LoadModelsMapping($.webgis.db.db_name, function(){
 							//if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
 							var extent = GetDefaultExtent($.webgis.db.db_name);
-							FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+							FlyToExtent(viewer, {extent:extent, duration:0});
 							LoadSysRole($.webgis.db.db_name, function(){
 								$('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
 							});
@@ -79,7 +79,7 @@ $(function() {
 						//LoadAllDNNode(viewer, $.webgis.db.db_name, function(){
 							//LoadAllDNEdge(viewer, $.webgis.db.db_name, function(){
 								//var extent = GetExtentByCzml();
-								//FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+								//FlyToExtent(viewer, {extent:extent});
 								//ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
 							//});
 						//});
@@ -93,7 +93,7 @@ $(function() {
 
 	
 	try{
-		//throw "unsupport_cesium_exception";
+		throw "unsupport_cesium_exception";
 		ShowProgressBar(true, 670, 200, '载入中', '正在载入，请稍候...');
 		viewer = InitCesiumViewer();
 		$.webgis.viewer = viewer;
@@ -363,8 +363,21 @@ function InitLeafletViewer()
 	var baseMaps = {};
 	
 	url_temlate = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
-	
-	
+
+	lyr = L.tileLayer(url_temlate, {
+		image_type:'amap_map',
+		noWrap:true,
+		tms:false,
+		zoomOffset:0,
+		minZoom: 1,
+		maxZoom: 18,
+	});
+	lyr.name = '高德地图';
+	lyr.iconUrl = Cesium.buildModuleUrl('/img/wmts-map.png');
+	lyr.tooltip = '高德地图';
+	layers.push(lyr);
+	baseMaps['高德地图'] = lyr;
+
 	lyr = L.tileLayer(url_temlate, {
 		image_type:'arcgis_sat', 
 		noWrap:true,
@@ -396,21 +409,7 @@ function InitLeafletViewer()
 	layers.push(lyr);
 	baseMaps['Bing卫星图'] = lyr;
 	
-	lyr = L.tileLayer(url_temlate, {
-		image_type:'amap_map', 
-		noWrap:true,
-		tms:false,
-		zoomOffset:0,
-		minZoom: 1,
-		maxZoom: 18,
-	});
-	lyr.name = '高德地图';
-	lyr.iconUrl = Cesium.buildModuleUrl('/img/wmts-map.png');
-	lyr.tooltip = '高德地图';
-	layers.push(lyr);
-	baseMaps['高德地图'] = lyr;
-	
-	
+
 	//var prefix = '';
 	//if($.webgis.remote.arcserver_host == '10.181.160.72')
 	//{
@@ -578,6 +577,18 @@ function InitCesiumViewer()
 		prefix = 'ztgdgis/';
 	}
 	providerViewModels.push(new Cesium.ProviderViewModel({
+		name : '高德地图',
+		iconUrl : 'img/wmts-map.png',
+		tooltip : '高德地图',
+		creationFunction : function() {
+			return new AMapTileImageryProvider({
+				url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+				imageType: 'amap_map',
+				queryType: 'server'
+			});
+		}
+	}));
+	providerViewModels.push(new Cesium.ProviderViewModel({
 		name : 'Esri卫星图',
 		iconUrl : 'img/esri-sat.png',
 		tooltip : 'Esri卫星图',
@@ -619,19 +630,7 @@ function InitCesiumViewer()
 			});
 		}
 	}));
-	providerViewModels.push(new Cesium.ProviderViewModel({
-		name : '高德地图',
-		iconUrl : 'img/wmts-map.png',
-		tooltip : '高德地图',
-		creationFunction : function() {
-			return new AMapTileImageryProvider({
-				url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-				imageType: 'amap_map',
-				queryType: 'server'
-			});
-		}
-	}));
-	
+
 	//providerViewModels.push(new Cesium.ProviderViewModel({
 		//name : 'Bing Maps Aerial with Labels',
 		//iconUrl : 'img/bingAerialLabels.png',
@@ -3191,6 +3190,26 @@ function InitToolPanel(viewer)
 	$('#but_line_antibird_statistics').on('click', function(){
 		ShowAntiBirdStatisticsDialog(viewer);
 	});
+	$('#but_status_commit_view').button({label:'数据查看'});
+	$('#but_status_commit_view').on('click', function(){
+		ShowStatusCommitListDialog(viewer);
+	});
+	$('#but_status_commit_import').button({label:'数据导入'});
+	$('#but_status_commit_import').on('click', function(){
+		ShowStatusCommitImportDialog(viewer);
+	});
+	$('#but_status_commit_standard').button({label:'查看标准'});
+	$('#but_status_commit_standard').on('click', function(){
+		ShowStatusCommitStandardDialog(viewer);
+	});
+	$('#but_status_commit_bbn').button({label:'BBN编辑'});
+	$('#but_status_commit_bbn').on('click', function(){
+		ShowStatusCommitStandardDialog(viewer);
+	});
+	$('#but_status_commit_analyze').button({label:'分析'});
+	$('#but_status_commit_analyze').on('click', function(){
+		ShowStatusCommitStandardDialog(viewer);
+	});
 
 	$('#but_dn_add').button({label:'新增配电网络'});
 	$('#but_dn_add').on('click', function(){
@@ -4418,8 +4437,8 @@ function InitSearchBox(viewer)
 				duration: 400,
 				complete:function(){
 					$("#div_search_option_toggle label").html("");
-					$('#div_search_option').css("border", "0px 1px 0px 1px solid #00FF00");
-					$('#div_search_option_panel').css("border", "0px 1px 1px 1px solid #00FF00");
+					$('#div_search_option').css("border", "0px 1px 0px 1px solid");
+					$('#div_search_option_panel').css("border", "0px 1px 1px 1px solid");
 				}
 			});
 		}
@@ -4480,7 +4499,7 @@ function InitSearchBox(viewer)
 					LoadTowerByLineName(viewer, $.webgis.db.db_name, name, function(data){
 						LoadLineByLineName(viewer, $.webgis.db.db_name, name, function(data1){
 							var extent = GetExtentByCzml();
-							FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+							FlyToExtent(viewer, {extent:extent});
 							if($.webgis.config.map_backend === 'cesium')
 							{
 								ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
@@ -4515,7 +4534,7 @@ function InitSearchBox(viewer)
 					$('#div_search_option').css('display','block');
 					$('#input_search').focus();
 				});
-				$('#button_search').css('background-color', '#00FF00');
+				$('#button_search').css('background-color', $.webgis.color.base_color);
 				
 			}else
 			{
@@ -4534,7 +4553,7 @@ function InitSearchBox(viewer)
 		$('#button_search').css('background-color', '#FFFFFF');
 		if($('#input_search').css('display') !== 'none')
 		{
-			$('#button_search').css('background-color', '#00FF00');
+			$('#button_search').css('background-color', $.webgis.color.base_color);
 		}
 	});
 
@@ -4579,7 +4598,7 @@ function LoadAntiBirdTowers(viewer)
 					}
 				});
 				var extent = GetExtentByCzml();
-				FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+				FlyToExtent(viewer, {extent:extent});
 				if ($.webgis.config.map_backend === 'cesium') {
 					ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
 				}
@@ -4600,7 +4619,7 @@ function LoadAntiBirdTowers(viewer)
 			}
 		});
 		var extent = GetExtentByCzml();
-		FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+		FlyToExtent(viewer, {extent:extent});
 		if ($.webgis.config.map_backend === 'cesium') {
 			ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
 		}
@@ -5214,7 +5233,7 @@ function ReloadBorders(viewer, forcereload)
 			
 		}
 	});
-	FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+	FlyToExtent(viewer, {extent:extent});
 }
 
 function LoadSegments(db_name, callback)
@@ -5791,9 +5810,9 @@ function LookAtTargetExtent(viewer, id, dx, dy)
 		var south = Cesium.Math.toRadians(y - dy);
 		var east = Cesium.Math.toRadians(x + dx);
 		var north = Cesium.Math.toRadians(y + dy);
-		var extent = new Cesium.Extent(west, south, east, north);
-		//scene.camera.controller.viewExtent(extent, ellipsoid);
-		FlyToExtent(viewer, west, south, east, north);
+		//var extent = new Cesium.Extent(west, south, east, north);
+		var extent = {west:west,south:south,east:east,north:north};
+		FlyToExtent(viewer, {extent:extent});
 	}
 }
 function ViewExtentByPos(viewer, lng, lat,  dx, dy)
@@ -5841,24 +5860,21 @@ function FlyToPointCart3(viewer, cartopos, duration)
     });	
 }
 
-function FlyToExtent(viewer, west, south, east, north)
+function FlyToExtent(viewer, option)
 {
 	if($.webgis.config.map_backend === 'cesium')
 	{
 		var scene = viewer.scene;
-		var extent = Cesium.Rectangle.fromDegrees(west, south, east, north);
-		//console.log(extent);
-		//scene.camera.flyToRectangle({
-			//destination : extent
-		//});
-		scene.camera.flyTo({
-			destination : extent
-		});
+		var extent = Cesium.Rectangle.fromDegrees(option.extent.west, option.extent.south, option.extent.east, option.extent.north);
+		var opt = { destination : extent };
+		delete option.extent;
+		opt = $.extend(true, opt, option)
+		scene.camera.flyTo(opt);
 	}
 	if($.webgis.config.map_backend === 'leaflet')
 	{
-		var southWest = L.latLng(south, west);
-		var	northEast = L.latLng(north, east);		
+		var southWest = L.latLng(option.extent.south, option.extent.west);
+		var	northEast = L.latLng(option.extent.north, option.extent.east);
 		var bounds = L.latLngBounds(southWest, northEast);
 		viewer.fitBounds(bounds);
 	}
@@ -6287,7 +6303,7 @@ function TowerInfoMixin(viewer)
 		});
 		eventHelper.add(viewer.homeButton.viewModel.command.afterExecute, function(commandInfo){
 			var extent = GetExtentByCzml();
-			FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+			FlyToExtent(viewer, {extent:extent});
 		});
 	}
 
@@ -9345,7 +9361,7 @@ function ShowTowerInfoDialog(viewer, tower)
 				var selectedEntity = viewer.selectedEntity;
 				if($.webgis.config.is_tower_focus)
 				{
-					$(e.target).css('background', '#00AA00 url(/css/black-green-theme/images/ui-bg_dots-medium_75_000000_4x4.png) 50% 50% repeat');
+					$(e.target).css('background-color', '#00AA00');
 					$(e.target).html('解除锁定');
 					
 					if (Cesium.defined(selectedEntity)) 
@@ -9357,7 +9373,7 @@ function ShowTowerInfoDialog(viewer, tower)
 				}
 				else
 				{
-					$(e.target).css('background', '#000000 url(/css/black-green-theme/images/ui-bg_dots-medium_75_000000_4x4.png) 50% 50% repeat');
+					$(e.target).css('background-color', '#000000');
 					$(e.target).html('锁定视角');
 					
 					if(selectedEntity)
@@ -9860,7 +9876,7 @@ function CreateFileBrowserAdditionalButton(div_id, collection, id)
 function CreateFileBrowser(div_id, width, height, fileext, collection, id)
 {
 	$('#' + div_id).empty();
-	if(id===undefined)
+	if(id === undefined)
 	{
 		ShowProgressBar(false);
 		$('#' + div_id).html('请先保存，再上传图片');
@@ -9880,7 +9896,7 @@ function CreateFileBrowser(div_id, width, height, fileext, collection, id)
 	html += '<div id="div_' + div_id + '_uploader" style="display:none">';
 	html += '</div>';
 	html += '<div id="div_' + div_id + '_upload_desciption" style="display:none;margin:10px;">';
-	html += '	<textarea id="' + div_id + '_upload_desciption" style="width:' + (width - 40) + 'px;height:100px;color:white;background-color:black;border:1px #00FF00 solid" rows="5" placeholder="在此输入备注..."></textarea>';
+	html += '	<textarea id="' + div_id + '_upload_desciption" style="width:' + (width - 40) + 'px;height:100px;border:1px ' + $.webgis.color.base_color + ' solid" rows="5" placeholder="在此输入备注..."></textarea>';
 	html += '</div>';
 	$('#' + div_id).append(html);
 	
@@ -11629,7 +11645,7 @@ function ShowLineDialog(viewer, mode)
 				}
 			},
 			styler: function(value) {
-				return 'color: #00FF00;background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+				return 'color: ' + $.webgis.color.base_color + ';';
 			}
 		});
 	}

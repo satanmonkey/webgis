@@ -1,6 +1,7 @@
 $.webgis = {};
 $.webgis.mapping = {};
 $.webgis.db = {};
+$.webgis.color = {};
 $.webgis.data = {};
 $.webgis.config = {};
 $.webgis.select = {};
@@ -26,6 +27,7 @@ $.webgis.current_userinfo = {};
 $.webgis.websocket.antibird.WS_PROTOCOL = 'ws';
 $.webgis.websocket.antibird.HOST = $.webgis.remote.localhost;
 $.webgis.websocket.antibird.PORT = 8088;
+$.webgis.color.base_color = '#2e6e9e';
 
 $.webgis.config.encrypt_key = 'kmgd111';
 
@@ -128,7 +130,8 @@ function GetDefaultExtent(db_name)
 {
 	if(db_name == 'kmgd')
 	{
-		return {'west':101.69184, 'south':24.04067, 'east':103.71404, 'north':26.06087};
+		//return {'west':101.69184, 'south':24.04067, 'east':103.71404, 'north':26.06087};
+		return {'west':99.69184, 'south':22.04067, 'east':105.71404, 'north':28.06087};
 	}
 	if(db_name == 'ztgd')
 	{
@@ -184,7 +187,7 @@ function InitWebGISFormDefinition()
 			_.forEach(that.groups, function(group)
 			{
 				var uid = $.uuid();
-				var g = that.append('<fieldset id="fieldset_' + uid + '" style="min-height:50px;color:#00FF00;border:1px solid #00FF00;margin:' + that.options.groupmargin + 'px;"><legend style="font-weight:bolder;color:#00FF00;">' + group + '</legend>');
+				var g = that.append('<fieldset id="fieldset_' + uid + '" style="min-height:50px;color:' + $.webgis.color.base_color + ';border:1px solid ' + $.webgis.color.base_color + ';margin:' + that.options.groupmargin + 'px;"><legend style="font-weight:bolder;color:' + $.webgis.color.base_color + ';">' + group + '</legend>');
 				that.append('</fieldset>');
 				that.append('<p></p>');
 				
@@ -291,7 +294,7 @@ function InitWebGISFormDefinition()
 								}
 							},
 							styler: function(value) {
-								return 'color: #00FF00;background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+								return 'color: ' + $.webgis.color.base_color + ';';
 							}
 						});
 						//if(fld.defaultvalue) $('#' + fldid).val(fld.defaultvalue);
@@ -299,9 +302,8 @@ function InitWebGISFormDefinition()
 						{
 							$('#' + fldid).multipleSelect("setSelects", [fld.defaultvalue]);
 						}
-						auto.css('border', '1px #00FF00 solid');
-						auto.css('color', '#00FF00');
-						auto.css('background', '#000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat');
+						auto.css('border', '1px ' + $.webgis.color.base_color + ' solid');
+						auto.css('color', $.webgis.color.base_color);
 					}
 					if(fld.type == 'multiselect' && fld.group == group)
 					{
@@ -330,7 +332,7 @@ function InitWebGISFormDefinition()
 							single: false,
 							position: position,
 							styler: function(value) {
-								return 'color: #00FF00;background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+								return 'color: ' + $.webgis.color.base_color + ';';
 							}
 						});
 						if(fld.defaultvalue && fld.defaultvalue instanceof Array && fld.defaultvalue.length>0)
@@ -402,7 +404,7 @@ function InitWebGISFormDefinition()
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
 						+ '"><label for="input_' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display
 						+ ':' 
-						+ '</label><' + divorspan + ' style="display:inline-block;width:32px;height:32px;border:1px #00FF00 solid;" id="' + fldid + '" name="' + fldid + '" ></' + divorspan + '>' + required 
+						+ '</label><' + divorspan + ' style="display:inline-block;width:32px;height:32px;border:1px ' + $.webgis.color.base_color + ' solid;" id="' + fldid + '" name="' + fldid + '" ></' + divorspan + '>' + required
 						+ '<ol class="kmgd-icon-selectable"  id="ol_' + fldid + '"></ol></' + divorspan + '>');
 						$('#ol_' + fldid ).css('display', 'none');
 						var defaultvalue = 'point_marker';
@@ -464,7 +466,7 @@ function InitWebGISFormDefinition()
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
 						+ '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display
 						+ ':</label>'
-						+ '<' + divorspan + '  style="display:inline-block;width:42px;height:32px;border:0px #00FF00 solid;">'
+						+ '<' + divorspan + '  style="display:inline-block;width:42px;height:32px;border:0px ' + $.webgis.color.base_color + ' solid;">'
 						+ '<input type="color" id="' + fldid + '" name="' + fldid + '" >' + required 
 						+ '</' + divorspan + '>'
 						+ '</' + divorspan + '>');
@@ -499,7 +501,7 @@ function InitWebGISFormDefinition()
 						var checked = false;
 						if(fld.defaultvalue) checked = true;
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '">'
-						+ '<' + divorspan + '  style="display:inline-block;width:24px;height:24px;border:0px #00FF00 solid;">'
+						+ '<' + divorspan + '  style="display:inline-block;width:24px;height:24px;border:0px ' + $.webgis.color.base_color + ' solid;">'
 						+ '<input type="checkbox" id="' + fldid + '" name="' + fldid + '" >' + required 
 						+ '</' + divorspan + '>'
 						+ '<label for="' + fldid + '" style="display:inline-block;text-align:left;width:' + that.options.labelwidth + 'px;">' + fld.display + '</label>'
@@ -658,16 +660,6 @@ function InitWebGISFormDefinition()
 				var editor = fields[k]['editor'];
 				if(typ === 'icon')
 				{
-					//data = 
-					////console.log(data);
-					//if(data['style'] && data['style']['icon'] && data['style']['icon']['uri'])
-					//{
-						////this.find('#' + prefix + id).css('background', '#000000 url(/' + data['style']['icon']['uri'] + ') 100% 100% no-repeat' );
-						//var cls = 'icon-selector-' + data['webgis_type'] + ' ui-selectee';
-						//this.find('#' + prefix + id).attr('class', '');
-						//this.find('#' + prefix + id).addClass(cls);
-					//}
-				
 				}
 				else if(typ === 'color')
 				{
@@ -733,7 +725,6 @@ function InitWebGISFormDefinition()
 					//console.log(data);
 					if(data['style'] && data['style']['icon'] && data['style']['icon']['uri'])
 					{
-						//this.find('#' + prefix + id).css('background', '#000000 url(/' + data['style']['icon']['uri'] + ') 100% 100% no-repeat' );
 						var cls = 'icon-selector-' + data['webgis_type'] + ' ui-selectee';
 						this.find('#' + prefix + id).attr('class', '');
 						this.find('#' + prefix + id).addClass(cls);
