@@ -3190,24 +3190,24 @@ function InitToolPanel(viewer)
 	$('#but_line_antibird_statistics').on('click', function(){
 		ShowAntiBirdStatisticsDialog(viewer);
 	});
-	$('#but_status_commit_view').button({label:'数据查看'});
-	$('#but_status_commit_view').on('click', function(){
+	$('#but_state_examination_view').button({label:'数据查看'});
+	$('#but_state_examination_view').on('click', function(){
 		ShowStatusCommitListDialog(viewer);
 	});
-	$('#but_status_commit_import').button({label:'数据导入'});
-	$('#but_status_commit_import').on('click', function(){
+	$('#but_state_examination_import').button({label:'数据导入'});
+	$('#but_state_examination_import').on('click', function(){
 		ShowStatusCommitImportDialog(viewer);
 	});
-	$('#but_status_commit_standard').button({label:'查看标准'});
-	$('#but_status_commit_standard').on('click', function(){
+	$('#but_state_examination_standard').button({label:'查看标准'});
+	$('#but_state_examination_standard').on('click', function(){
 		ShowStatusCommitStandardDialog(viewer);
 	});
-	$('#but_status_commit_bbn').button({label:'BBN编辑'});
-	$('#but_status_commit_bbn').on('click', function(){
+	$('#but_state_examination_bbn').button({label:'BBN编辑'});
+	$('#but_state_examination_bbn').on('click', function(){
 		ShowStatusCommitStandardDialog(viewer);
 	});
-	$('#but_status_commit_analyze').button({label:'分析'});
-	$('#but_status_commit_analyze').on('click', function(){
+	$('#but_state_examination_analyze').button({label:'分析'});
+	$('#but_state_examination_analyze').on('click', function(){
 		ShowStatusCommitStandardDialog(viewer);
 	});
 
