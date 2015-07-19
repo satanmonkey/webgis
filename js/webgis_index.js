@@ -9098,69 +9098,98 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 		}
 		if(type === 'TOWER')
 		{
-			_.forEach(towerlist, function (item) {
+			//_.forEach(towerlist, function (item) {
+			//	var o = {};
+			//	o._id = item._id;
+			//	o.name = item.properties.name;
+			//	o.imei = '';
+			//	o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+			//	o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+			//	//var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
+			//	//	return item1.type.indexOf('驱鸟装置') > -1;
+			//	//}), 'imei');
+			//	//var countsum = 0;
+			//	//_.forEach(imeiarr, function (item1) {
+			//	//	var c = _.result(_.find(data1, {imei:item1}), 'count');
+			//	//	if(c != undefined) {
+			//	//		countsum += c;
+			//	//	}
+			//	//});
+			//	var countsum = _.result(_.find(data1, {towerName:o.name}),'count');
+			//	if(countsum === undefined){
+			//		countsum = 0;
+			//	}
+			//	o.count = countsum;
+			//	towersdata.Rows.push(o);
+			//});
+			_.forEach(data1, function (item) {
 				var o = {};
-				o._id = item._id;
-				o.name = item.properties.name;
-				o.imei = '';
+				o.name = item.towerName;
 				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
 				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
-				var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
-					return item1.type.indexOf('驱鸟装置') > -1;
-				}), 'imei');
-				var countsum = 0;
-				_.forEach(imeiarr, function (item1) {
-					var c = _.result(_.find(data1, {imei:item1}), 'count');
-					if(c != undefined) {
-						countsum += c;
-					}
-				});
-				o.count = countsum;
+				o.count = item.count;
 				towersdata.Rows.push(o);
 			});
 		}
 		if(type === 'LINE')
 		{
-			var lines = [];
-			_.forEach(towerlist, function(item){
-				if(item.properties.name.indexOf('#') > -1)
-				{
-					var linename = item.properties.name.split('#')[0];
-					var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
-						return item1.type.indexOf('驱鸟装置') > -1;
-					}), 'imei');
-
-					var idx = _.findIndex(lines, 'name', linename);
-					if(idx < 0){
-						lines.push({name:linename, imei:imeiarr});
-					}else{
-						lines[idx].imei = _.union(lines[idx].imei, imeiarr);
-					}
-				}
-			});
-
-			_.forEach(lines, function (item) {
+			//var lines = [];
+			//_.forEach(towerlist, function(item){
+			//	if(item.properties.name.indexOf('#') > -1)
+			//	{
+			//		var linename = item.properties.name.split('#')[0];
+			//		var imeiarr = _.pluck(_.filter(item.properties.metals, function (item1) {
+			//			return item1.type.indexOf('驱鸟装置') > -1;
+			//		}), 'imei');
+            //
+			//		var idx = _.findIndex(lines, 'name', linename);
+			//		if(idx < 0){
+			//			lines.push({name:linename, imei:imeiarr});
+			//		}else{
+			//			lines[idx].imei = _.union(lines[idx].imei, imeiarr);
+			//		}
+			//	}
+			//});
+			//_.forEach(lines, function (item) {
+			//	var o = {};
+			//	o.name = item.name;
+			//	o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+			//	o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+			//	var countsum = _.result(_.find(data1, {lineName:item.name}),'count');
+			//	if(countsum === undefined){
+			//		countsum = 0;
+			//	}
+			//	o.count = countsum;
+			//	towersdata.Rows.push(o);
+			//});
+			_.forEach(data1, function (item) {
 				var o = {};
-				o.name = item.name;
+				o.name = item.lineName;
 				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
 				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
-				var countsum = 0;
-				_.forEach(item.imei, function (item1) {
-					var c = _.result(_.find(data1, {imei:item1}), 'count');
-					if(c != undefined) {
-						countsum += c;
-					}
-				});
-				o.count = countsum;
+				o.count = item.count;
 				towersdata.Rows.push(o);
 			});
 		}
+		if(type === 'WEATHER')
+		{
+			//console.log(data1);
+			_.forEach(data1, function (item) {
+				var o = {};
+				o.name = item.weather;
+				o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				o.count = item.count;
+				towersdata.Rows.push(o);
+			});
+		}
+
 		return towersdata;
 	};
-	var towers = _.filter($.webgis.data.anti_bird_towers, function(item){
-		return _.indexOf(option.towers, item._id) > -1;
-	});
-	var tabledata = build_tabledata(towers, option.type, []);
+	var towers_list = $.extend(true, [], option.towers);
+	//delete option.type;
+	//delete option.resultType;
+	delete option.towers;
 	var buttons = [];
 	buttons.push(
 		{
@@ -9235,66 +9264,111 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 			}
 		}
 	});
-
-	$('#anti_bird_statistics_result_table').empty();
-	$('#anti_bird_statistics_result_table').append('<div id="div_anti_bird_statistics_result_table"></div>');
-	var columns = [];
-	if(option.type === 'DEVICE'){
-		columns = [
-			//{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
-			{ display: '杆塔名称', name: 'name', align: 'left',  width:160 },
-			{ display: '设备IMEI', name: 'imei', id:'imei1', align: 'left',  width:200},
-			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
-			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
-			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
-		];
-	}
-	if(option.type === 'TOWER'){
-		columns = [
-			{ display: '杆塔名称', name: 'name', align: 'left',  width:160 },
-			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
-			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
-			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
-		];
-	}
-	if(option.type === 'LINE'){
-		columns = [
-			{ display: '线路名称', name: 'name', align: 'left',  width:160 },
-			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
-			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
-			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
-		];
-	}
-	if(option.type === 'ALTITUDE'){
-		columns = [
-			{ display: '海拔范围', name: 'name', align: 'left',  width:160 },
-			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
-			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
-			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
-		];
-	}
-	if(option.type === 'WEATHER'){
-		columns = [
-			{ display: '天气类型', name: 'name', align: 'left',  width:160 },
-			{ display: '起始时间', name:'beginTime',   align: 'left',  width:130 },
-			{ display: '结束时间', name:'endTime',   align: 'left',  width:130 },
-			{ display: '触发次数', name:'count',   align: 'left',  width:100 }
-		];
-	}
-	$('#div_anti_bird_statistics_result_table').ligerGrid({
+	var load_data_table = function(tabledata)
+	{
+		$('#anti_bird_statistics_result_table').empty();
+		$('#anti_bird_statistics_result_table').append('<div id="div_anti_bird_statistics_result_table"></div>');
+		var columns = [];
+		if (option.type === 'DEVICE') {
+			columns = [
+				//{ display: '', name: '_id', width:1, minWidth: 1 , hide:true},
+				{display: '杆塔名称', name: 'name', align: 'left', width: 160},
+				{display: '设备IMEI', name: 'imei', id: 'imei1', align: 'left', width: 200},
+				{display: '起始时间', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时间', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
+		if (option.type === 'TOWER') {
+			columns = [
+				{display: '杆塔名称', name: 'name', align: 'left', width: 160},
+				{display: '起始时间', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时间', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
+		if (option.type === 'LINE') {
+			columns = [
+				{display: '线路名称', name: 'name', align: 'left', width: 160},
+				{display: '起始时间', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时间', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
+		if (option.type === 'ALTITUDE') {
+			columns = [
+				{display: '海拔范围', name: 'name', align: 'left', width: 160},
+				{display: '起始时间', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时间', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
+		if (option.type === 'WEATHER') {
+			columns = [
+				{display: '天气类型', name: 'name', align: 'left', width: 160},
+				{display: '起始时间', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时间', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
+		$('#div_anti_bird_statistics_result_table').ligerGrid({
 			columns: columns,
 			width: '100%',
 			height: '70%',
 			data: tabledata,
 			alternatingRow: false,
 			usePager: false,
-			tree: { columnId: 'imei1' }
-	});
-	//delete option.type;
-	delete option.resultType;
-	delete option.towers;
-
-	console.log(JSON.stringify(option));
+			tree: {columnId: 'imei1'}
+		});
+	};
+	var load_data = function() {
+		var url = '/proxy/api/statistics/';
+		var type = '';
+		if (option.type === 'DEVICE') {
+			type = 'device';
+		}
+		if (option.type === 'TOWER') {
+			type = 'tower';
+		}
+		if (option.type === 'LINE') {
+			type = 'line';
+		}
+		if (option.type === 'WEATHER') {
+			type = 'weather';
+		}
+		url += type + '/' + option.beginTime + '/' + option.endTime + '/' + option.minSpeed + '/' + option.maxSpeed;
+		ShowProgressBar(true, 670, 200, '加载中', '正在计算统计信息，请稍候...');
+		$.ajax({
+			type: "POST",
+			url: url,
+			data: JSON.stringify(option),
+			contentType: "application/json; charset=utf-8",
+			dataType: "json"
+		})
+		.done(function (data1) {
+			ShowProgressBar(false);
+			var towers = _.filter($.webgis.data.anti_bird_towers, function(item){
+				return _.indexOf(towers_list, item._id) > -1;
+			});
+			var tabledata = build_tabledata(towers, option.type, data1.data);
+			load_data_table(tabledata);
+			$('#div_anti_bird_statistics_result_chart').drawChartWithJson(type, data1);
+			if (option.resultType === 'chart') {
+				$('#tabs_anti_bird_statistics_result').tabs( "option", "active", 1 );
+			}
+		})
+		.fail(function (xhr, status, e) {
+			ShowProgressBar(false);
+			$.jGrowl("加载失败:" + e, {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylefail',
+				glue: 'before'
+			});
+		});
+	};
+	load_data();
+	//console.log(JSON.stringify(option));
 }
 
 function DrawAntiBirdInfoChart(option)
