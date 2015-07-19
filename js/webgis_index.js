@@ -3192,23 +3192,23 @@ function InitToolPanel(viewer)
 	});
 	$('#but_state_examination_view').button({label:'数据查看'});
 	$('#but_state_examination_view').on('click', function(){
-		ShowStatusCommitListDialog(viewer);
+		ShowStateExaminationListDialog(viewer);
 	});
 	$('#but_state_examination_import').button({label:'数据导入'});
 	$('#but_state_examination_import').on('click', function(){
-		ShowStatusCommitImportDialog(viewer);
+		ShowStateExaminationImportDialog(viewer);
 	});
 	$('#but_state_examination_standard').button({label:'查看标准'});
 	$('#but_state_examination_standard').on('click', function(){
-		ShowStatusCommitStandardDialog(viewer);
+		ShowStateExaminationStandardDialog(viewer);
 	});
 	$('#but_state_examination_bbn').button({label:'BBN编辑'});
 	$('#but_state_examination_bbn').on('click', function(){
-		ShowStatusCommitStandardDialog(viewer);
+		ShowStateExaminationStandardDialog(viewer);
 	});
 	$('#but_state_examination_analyze').button({label:'分析'});
 	$('#but_state_examination_analyze').on('click', function(){
-		ShowStatusCommitStandardDialog(viewer);
+		ShowStateExaminationStandardDialog(viewer);
 	});
 
 	$('#but_dn_add').button({label:'新增配电网络'});
@@ -3254,6 +3254,12 @@ function InitToolPanel(viewer)
 	{
 		$('#but_sys_role_func').hide();
 	}
+}
+
+
+function ShowStateExaminationImportDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'state_examination_import')
 }
 
 function ClearEdges2D(viewer, webgis_type)
@@ -3502,6 +3508,24 @@ function CreateDialogSkeleton(viewer, dlg_id)
 						</div>\
 						<div id="anti_bird_statistics_result_chart">\
 							<div id="div_anti_bird_statistics_result_chart"></div>\
+						</div>\
+					</div>\
+				</div>\
+			');
+		}
+		if(dlg_id === 'state_examination_import'){
+			$(document.body).append('\
+				<div id="dlg_state_examination_import" >\
+					<div id="tabs_state_examination_import">\
+						<ul>\
+							<li><a href="#div_state_examination_import_single">单条输入</a></li>\
+							<li><a href="#div_state_examination_import_multiple">批量导入</a></li>\
+						</ul>\
+						<div id="div_state_examination_import_single">\
+							<form id="form_state_examination_import_single"></form>\
+						</div>\
+						<div id="div_state_examination_import_multiple">\
+							<form id="form_state_examination_import_multiple"></form>\
 						</div>\
 					</div>\
 				</div>\
