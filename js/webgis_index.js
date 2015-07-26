@@ -961,15 +961,6 @@ function InitKeyboardEvent(viewer)
 				var get_id = function()
 				{
 					var ret;
-					//for(var k in $.webgis.data.geojsons)
-					//{
-					//	var g = $.webgis.data.geojsons[k];
-					//	if(g.properties.start == $.webgis.select.selected_obj.id.properties.start && g.properties.end == $.webgis.select.selected_obj.id.properties.end)
-					//	{
-					//		ret = g['_id'];
-					//		break;
-					//	}
-					//}
 					ret = _.result(_.first(_.filter($.webgis.data.geojsons, {
 						properties:{
 							start:$.webgis.select.selected_obj.id.properties.start,
@@ -1059,6 +1050,7 @@ function InitKeyboardEvent(viewer)
 					var cond = {'db':$.webgis.db.db_name, 'collection':'features', 'action':'remove', '_id':$.webgis.select.selected_obj.id};
 					MongoFind( cond, 
 						function(data){
+							//console.log(data);
 							if(data.length>0)
 							{
 								if(data[0]['ok'] === 1)
@@ -1069,22 +1061,7 @@ function InitKeyboardEvent(viewer)
 										theme: 'bubblestylesuccess',
 										glue:'before'
 									});
-
-									if(g)
-									{
-										_.remove( $.webgis.data.geojsons, function(n){
-											return n._id === g._id;
-										});
-									}
-									if($.webgis.config.map_backend === 'cesium')
-									{
-										var cz = _.find($.webgis.data.czmls, {id:$.webgis.select.selected_obj.id});
-										if(cz){
-											_.remove( $.webgis.data.czmls, function(n){
-												return n.id === cz.id;
-											});
-										}
-									}
+									RemoveCzml($.webgis.select.selected_obj.id);
 									delete $.webgis.select.prev_selected_obj;
 									$.webgis.select.prev_selected_obj = undefined;
 									delete $.webgis.select.selected_obj;
@@ -1261,14 +1238,14 @@ function InitLayerControl2D(viewer)
                 }
 
                 var imageryLayers = viewer.layers;
-                for (var i in viewer.layers) {
-					var layer = viewer.layers[i];
+				_.forEach( viewer.layers, function(layer) {
+					//var layer = viewer.layers[i];
 					if(viewer.hasLayer(layer))
 					{
 						viewer.removeLayer(layer);
-						break;
+						return;
 					}
-                }
+                });
 
                 if (Cesium.defined(value)) 
 				{
@@ -2948,6 +2925,54 @@ function InitPoiInfoDialog()
 	//});
 //}
 
+function ClearHeatMap(viewer)
+{
+	if($.webgis.config.map_backend === 'cesium')
+	{
+		while(_.keys($.webgis.data.heatmap_layers).length>0)
+		{
+			var k = _.keys($.webgis.data.heatmap_layers)[0];
+			var hm = $.webgis.data.heatmap_layers[k];
+			//console.log(hm.type);
+			if(hm && hm.type === 'heatmap')
+			{
+				hm.layer.destroy();
+			}
+			if(hm && hm.type === 'tile')
+			{
+				viewer.scene.imageryLayers.remove(hm.layer, true);
+			}
+			delete $.webgis.data.heatmap_layers[k];
+			//$.webgis.data.heatmap_layers[k] = undefined;
+		}
+		while(_.keys($.webgis.data.heatmap_primitive).length>0)
+		{
+			var k = _.keys($.webgis.data.heatmap_primitive)[0];
+			//console.log(k);
+			if(viewer.scene.primitives.contains($.webgis.data.heatmap_primitive[k]))
+			{
+				viewer.scene.primitives.remove($.webgis.data.heatmap_primitive[k]);
+			}
+			delete $.webgis.data.heatmap_primitive[k];
+			//$.webgis.data.heatmap_primitive[k] = undefined;
+		}
+	}
+	if($.webgis.config.map_backend === 'leaflet')
+	{
+		//console.log($.webgis.data.heatmap_layers);
+		while(_.keys($.webgis.data.heatmap_layers).length>0)
+		{
+			k = _.keys($.webgis.data.heatmap_layers)[0];
+			var hm = $.webgis.data.heatmap_layers[k];
+			if(viewer.hasLayer(hm))
+			{
+				viewer.removeLayer(hm);
+				delete $.webgis.data.heatmap_layers[k];
+				//$.webgis.data.heatmap_layers[k] = undefined;
+			}
+		}
+	}
+}
 function InitToolPanel(viewer)
 {
 	$('#control_toolpanel_kmgd_handle').css('z-index', '9');
@@ -3075,52 +3100,7 @@ function InitToolPanel(viewer)
 	});
 	$('#but_heatmap_clear').button({label:'清除'});
 	$('#but_heatmap_clear').on('click', function(){
-		if($.webgis.config.map_backend === 'cesium')
-		{
-			while(Object.keys($.webgis.data.heatmap_layers).length>0)
-			{
-				var k = Object.keys($.webgis.data.heatmap_layers)[0];
-				//console.log(k);
-				var hm = $.webgis.data.heatmap_layers[k];
-				//console.log(hm.type);
-				if(hm && hm.type === 'heatmap')
-				{
-					hm.layer.destroy();
-				}
-				if(hm && hm.type === 'tile')
-				{
-					viewer.scene.imageryLayers.remove(hm.layer, true);
-				}
-				delete $.webgis.data.heatmap_layers[k];
-				//$.webgis.data.heatmap_layers[k] = undefined;
-			}
-			while(Object.keys($.webgis.data.heatmap_primitive).length>0)
-			{
-				var k = Object.keys($.webgis.data.heatmap_primitive)[0];
-				//console.log(k);
-				if(viewer.scene.primitives.contains($.webgis.data.heatmap_primitive[k]))
-				{
-					viewer.scene.primitives.remove($.webgis.data.heatmap_primitive[k]);
-				}
-				delete $.webgis.data.heatmap_primitive[k];
-				//$.webgis.data.heatmap_primitive[k] = undefined;
-			}
-		}
-		if($.webgis.config.map_backend === 'leaflet')
-		{
-			//console.log($.webgis.data.heatmap_layers);
-			while(Object.keys($.webgis.data.heatmap_layers).length>0)
-			{
-				k = Object.keys($.webgis.data.heatmap_layers)[0];
-				var hm = $.webgis.data.heatmap_layers[k];
-				if(viewer.hasLayer(hm))
-				{
-					viewer.removeLayer(hm);
-					delete $.webgis.data.heatmap_layers[k];
-					//$.webgis.data.heatmap_layers[k] = undefined;
-				}
-			}
-		}
+		ClearHeatMap(viewer);
 	});
 	
 	
@@ -3452,6 +3432,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 							<li><a href="#anti_bird_statistics_towerlist">设备列表</a></li>\
 							<li><a href="#anti_bird_statistics_chart">统计图表</a></li>\
 							<li><a href="#anti_bird_statistics_heatmap">地理热度图</a></li>\
+							<li><a href="#anti_bird_statistics_birdmoveroute">鸟类迁徙区域</a></li>\
 						</ul>\
 						<div id="anti_bird_statistics_towerlist">\
 							<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
@@ -3463,6 +3444,10 @@ function CreateDialogSkeleton(viewer, dlg_id)
 						</div>\
 						<div id="anti_bird_statistics_heatmap">\
 							<form id="form_anti_bird_statistics_heatmap">\
+							</form>\
+						</div>\
+						<div id="anti_bird_statistics_birdmoveroute">\
+							<form id="form_anti_bird_statistics_birdmoveroute">\
 							</form>\
 						</div>\
 					</div>\
@@ -4418,8 +4403,8 @@ function InitSearchBox(viewer)
 				duration: 400,
 				complete:function(){
 					$("#div_search_option_toggle label").html("");
-					$('#div_search_option').css("border", "0px 1px 0px 1px solid #00FF00");
-					$('#div_search_option_panel').css("border", "0px 1px 1px 1px solid #00FF00");
+					$('#div_search_option').css('border', '0px 1px 0px 1px solid ' + $.webgis.color.base_color);
+					$('#div_search_option_panel').css('border', '0px 1px 1px 1px solid ' + $.webgis.color.base_color);
 				}
 			});
 		}
@@ -4515,7 +4500,7 @@ function InitSearchBox(viewer)
 					$('#div_search_option').css('display','block');
 					$('#input_search').focus();
 				});
-				$('#button_search').css('background-color', '#00FF00');
+				$('#button_search').css('background-color', $.webgis.color.base_color);
 				
 			}else
 			{
@@ -4534,7 +4519,7 @@ function InitSearchBox(viewer)
 		$('#button_search').css('background-color', '#FFFFFF');
 		if($('#input_search').css('display') !== 'none')
 		{
-			$('#button_search').css('background-color', '#00FF00');
+			$('#button_search').css('background-color', $.webgis.color.base_color);
 		}
 	});
 
@@ -4666,7 +4651,7 @@ function ShowSearchResult(viewer, geojson)
 		var g = _.find($.webgis.data.geojsons, {_id:_id});
 		if(!g)
 		{
-			$.webgis.data.geojsons.push(geojson); //AddTerrainZOffset(geojson);
+			$.webgis.data.geojsons.push(geojson);
 			g = geojson;
 		}
 		if($.webgis.config.map_backend === 'cesium')
@@ -4691,7 +4676,6 @@ function ShowSearchResult(viewer, geojson)
 			}
 			$.webgis.control.leaflet_geojson_layer.addData(geojson);
 		}
-
 	}
 }
 
@@ -5745,7 +5729,7 @@ function ReloadCzmlDataSource(viewer, z_aware, forcereload)
 		viewer.dataSources.add(dataSource);
 	}
 	dataSource.process(arr);
-	if(forcereload)
+	if(forcereload === true)
 	{
 		console.log('czml forcereload');
 		viewer.dataSources.remove(dataSource, true) ;
@@ -8431,13 +8415,16 @@ function ShowAntiBirdStatisticsDialog(viewer)
 		},
 		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
 		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
-		{display: "生成地理热图", id: "button_create", newline: true,  type: "button", group:'操作', width:350, defaultvalue:'点击生成热度图', click:function(){
+		{display: "生成热图", id: "button_create", newline: true,  type: "button", group:'热图操作', width:350, defaultvalue:'点击生成热度图', click:function(){
 			var data = $('#form_anti_bird_statistics_heatmap').webgisform('getdata');
 			AntiBirdHeatmap(viewer, {
 				speed:data.slider_distinguish_speed,
 				start:moment(data.start_date).local().format('YYYYMMDDHHmm'),
 				end:moment(data.end_date).local().format('YYYYMMDDHHmm')
 			});
+		}},
+		{display: "清除热图", id: "button_clear", newline: true,  type: "button", group:'热图操作', width:350, defaultvalue:'点击清除热度图', click:function(){
+			ClearHeatMap(viewer);
 		}}
 	];
 	var form = $('#form_anti_bird_statistics_heatmap').webgisform(flds,
@@ -8456,9 +8443,63 @@ function ShowAntiBirdStatisticsDialog(viewer)
 			}
 		}
 	});
+
+	//var chart_type_list = [
+	//	{label:'2000-2010中国云南省鸟类活动区域', value:'1'}
+	//];
+	var flds1 = [
+		{display: "区域类别", id:"area_id",  type: "select", editor:{data:[]}, group:'区域类别',  width:350  },
+		{display: "添加区域类别", id: "button_create", newline: true,  type: "button", group:'操作', width:300, labelwidth:120, defaultvalue:'添加', click:function(){
+			var data = $('#form_anti_bird_statistics_birdmoveroute').webgisform('getdata');
+			AntiBirdirdmoveroute(viewer, {
+				area_id:data.area_id
+			});
+		}},
+		{display: "清除区域类别", id: "button_clear", newline: true,  type: "button", group:'操作', width:300, labelwidth:120, defaultvalue:'清除', click:function(){
+			var data = $('#form_anti_bird_statistics_birdmoveroute').webgisform('getdata');
+			AntiBirdirdmoveroute(viewer, {
+				area_id:data.area_id,
+				clear:true,
+			});
+		}}
+	];
+	var form = $('#form_anti_bird_statistics_birdmoveroute').webgisform(flds1,
+	{
+		prefix:'form_anti_bird_statistics_birdmoveroute_',
+		maxwidth:520
+	});
+
 	BuildAntiBirdStatisticsForm(viewer);
 }
 
+function RemoveCzml(id)
+{
+	if($.webgis.config.map_backend === 'cesium') {
+		_.remove($.webgis.data.czmls, {id: id});
+	}
+	_.remove($.webgis.data.geojsons, {_id:id});
+}
+function AntiBirdirdmoveroute(viewer, option)
+{
+	if( _.isString(option.area_id) && option.area_id.length && option.clear === true)
+	{
+		RemoveCzml(option.area_id);
+		ReloadCzmlDataSource(viewer, $.webgis.config.zaware, true);
+	}
+	if(_.isString(option.area_id) && option.area_id.length && _.isUndefined(option.clear)) {
+		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'properties.webgis_type': 'polygon_marker', '_id':option.area_id};
+		ShowProgressBar(true, 670, 200, '查询中', '正在查询，请稍候...');
+		MongoFind(cond, function (data1) {
+			ShowProgressBar(false);
+			//console.log(data1);
+			if (_.isArray(data1) && data1.length > 0) {
+				_.forEach(data1, function(item){
+					ShowSearchResult(viewer, item);
+				});
+			}
+		});
+	}
+}
 function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 {
 	var title = imei;
@@ -8888,7 +8929,13 @@ function BuildAntiBirdStatisticsForm(viewer)
 				group: '统计参数',
 				width: 350,
 				defaultvalue: 'DEVICE',
-				editor: {data: [{'value': 'DEVICE', 'label': '按设备统计'},{'value': 'TOWER', 'label': '按杆塔统计'},{'value': 'LINE', 'label': '按杆塔所在线路统计'}, {'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'}, {'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}]},
+				editor: {data: [
+					{'value': 'DEVICE', 'label': '按设备统计'},
+					{'value': 'TOWER', 'label': '按杆塔统计'},
+					{'value': 'LINE', 'label': '按杆塔所在线路统计'},
+					//{'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'},
+					{'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}
+				]},
 				validate: {required: true},
 				change: function (value) {
 				}
@@ -9003,6 +9050,26 @@ function BuildAntiBirdStatisticsForm(viewer)
 		});
 		build(towers);
 	}
+
+	var cond = {'db':$.webgis.db.db_name, 'collection':'features', 'properties.webgis_type': 'polygon_marker'};
+	ShowProgressBar(true, 670, 200, '查询中', '正在查询，请稍候...');
+	MongoFind(cond, function(data1) {
+		ShowProgressBar(false);
+		$('#form_anti_bird_statistics_birdmoveroute_area_id').empty();
+		if (_.isArray(data1) && data1.length === 0) {
+			//$('#form_anti_bird_statistics_birdmoveroute_area_id').append('<option value="">(无数据)</option>');
+		}
+		if (_.isArray(data1) && data1.length > 0) {
+			//console.log(data1);
+			var list = _.map(data1, function(item){
+				return {label:item.properties.name, value:item._id};
+			});
+			_.forEach(list, function(item){
+				$('#form_anti_bird_statistics_birdmoveroute_area_id').append('<option value="' + item.value + '">' + item.label + '</option>');
+			});
+		}
+		$('#form_anti_bird_statistics_birdmoveroute_area_id').multipleSelect('refresh');
+	});
 }
 
 function BuildAntiBirdInfoChartForm(imei)
@@ -9385,14 +9452,13 @@ function AntiBirdHeatmap(viewer, dict)
 		ShowProgressBar(true, 670, 200, '载入中', '正在查询统计数据，请稍候...');
 		$.get(url, {}, function( data1 ){
 			//console.log(data1);
-			if(data1 instanceof Array)
+			if(_.isArray(data1))
 			{
-				//var hid = 'heatmap_' + dict.start + '_' + dict.end + '_' + dict.speed[0] + '_' + dict.speed[1];
 				var hid = 'heatmap_anti_bird';
-				for(var i in data1)
-				{
-					data1[i].text = dict.start + '-' + dict.end + ' ' + data1[i].count + '次';
-				}
+				data1 = _.map(data1, function(item){
+					item.text = dict.start + '-' + dict.end + ' ' + item.count + '次';
+					return item;
+				});
 				DrawHeatMapPixel(viewer, hid , data1);
 				if($.webgis.config.map_backend === 'cesium')
 				{
@@ -9954,7 +10020,7 @@ function CreateFileBrowser(div_id, width, height, fileext, collection, id)
 	html += '<div id="div_' + div_id + '_uploader" style="display:none">';
 	html += '</div>';
 	html += '<div id="div_' + div_id + '_upload_desciption" style="display:none;margin:10px;">';
-	html += '	<textarea id="' + div_id + '_upload_desciption" style="width:' + (width - 40) + 'px;height:100px;color:white;background-color:black;border:1px #00FF00 solid" rows="5" placeholder="在此输入备注..."></textarea>';
+	html += '	<textarea id="' + div_id + '_upload_desciption" style="width:' + (width - 40) + 'px;height:100px;color:white;background-color:black;border:1px ' + $.webgis.color.base_color + ' solid" rows="5" placeholder="在此输入备注..."></textarea>';
 	html += '</div>';
 	$('#' + div_id).append(html);
 	
@@ -11703,7 +11769,7 @@ function ShowLineDialog(viewer, mode)
 				}
 			},
 			styler: function(value) {
-				return 'color: #00FF00;background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+				return 'color: ' + $.webgis.color.base_color + ';background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
 			}
 		});
 	}
