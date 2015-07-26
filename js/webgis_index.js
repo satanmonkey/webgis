@@ -758,6 +758,13 @@ function ClearSelectColor2D(viewer)
 	
 }
 
+function RemoveCzml(id)
+{
+	if($.webgis.config.map_backend === 'cesium') {
+		_.remove($.webgis.data.czmls, {id: id});
+	}
+	_.remove($.webgis.data.geojsons, {_id:id});
+}
 function InitKeyboardEvent(viewer)
 {
 	var get_current_edge = function(id0, id1)
@@ -979,15 +986,6 @@ function InitKeyboardEvent(viewer)
 				var get_id = function()
 				{
 					var ret;
-					//for(var k in $.webgis.data.geojsons)
-					//{
-					//	var g = $.webgis.data.geojsons[k];
-					//	if(g.properties.start == $.webgis.select.selected_obj.id.properties.start && g.properties.end == $.webgis.select.selected_obj.id.properties.end)
-					//	{
-					//		ret = g['_id'];
-					//		break;
-					//	}
-					//}
 					ret = _.result(_.first(_.filter($.webgis.data.geojsons, {
 						properties:{
 							start:$.webgis.select.selected_obj.id.properties.start,
@@ -1077,6 +1075,7 @@ function InitKeyboardEvent(viewer)
 					var cond = {'db':$.webgis.db.db_name, 'collection':'features', 'action':'remove', '_id':$.webgis.select.selected_obj.id};
 					MongoFind( cond, 
 						function(data){
+							//console.log(data);
 							if(data.length>0)
 							{
 								if(data[0]['ok'] === 1)
@@ -1087,22 +1086,7 @@ function InitKeyboardEvent(viewer)
 										theme: 'bubblestylesuccess',
 										glue:'before'
 									});
-
-									if(g)
-									{
-										_.remove( $.webgis.data.geojsons, function(n){
-											return n._id === g._id;
-										});
-									}
-									if($.webgis.config.map_backend === 'cesium')
-									{
-										var cz = _.find($.webgis.data.czmls, {id:$.webgis.select.selected_obj.id});
-										if(cz){
-											_.remove( $.webgis.data.czmls, function(n){
-												return n.id === cz.id;
-											});
-										}
-									}
+									RemoveCzml($.webgis.select.selected_obj.id);
 									delete $.webgis.select.prev_selected_obj;
 									$.webgis.select.prev_selected_obj = undefined;
 									delete $.webgis.select.selected_obj;
@@ -1279,14 +1263,14 @@ function InitLayerControl2D(viewer)
                 }
 
                 var imageryLayers = viewer.layers;
-                for (var i in viewer.layers) {
-					var layer = viewer.layers[i];
+				_.forEach( viewer.layers, function(layer) {
+					//var layer = viewer.layers[i];
 					if(viewer.hasLayer(layer))
 					{
 						viewer.removeLayer(layer);
-						break;
+						return;
 					}
-                }
+                });
 
                 if (Cesium.defined(value)) 
 				{
@@ -2692,6 +2676,54 @@ function InitPoiInfoDialog()
 	//});
 //}
 
+function ClearHeatMap(viewer)
+{
+	if($.webgis.config.map_backend === 'cesium')
+	{
+		while(_.keys($.webgis.data.heatmap_layers).length>0)
+		{
+			var k = _.keys($.webgis.data.heatmap_layers)[0];
+			var hm = $.webgis.data.heatmap_layers[k];
+			//console.log(hm.type);
+			if(hm && hm.type === 'heatmap')
+			{
+				hm.layer.destroy();
+			}
+			if(hm && hm.type === 'tile')
+			{
+				viewer.scene.imageryLayers.remove(hm.layer, true);
+			}
+			delete $.webgis.data.heatmap_layers[k];
+			//$.webgis.data.heatmap_layers[k] = undefined;
+		}
+		while(_.keys($.webgis.data.heatmap_primitive).length>0)
+		{
+			var k = _.keys($.webgis.data.heatmap_primitive)[0];
+			//console.log(k);
+			if(viewer.scene.primitives.contains($.webgis.data.heatmap_primitive[k]))
+			{
+				viewer.scene.primitives.remove($.webgis.data.heatmap_primitive[k]);
+			}
+			delete $.webgis.data.heatmap_primitive[k];
+			//$.webgis.data.heatmap_primitive[k] = undefined;
+		}
+	}
+	if($.webgis.config.map_backend === 'leaflet')
+	{
+		//console.log($.webgis.data.heatmap_layers);
+		while(_.keys($.webgis.data.heatmap_layers).length>0)
+		{
+			k = _.keys($.webgis.data.heatmap_layers)[0];
+			var hm = $.webgis.data.heatmap_layers[k];
+			if(viewer.hasLayer(hm))
+			{
+				viewer.removeLayer(hm);
+				delete $.webgis.data.heatmap_layers[k];
+				//$.webgis.data.heatmap_layers[k] = undefined;
+			}
+		}
+	}
+}
 function InitToolPanel(viewer)
 {
 	$('#control_toolpanel_kmgd_handle').css('z-index', '9');
@@ -2819,52 +2851,7 @@ function InitToolPanel(viewer)
 	});
 	$('#but_heatmap_clear').button({label:'清除'});
 	$('#but_heatmap_clear').on('click', function(){
-		if($.webgis.config.map_backend === 'cesium')
-		{
-			while(Object.keys($.webgis.data.heatmap_layers).length>0)
-			{
-				var k = Object.keys($.webgis.data.heatmap_layers)[0];
-				//console.log(k);
-				var hm = $.webgis.data.heatmap_layers[k];
-				//console.log(hm.type);
-				if(hm && hm.type === 'heatmap')
-				{
-					hm.layer.destroy();
-				}
-				if(hm && hm.type === 'tile')
-				{
-					viewer.scene.imageryLayers.remove(hm.layer, true);
-				}
-				delete $.webgis.data.heatmap_layers[k];
-				//$.webgis.data.heatmap_layers[k] = undefined;
-			}
-			while(Object.keys($.webgis.data.heatmap_primitive).length>0)
-			{
-				var k = Object.keys($.webgis.data.heatmap_primitive)[0];
-				//console.log(k);
-				if(viewer.scene.primitives.contains($.webgis.data.heatmap_primitive[k]))
-				{
-					viewer.scene.primitives.remove($.webgis.data.heatmap_primitive[k]);
-				}
-				delete $.webgis.data.heatmap_primitive[k];
-				//$.webgis.data.heatmap_primitive[k] = undefined;
-			}
-		}
-		if($.webgis.config.map_backend === 'leaflet')
-		{
-			//console.log($.webgis.data.heatmap_layers);
-			while(Object.keys($.webgis.data.heatmap_layers).length>0)
-			{
-				k = Object.keys($.webgis.data.heatmap_layers)[0];
-				var hm = $.webgis.data.heatmap_layers[k];
-				if(viewer.hasLayer(hm))
-				{
-					viewer.removeLayer(hm);
-					delete $.webgis.data.heatmap_layers[k];
-					//$.webgis.data.heatmap_layers[k] = undefined;
-				}
-			}
-		}
+		ClearHeatMap(viewer);
 	});
 	
 	
@@ -3094,7 +3081,7 @@ function ShowStateExaminationListDialog(viewer)
 	CreateDialogSkeleton(viewer, 'dlg_state_examination_list');
 	$('#dlg_state_examination_list').dialog({
 		width: 640,
-		height: 570,
+		height: 670,
 		minWidth:200,
 		minHeight: 200,
 		draggable: true,
@@ -3125,6 +3112,7 @@ function ShowStateExaminationListDialog(viewer)
 						'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
 						function () {
 							DeleteStateExamination(viewer, null, function () {
+								$.webgis.data.state_examination.control.list_grid.deleteRange(rows);
 							},function(){
 							});
 						},
@@ -3142,19 +3130,7 @@ function ShowStateExaminationListDialog(viewer)
 			}
 		]
 	});
-	ShowProgressBar(true, 670, 200, '保存', '正在查询，请稍候...');
-	$.ajax({
-		url:'/state_examination/query',
-		method:'post',
-		data: JSON.stringify({})
-	})
-	.always(function () {
-		ShowProgressBar(false);
-	})
-	.done(function (data1) {
-		data1 = JSON.parse(data1);
-		$.webgis.data.state_examination.list_data = data1;
-		var tabledata = {Rows:$.webgis.data.state_examination.list_data};
+	var reload_grid = function(list, name_filter, year_filter, voltage_filter) {
 		var get_sel = function(name) {
 			var levs = [
 				//{value:'', label:'(请选择等级)'},
@@ -3223,15 +3199,70 @@ function ShowStateExaminationListDialog(viewer)
 				editor: { type: 'select', data: get_sel('unit_8'), valueField: 'unit_8' }
 			}
 		];
+		$('#div_state_examination_list_grid_container').empty();
+		$('#div_state_examination_list_grid_container').append('<div id="div_state_examination_list_grid"></div>');
+		if(_.isString(name_filter)  && name_filter.length )
+		{
+			list = _.filter(list, function(item){
+				return item.line_name.toString() === name_filter;
+			});
+		}
+		if(  _.isString(year_filter) &&  year_filter.length)
+		{
+			list = _.filter(list, function(item){
+				return item.check_year.toString() === year_filter;
+			});
+		}
+		if(  _.isString(voltage_filter) &&  voltage_filter.length)
+		{
+			list = _.filter(list, function(item){
+				return item.voltage.toString() === voltage_filter;
+			});
+		}
+		var tabledata = {Rows:list};
 		$.webgis.data.state_examination.control.list_grid = $('#div_state_examination_list_grid').ligerGrid({
-			columns:columns,
-			data:tabledata,
+			columns: columns,
+			data: tabledata,
 			enabledEdit: true,
-			clickToEdit:false,
+			clickToEdit: false,
 			checkbox: true,
-			pageSize:10
+			pageSize: 10
 		});
+	};
+	ShowProgressBar(true, 670, 200, '保存', '正在查询，请稍候...');
+	$.ajax({
+		url:'/state_examination/query',
+		method:'post',
+		data: JSON.stringify({})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		data1 = JSON.parse(data1);
+		$.webgis.data.state_examination.list_data = data1;
 
+		$('#form_state_examination_list_filter_line_name').empty();
+		$('#form_state_examination_list_filter_line_name').append('<option value="">(请选择)</option>');
+		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'line_name')), function(item){
+			$('#form_state_examination_list_filter_line_name').append('<option value="' + item + '">' + item + '</option>');
+		});
+		$('#form_state_examination_list_filter_line_name').multipleSelect('refresh');
+
+		$('#form_state_examination_list_filter_voltage').empty();
+		$('#form_state_examination_list_filter_voltage').append('<option value="">(请选择)</option>');
+		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'voltage')), function(item){
+			$('#form_state_examination_list_filter_voltage').append('<option value="' + item + '">' + item  + '</option>');
+		});
+		$('#form_state_examination_list_filter_line_voltage').multipleSelect('refresh');
+
+		$('#form_state_examination_list_filter_check_year').empty();
+		$('#form_state_examination_list_filter_check_year').append('<option value="">(请选择)</option>');
+		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'check_year')), function(item){
+			$('#form_state_examination_list_filter_check_year').append('<option value="' + item + '">' + item + '</option>');
+		});
+		$('#form_state_examination_list_filter_check_year').multipleSelect('refresh');
+		reload_grid($.webgis.data.state_examination.list_data, '', '', '');
 	})
 	.fail(function (jqxhr, textStatus, e) {
 		$.jGrowl("查询失败:" + e, {
@@ -3241,6 +3272,35 @@ function ShowStateExaminationListDialog(viewer)
 			glue:'before'
 		});
 	});
+
+	var flds = [
+		{ display: "线路名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
+			change:function(data2){
+				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
+				reload_grid($.webgis.data.state_examination.list_data, data2, data3.check_year, data3.voltage);
+			}
+		},
+        { display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '过滤条件', width: 350, labelwidth: 120,
+			change:function(data2){
+				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
+				reload_grid($.webgis.data.state_examination.list_data, data3.line_name, data3.check_year, data2);
+			}
+		},
+        { display: "评价年份", id: "check_year", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '过滤条件', width: 350, labelwidth: 120,
+			change:function(data2){
+				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
+				reload_grid($.webgis.data.state_examination.list_data, data3.line_name, data2, data3.voltage);
+			}
+		}
+	];
+
+	$('#form_state_examination_list_filter').webgisform(flds, {
+		prefix: "form_state_examination_list_filter_",
+		maxwidth: 530
+		//margin:10,
+		//groupmargin:10
+	});
+
 }
 
 function StateExaminationListBeginEdit(rowindex)
@@ -3960,6 +4020,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 							<li><a href="#anti_bird_statistics_towerlist">设备列表</a></li>\
 							<li><a href="#anti_bird_statistics_chart">统计图表</a></li>\
 							<li><a href="#anti_bird_statistics_heatmap">地理热度图</a></li>\
+							<li><a href="#anti_bird_statistics_birdmoveroute">鸟类迁徙区域</a></li>\
 						</ul>\
 						<div id="anti_bird_statistics_towerlist">\
 							<div id="div_anti_bird_statistics_towerlist_treegrid"></div>\
@@ -4034,7 +4095,11 @@ function CreateDialogSkeleton(viewer, dlg_id)
 		{
 			$(document.body).append('\
 				<div id="dlg_state_examination_list" >\
-					<div id="div_state_examination_list_grid"></div>\
+					<form id="form_state_examination_list_filter"></form>\
+					<div id="div_state_examination_list_grid_container">\
+						<div id="div_state_examination_list_grid">\
+						</div>\
+					</div>\
 				</div>\
 			');
 		}
@@ -5216,7 +5281,7 @@ function ShowSearchResult(viewer, geojson)
 		var g = _.find($.webgis.data.geojsons, {_id:_id});
 		if(!g)
 		{
-			$.webgis.data.geojsons.push(geojson); //AddTerrainZOffset(geojson);
+			$.webgis.data.geojsons.push(geojson);
 			g = geojson;
 		}
 		if($.webgis.config.map_backend === 'cesium')
@@ -6295,7 +6360,7 @@ function ReloadCzmlDataSource(viewer, z_aware, forcereload)
 		viewer.dataSources.add(dataSource);
 	}
 	dataSource.process(arr);
-	if(forcereload)
+	if(forcereload === true)
 	{
 		console.log('czml forcereload');
 		viewer.dataSources.remove(dataSource, true) ;
