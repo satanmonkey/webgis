@@ -11,8 +11,10 @@ $.webgis.data.borders = [];
 $.webgis.mapping.models_mapping = {};
 $.webgis.geometry.segments = [];
 $.webgis.geometry.lines = [];
-
-
+$.webgis.data.state_examination = {};
+$.webgis.data.state_examination.control = {};
+$.webgis.data.state_examination.standard = [];
+$.webgis.data.state_examination.import_excel_data = [];
 $.webgis.config.is_tower_focus = false;
 
 
@@ -48,6 +50,9 @@ $.webgis.config.max_file_size = 5000000;
 
 
 $(function() {
+	//$.validator.addMethod("select_required", function(value, element) {
+	//	return $(element).multipleSelect("getSelects").length > 0;
+	//}, '请选择');
 	var session_data_string = Cookies.get('session_data').replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
 	$.webgis.current_userinfo  = JSON.parse(session_data_string);
 	console.log("current login user: " + $.webgis.current_userinfo.displayname);
@@ -75,6 +80,7 @@ $(function() {
 								$('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
 							});
 						});
+
 						//$.webgis.config.zaware = true;
 						//LoadAllDNNode(viewer, $.webgis.db.db_name, function(){
 							//LoadAllDNEdge(viewer, $.webgis.db.db_name, function(){
@@ -109,6 +115,7 @@ $(function() {
 		InitModelList(viewer);
 		InitKeyboardEvent(viewer);
 		load_init_data();
+		InitStateExamination();
 		InitScreenSize(viewer);
 	}catch(ex)
 	{
@@ -116,31 +123,32 @@ $(function() {
 		$('#cesiumContainer').empty();
 		$('#control_toolpanel_kmgd_left').css('display','none');
 		ShowProgressBar(false);
+		$.webgis.config.map_backend = 'leaflet';
 		ShowMessage(null, 400, 300, '提示', '系统检测到该浏览器不支持最新HTML5标准WEBGL部分，因此将禁用3D视图。请使用Chrome浏览器或内置Chrome内核的浏览器以获得最佳浏览体验。', function(){
-			$.webgis.config.map_backend = 'leaflet';
-			viewer = InitLeafletViewer();
-			$.webgis.viewer = viewer;
-			
-			InitHomeButton2D(viewer);
-			InitLayerControl2D(viewer);
-			InitRuler(viewer);
-			InitNavigationHelp(viewer);
-			InitLogout(viewer);
-		
-			InitWebGISFormDefinition();
-			InitDrawHelper2D(viewer);
-			$.webgis.control.drawhelper.show(false);
-			
-			InitPoiInfoDialog();
-			//InitTowerInfoDialog();
-			
-			InitSearchBox(viewer);
-			InitToolPanel(viewer);
-			InitModelList(viewer);
-			InitKeyboardEvent(viewer);
-			load_init_data();
-			InitScreenSize(viewer);
 		});
+		viewer = InitLeafletViewer();
+		$.webgis.viewer = viewer;
+
+		InitHomeButton2D(viewer);
+		InitLayerControl2D(viewer);
+		InitRuler(viewer);
+		InitNavigationHelp(viewer);
+		InitLogout(viewer);
+
+		InitWebGISFormDefinition();
+		InitDrawHelper2D(viewer);
+		$.webgis.control.drawhelper.show(false);
+
+		InitPoiInfoDialog();
+		//InitTowerInfoDialog();
+
+		InitSearchBox(viewer);
+		InitToolPanel(viewer);
+		InitModelList(viewer);
+		InitKeyboardEvent(viewer);
+		load_init_data();
+		InitStateExamination();
+		InitScreenSize(viewer);
 	}
 	
 	
@@ -168,6 +176,17 @@ $(function() {
 	//};
 });
 
+function InitStateExamination()
+{
+	$.getJSON( 'js/jiakongztpj.json')
+	.done(function( data ){
+		//if(success) success(data);
+		$.webgis.data.state_examination.standard = data;
+	})
+	.fail(function( jqxhr ){
+
+	});
+}
 function InitScreenSize(viewer)
 {
 	$('#cesiumContainer').css('height', $( window ).height() + 'px');
@@ -386,26 +405,27 @@ function InitLeafletViewer()
 		maxZoom: 18,
 	});
 	lyr.name = 'ESRI卫星图';
-	lyr.iconUrl = Cesium.buildModuleUrl('/img/esri-sat.png');
+	//lyr.iconUrl = Cesium.buildModuleUrl('/img/esri-sat.png');
+	lyr.iconUrl = Cesium.buildModuleUrl('/img/bingAerial.png');
 	lyr.tooltip = 'ESRI卫星图';
 	layers.push(lyr);
 	baseMaps['ESRI卫星图'] = lyr;
 	
 	
-	lyr = L.tileLayer(url_temlate, {
-		image_type:'bing_sat', 
-		noWrap:true,
-		tms:false,
-		zoomOffset:-1,
-		minZoom: 1,
-		maxZoom: 18,
-	});
-	
-	lyr.name = 'Bing卫星图';
-	lyr.iconUrl = Cesium.buildModuleUrl('/img/bingAerial.png');
-	lyr.tooltip = 'Bing卫星图';
-	layers.push(lyr);
-	baseMaps['Bing卫星图'] = lyr;
+	//lyr = L.tileLayer(url_temlate, {
+	//	image_type:'bing_sat',
+	//	noWrap:true,
+	//	tms:false,
+	//	zoomOffset:-1,
+	//	minZoom: 1,
+	//	maxZoom: 18,
+	//});
+	//
+	//lyr.name = 'Bing卫星图';
+	//lyr.iconUrl = Cesium.buildModuleUrl('/img/bingAerial.png');
+	//lyr.tooltip = 'Bing卫星图';
+	//layers.push(lyr);
+	//baseMaps['Bing卫星图'] = lyr;
 	
 
 	//var prefix = '';
@@ -588,7 +608,8 @@ function InitCesiumViewer()
 	}));
 	providerViewModels.push(new Cesium.ProviderViewModel({
 		name : 'Esri卫星图',
-		iconUrl : 'img/esri-sat.png',
+		//iconUrl : 'img/esri-sat.png',
+		iconUrl : 'img/bingAerial.png',
 		tooltip : 'Esri卫星图',
 		creationFunction : function() {
 			return new ESRIImageryFromServerProvider({
@@ -613,21 +634,21 @@ function InitCesiumViewer()
 			});
 		}
 	}));
-	providerViewModels.push(new Cesium.ProviderViewModel({
-		name : 'Bing卫星图',
-		iconUrl : 'img/bingAerial.png',
-		tooltip : 'Bing卫星图',
-		creationFunction : function() {
-			return new BingImageryFromServerProvider({
-				//url : 'http://dev.virtualearth.net',
-				//mapStyle : Cesium.BingMapsStyle.AERIAL
-				////proxy : proxyIfNeeded
-				url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-				imageType: 'bing_sat',
-				queryType: 'server'
-			});
-		}
-	}));
+	//providerViewModels.push(new Cesium.ProviderViewModel({
+	//	name : 'Bing卫星图',
+	//	iconUrl : 'img/bingAerial.png',
+	//	tooltip : 'Bing卫星图',
+	//	creationFunction : function() {
+	//		return new BingImageryFromServerProvider({
+	//			//url : 'http://dev.virtualearth.net',
+	//			//mapStyle : Cesium.BingMapsStyle.AERIAL
+	//			////proxy : proxyIfNeeded
+	//			url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+	//			imageType: 'bing_sat',
+	//			queryType: 'server'
+	//		});
+	//	}
+	//}));
 
 	//providerViewModels.push(new Cesium.ProviderViewModel({
 		//name : 'Bing Maps Aerial with Labels',
@@ -937,7 +958,7 @@ function InitKeyboardEvent(viewer)
 			{
 				//console.log(e);
 			}
-			console.log($.webgis.select.selected_obj);
+			//console.log($.webgis.select.selected_obj);
 			if($.webgis.select.selected_obj && $.webgis.select.selected_obj.id && $.webgis.select.selected_obj.id.properties && $.webgis.select.selected_obj.id.properties.webgis_type.indexOf('edge_')>-1)
 			{
 				if(!CheckPermission('edge_delete'))
@@ -2924,11 +2945,11 @@ function InitToolPanel(viewer)
 	});
 	$('#but_state_examination_bbn').button({label:'BBN编辑'});
 	$('#but_state_examination_bbn').on('click', function(){
-		ShowStateExaminationStandardDialog(viewer);
+		ShowStateExaminationBBNDialog(viewer);
 	});
 	$('#but_state_examination_analyze').button({label:'分析'});
 	$('#but_state_examination_analyze').on('click', function(){
-		ShowStateExaminationStandardDialog(viewer);
+		ShowStateExaminationAnalyzeDialog(viewer);
 	});
 
 	$('#but_dn_add').button({label:'新增配电网络'});
@@ -2976,12 +2997,754 @@ function InitToolPanel(viewer)
 	}
 }
 
-
-function ShowStateExaminationImportDialog(viewer)
+function ShowStateExaminationStandardDialog(viewer)
 {
-	CreateDialogSkeleton(viewer, 'state_examination_import')
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
+	$('#dlg_state_examination_standard').dialog({
+		width: 600,
+		height: 600,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'状态评价标准',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	var list = _.uniq(_.pluck($.webgis.data.state_examination.standard, 'parent'));
+	var unitlist = _.map(list, function(item){
+		return {value:item, label:item};
+	});
+	var levs = [
+		{value:'', label:'(请选择等级)'},
+		{value:'I', label:'I级'},
+		{value:'II', label:'II级'},
+		{value:'III', label:'III级'},
+		{value:'IV', label:'IV级'},
+	];
+	var flds = [
+        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, group: '标准依据'},
+        { display: "单元划分", id: "unit", newline: true, type: "select", editor: { data: unitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
+			change:function(data1){
+				var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
+				$('#form_state_examination_standard_name').empty();
+				//$('#form_state_examination_standard_name' ).append('<option value="">(请选择)</option>');
+				_.forEach(list, function(item)
+				{
+					$('#form_state_examination_standard_name' ).append('<option value="' + item + '">' + item + '</option>');
+				});
+				$('#form_state_examination_standard_name').multipleSelect('refresh');
+				$('#form_state_examination_standard').webgisform('setdata', {'level':'', 'desc':''});
+			}
+		},
+        { display: "状态量名称", id: "name", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
+			change:function(data1){
+				$('#form_state_examination_standard').webgisform('setdata', {'level':'', 'desc':''});
+			}
+		},
+        { display: "状态等级划分", id: "level", newline: true, type: "select", editor: { data: levs }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
+			change:function(data1){
+				var name = $('#form_state_examination_standard').webgisform('getdata').name;
+				if(name && name.length && data1.length){
+					var levels = _.result(_.find($.webgis.data.state_examination.standard, {name:name}), 'levels');
+					if(levels[data1]){
+						$('#form_state_examination_standard').webgisform('setdata', {'desc':levels[data1].according});
+					}else{
+						$('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+					}
+				}else{
+					$('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+				}
+			}
+		},
+        { display: "等级描述", id: "desc", newline: true, type: "textarea",  defaultvalue: '', group: '等级明细', width: 350,height:130, labelwidth: 120}
+
+	];
+	$('#form_state_examination_standard').webgisform(flds, {
+		prefix: "form_state_examination_standard_",
+		maxwidth: 540
+		//margin:10,
+		//groupmargin:10
+	});
+
 }
 
+function ShowStateExaminationListDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_list');
+	$('#dlg_state_examination_list').dialog({
+		width: 640,
+		height: 570,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'状态评价记录',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "批量删除",
+				click: function(e){
+					var rows = $.webgis.data.state_examination.control.list_grid.getSelectedRows();
+					if(rows.length === 0) return;
+					ShowConfirm(null, 500, 200,
+						'删除确认',
+						'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+						function () {
+							DeleteStateExamination(viewer, null, function () {
+							},function(){
+							});
+						},
+						function () {
+							//$('#').dialog("close");
+						}
+					);
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	ShowProgressBar(true, 670, 200, '保存', '正在查询，请稍候...');
+	$.ajax({
+		url:'/state_examination/query',
+		method:'post',
+		data: JSON.stringify({})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		data1 = JSON.parse(data1);
+		$.webgis.data.state_examination.list_data = data1;
+		var tabledata = {Rows:$.webgis.data.state_examination.list_data};
+		var get_sel = function(name) {
+			var levs = [
+				//{value:'', label:'(请选择等级)'},
+				{value: 'I', text: 'I级'},
+				{value: 'II', text: 'II级'},
+				{value: 'III', text: 'III级'},
+				{value: 'IV', text: 'IV级'},
+			];
+			var ret = _.map(levs, function(item){
+				var o = {text:item.text};
+				o[name] = item.value;
+				return o;
+			});
+			return ret;
+		};
+		var columns = [
+			{ display: '操作', isSort: false, width: 100, render: function (rowdata, rowindex, value)
+                {
+                    var h = "";
+                    if (!rowdata._editing)
+                    {
+                        h += "<a href='javascript:StateExaminationListBeginEdit(" + rowindex + ")'>修改</a> ";
+                        h += "<a href='javascript:StateExaminationListDeleteRow(" + rowindex + ")'>删除</a> ";
+                    }
+                    else
+                    {
+                        h += "<a href='javascript:StateExaminationListEndEdit(" + rowindex + ")'>提交</a> ";
+                        h += "<a href='javascript:StateExaminationListCancelEdit(" + rowindex + ")'>取消</a> ";
+                    }
+                    return h;
+                }
+			},
+			{display:'', name:'id', width: 1, hide: true},
+			{display:'评价年份', name:'check_year', width: 50, editor: { type: 'text' }},
+			{display:'线路名称', name:'line_name', width: 100, editor: { type: 'text' }},
+			{display:'情况描述', name:'description', width: 200, editor: { type: 'text' }},
+			{display:'检修策略', name:'suggestion', width: 200, editor: { type: 'text' }},
+			{display:'线路整体评价', name:'line_state', width: 100,
+				editor: { type: 'select', data: get_sel('line_state'), valueField: 'line_state' }
+			},
+			{display:'基础', name:'unit_1', width: 50,
+				editor: { type: 'select', data: get_sel('unit_1'), valueField: 'unit_1' }
+				//render:function (item){
+				//	return item.label;
+				//}
+			},
+			{display:'杆塔', name:'unit_2', width: 50,
+				editor: { type: 'select', data: get_sel('unit_2'), valueField: 'unit_2' }
+			},
+			{display:'导地线', name:'unit_3', width: 50,
+				editor: { type: 'select', data: get_sel('unit_3'), valueField: 'unit_3' }
+			},
+			{display:'绝缘子', name:'unit_4', width: 50,
+				editor: { type: 'select', data: get_sel('unit_4'), valueField: 'unit_4' }
+			},
+			{display:'金具', name:'unit_5', width: 50,
+				editor: { type: 'select', data: get_sel('unit_5'), valueField: 'unit_5' }
+			},
+			{display:'接地装置', name:'unit_6', width: 50,
+				editor: { type: 'select', data: get_sel('unit_6'), valueField: 'unit_6' }
+			},
+			{display:'附属设施', name:'unit_7', width: 50,
+				editor: { type: 'select', data: get_sel('unit_7'), valueField: 'unit_7' }
+			},
+			{display:'通道环境', name:'unit_8', width: 50,
+				editor: { type: 'select', data: get_sel('unit_8'), valueField: 'unit_8' }
+			}
+		];
+		$.webgis.data.state_examination.control.list_grid = $('#div_state_examination_list_grid').ligerGrid({
+			columns:columns,
+			data:tabledata,
+			enabledEdit: true,
+			clickToEdit:false,
+			checkbox: true,
+			pageSize:10
+		});
+
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("查询失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue:'before'
+		});
+	});
+}
+
+function StateExaminationListBeginEdit(rowindex)
+{
+	$.webgis.data.state_examination.control.list_grid.beginEdit(rowindex);
+}
+function StateExaminationListDeleteRow(rowindex)
+{
+	ShowConfirm(null, 500, 200,
+		'删除确认',
+		'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+		function () {
+			var row = $.webgis.data.state_examination.control.list_grid.getRow(rowindex);
+			console.log(row);
+			if(row && row._id) {
+				DeleteStateExamination(null, {_id:row._id}, function () {
+					$.webgis.data.state_examination.control.list_grid.deleteRow(rowindex);
+				},function(){
+					$.webgis.data.state_examination.control.list_grid.cancelEdit(rowindex);
+				});
+			}
+		},
+		function () {
+			//$('#').dialog("close");
+		}
+	);
+}
+function StateExaminationListEndEdit(rowindex)
+{
+	$.webgis.data.state_examination.control.list_grid.endEdit(rowindex);
+	ShowConfirm(null, 500, 200,
+		'确认',
+		'确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+		function () {
+			var row = $.webgis.data.state_examination.control.list_grid.getRow(rowindex);
+			_.forIn(row, function(v, k){
+				if(_.startsWith(k, '__'))
+				{
+					delete row[k];
+				}
+			});
+			console.log(row);
+			if(row) {
+				SaveStateExamination(null, row, function () {
+					$.webgis.data.state_examination.control.list_grid.endEdit(rowindex);
+				},function(){
+					$.webgis.data.state_examination.control.list_grid.cancelEdit(rowindex);
+				});
+			}
+		},
+		function () {
+			//$('#').dialog("close");
+		}
+	);
+
+}
+function StateExaminationListCancelEdit(rowindex)
+{
+	$.webgis.data.state_examination.control.list_grid.cancelEdit(rowindex);
+}
+
+function DeleteStateExamination(viewer, data, success, fail)
+{
+	ShowProgressBar(true, 670, 200, '保存', '正在删除，请稍候...');
+	if(_.isNull(data)){
+		var rows = $.webgis.data.state_examination.control.list_grid.getSelectedRows();
+		data = _.map(rows, function(item){
+			return item._id;
+		});
+	}
+	if(data.length === 0) return;
+	$.ajax({
+		url:'/state_examination/delete',
+		method:'post',
+		data: JSON.stringify({_id: data})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		if(data1.result) {
+			$.jGrowl("删除失败:" + data1.result, {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylefail',
+				glue:'before'
+			});
+			if(fail) fail();
+		}else{
+			$.jGrowl("删除成功", {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylesuccess',
+				glue: 'before'
+			});
+			if(success) success();
+		}
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("删除失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue:'before'
+		});
+		if(fail) fail();
+	});
+
+}
+
+function PreviewStateExaminationMultiple(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_import_preview');
+	$('#dlg_state_examination_import_preview').dialog({
+		width: 640,
+		height: 520,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'批量导入预览',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "导入",
+				click: function(e){
+					SaveStateExaminationMultiple(viewer);
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	var formdata = $('#form_state_examination_import_multiple').webgisform('getdata');
+	var data = _.result(_.find($.webgis.data.state_examination.import_excel_data, {sheet_name:formdata.sheet_name}), 'sheet_data');
+	_.forIn(formdata, function(v, k){
+		if(_.isUndefined(v)){
+			delete formdata[k];
+		}
+	});
+	delete formdata.sheet_name;
+	var keys = _.values(formdata);
+	$.webgis.data.state_examination.import_data = _.map(data,  function(item){
+		return _.pick(item, keys);
+	});
+	$.webgis.data.state_examination.import_data = _.filter($.webgis.data.state_examination.import_data, function(item){
+		return !_.isEmpty(item.check_year);
+	});
+	var tabledata = {Rows:$.webgis.data.state_examination.import_data};
+	var columns = [
+		{display:'评价年份', name:'check_year', width: 50},
+		{display:'线路名称', name:'line_name', width: 100},
+		{display:'情况描述', name:'description', width: 200},
+		{display:'检修策略', name:'suggestion', width: 200},
+		{display:'线路整体评价', name:'line_state', width: 100},
+		{display:'基础', name:'unit_1', width: 50},
+		{display:'杆塔', name:'unit_2', width: 50},
+		{display:'导地线', name:'unit_3', width: 50},
+		{display:'绝缘子', name:'unit_4', width: 50},
+		{display:'金具', name:'unit_5', width: 50},
+		{display:'接地装置', name:'unit_6', width: 50},
+		{display:'附属设施', name:'unit_7', width: 50},
+		{display:'通道环境', name:'unit_8', width: 50}
+	];
+	$('#div_state_examination_import_preview_grid').ligerGrid({
+		columns:columns,
+		data:tabledata,
+		pageSize:10
+	});
+}
+function ShowStateExaminationImportDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_import');
+	$('#dlg_state_examination_import').dialog({
+		width: 540,
+		height: 600,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'数据导入',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "查看评价标准",
+				click: function(e){
+					ShowStateExaminationStandardDialog(viewer);
+				}
+			},
+			{
+				text: "导入...",
+				click: function(e){
+					if($('#tabs_state_examination_import').tabs('option', 'active') === 0) {
+						SaveStateExaminationSingle(viewer);
+					}
+					if($('#tabs_state_examination_import').tabs('option', 'active') === 1) {
+						PreviewStateExaminationMultiple(viewer);
+					}
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	$('#tabs_state_examination_import').tabs({
+		collapsible: false,
+		active: 0
+	});
+    var list = ['08', '09', '10', '11', '12', '13', '15'];
+    var voltagelist = [];
+	_.forIn($.webgis.data.codes['voltage_level'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			voltagelist.push({ value: k, label: $.webgis.data.codes['voltage_level'][k] });
+		}
+	});
+	list = _.range(2000, 2030);
+	var yearlist = [
+		//{value:'', label:'(请选择年份)'}
+	];
+	 _.forEach(list, function(item){
+		yearlist.push( {value:item.toString(), label:item.toString()});
+	});
+	var unitlist = _.uniq(_.pluck($.webgis.data.state_examination.standard, 'parent'));
+	var levs = [
+		//{value:'', label:'(请选择等级)'},
+		{value:'I', label:'I级'},
+		{value:'II', label:'II级'},
+		{value:'III', label:'III级'},
+		{value:'IV', label:'IV级'},
+	];
+	var lines = _.map($.webgis.data.lines, function(item){
+		return {label:item.properties.name, value:item._id};
+	});
+	lines.unshift({value:'', label:'(请选择线路)'});
+	var flds = [
+		{ display: "线路名称", id: "line_name", newline: true, type: "text", group: '线路信息', width: 250, labelwidth: 120, validate: { required: true}},
+		{ display: "GIS线路绑定", id: "line_id", newline: true, type: "select", editor: { data: lines }, defaultvalue:'', group: '线路信息', width: 250, labelwidth: 120 },
+        { display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: voltagelist }, defaultvalue: '13', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
+        { display: "评价年份", id: "check_year", newline: true, type: "select", editor: { data: yearlist }, defaultvalue: '2015', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
+	];
+	_.forEach(unitlist, function(item){
+		flds.push({ display: item, id: "unit_" + (_.indexOf(unitlist, item) + 1), newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-单元', width: 250, labelwidth: 120, validate:{ required: true}});
+	});
+	flds.push({ display: '线路整体', id: "line_status" , newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-整体', width: 250, labelwidth: 120, validate:{ required: true}});
+	flds.push({ display: '存在问题描述', id: "description" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250, height:120, labelwidth: 120 });
+	flds.push({ display: '检修策略', id: "suggestion" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250,  height:90, labelwidth: 120 });
+	$('#form_state_examination_import_single').webgisform(flds, {
+		prefix: "form_state_examination_import_single_",
+		maxwidth: 430
+		//margin:10,
+		//groupmargin:10
+	});
+
+	var rebuild_column_select = function(unitlist, arr){
+		var colids = ['line_name', 'voltage', 'check_year', 'line_status', 'description', 'suggestion'];
+		_.forEach(_.range(1, unitlist.length + 1), function(i){
+			colids.push('unit_' + i);
+		});
+		_.forEach(colids, function(item) {
+			$('#form_state_examination_import_multiple_' + item).empty();
+			//$('#form_state_examination_import_multiple_' + item).append('<option value="">(请选择)</option>');
+			_.forEach(arr, function (item1) {
+				$('#form_state_examination_import_multiple_' + item).append('<option value="' + item1 + '">' + item1 + '</option>');
+			});
+			$('#form_state_examination_import_multiple_' + item).multipleSelect('refresh');
+		});
+	};
+	var flds1 = [
+		{ display: "选择Excel文件", id: "excel_file", newline: true, type: "file",  group: 'Excel文件', width: 250, labelwidth: 120,
+			handleFile:function(e){
+				function to_json(workbook) {
+					var result = [];
+					workbook.SheetNames.forEach(function(sheetName) {
+						var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+						if(roa.length > 0){
+							result.push({sheet_name:sheetName, sheet_data:roa});
+						}
+					});
+					return result;
+				}
+				var files = e.target.files;
+				var f = files[0];
+
+				var reader = new FileReader();
+				if(f && f.name) {
+					if(!_.endsWith(f.name, '.xls')){
+						ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+						return;
+					}
+					var name = f.name;
+					console.log(name);
+					reader.onload = function (e) {
+						var data = e.target.result;
+						var wb = XLS.read(data, {type: 'binary'});
+						$.webgis.data.state_examination.import_excel_data = to_json(wb);
+						var arr = _.pluck($.webgis.data.state_examination.import_excel_data, 'sheet_name');
+						$('#form_state_examination_import_multiple_sheet_name').empty();
+						$('#form_state_examination_import_multiple_sheet_name').append('<option value="">(请选择Sheet名称)</option>');
+						_.forEach(arr, function (item) {
+							$('#form_state_examination_import_multiple_sheet_name').append('<option value="' + item + '">' + item + '</option>');
+						});
+						$('#form_state_examination_import_multiple_sheet_name').multipleSelect('refresh');
+					};
+					reader.readAsBinaryString(f);
+				}else{
+					$('#form_state_examination_import_multiple_sheet_name').empty();
+					$('#form_state_examination_import_multiple_sheet_name').multipleSelect('refresh');
+					rebuild_column_select(unitlist, []);
+				}
+			}
+		},
+		{ display: "工作表Sheet名称", id: "sheet_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel文件', width: 200, labelwidth: 150,
+			change:function(data1){
+				ShowProgressBar(true, 670, 200, '查询中', '正在查询，请稍候...');
+				var arr = _.keys(_.result(_.find($.webgis.data.state_examination.import_excel_data, {sheet_name:data1}), 'sheet_data')[0]);
+				rebuild_column_select(unitlist, arr);
+				ShowProgressBar(false);
+			}
+		},
+		{ display: "线路名列名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
+        { display: "电压等级列名称", id: "voltage", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
+        { display: "评价年份列名称", id: "check_year", newline: true, type: "select", editor: { data: [] }, defaultvalue:'',  group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
+		{ display: '线路整体评价列名称', id: "line_status" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200,validate:{ required: true}},
+		{ display: '存在问题描述列名称', id: "description" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200,validate:{ required: true}},
+		{ display: '检修策略列名称', id: "suggestion" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true} }
+	];
+	_.forEach(unitlist, function(item){
+		flds1.push({ display: '[' + item + ']' + '列名称', id: "unit_" + (_.indexOf(unitlist, item) + 1), newline: true, type: "select",  editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true} });
+	});
+
+	$('#form_state_examination_import_multiple').webgisform(flds1, {
+		prefix: "form_state_examination_import_multiple_",
+		maxwidth: 430
+		//margin:10,
+		//groupmargin:10
+	});
+}
+
+function SaveStateExaminationMultiple(viewer)
+{
+	ShowConfirm(null, 500, 200,
+		'导入确认',
+		'确认导入吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+		function () {
+			$.webgis.data.state_examination.import_data = BindExistLineId($.webgis.data.state_examination.import_data);
+			//console.log($.webgis.data.state_examination.import_data);
+			SaveStateExamination(viewer, $.webgis.data.state_examination.import_data);
+		},
+		function () {
+			$('#').dialog("close");
+		}
+	);
+}
+function BindExistLineId(data)
+{
+	if(typeof data === 'string'){
+		if(_.isUndefined(data.line_id) || _.isEmpty(data.line_id) || _.isNull(data.line_id))
+		{
+			var line_id = _.result(_.find($.webgis.data.lines, _.matchesProperty('properties.name', data.line_name)), '_id');
+			if (line_id) {
+				data.line_id = line_id;
+			}
+		}
+	}
+	if (data instanceof Array){
+		//console.log($.webgis.data.lines);
+		var data1 = _.map(data, function(item){
+			if(_.isUndefined(item.line_id) || _.isEmpty(item.line_id) || _.isNull(item.line_id))
+			{
+				var line_id = _.result(_.find($.webgis.data.lines, _.matchesProperty('properties.name', item.line_name)), '_id');
+				if (line_id) {
+					item.line_id = line_id;
+				}
+			}
+			return item;
+		});
+		data = data1;
+	}
+	return data;
+}
+
+function SaveStateExamination(viewer, data, success, fail)
+{
+	var checkyear_int = function(checkyear){
+		var ret = checkyear;
+		if(_.isUndefined(ret)){
+			ret = 0;
+		}
+		else if(_.isEmpty(ret)){
+			ret = 0;
+		}
+		else if(_.isNull(ret)){
+			ret = 0;
+		}
+		else if(_.isString(ret)) {
+			ret = parseInt(ret.replace('年', ''));
+		}
+		return ret;
+	};
+	var data_modifier = function(data){
+		var v = $.webgis.data.codes['voltage_level'][data.voltage];
+		if(v) data.voltage = v.replace('交流', '');
+		data = BindExistLineId(data);
+		if(_.isObject(data)){
+			data.check_year = checkyear_int(data.check_year);
+		}
+		if(_.isArray(data)) {
+			data = _.map(data, function(item){
+				item.check_year = checkyear_int(item.check_year);
+				return item;
+			});
+		}
+		return data;
+	};
+	data = data_modifier(data);
+	console.log(data);
+	ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
+	$.ajax({
+		url:'/state_examination/save',
+		method:'post',
+		data: JSON.stringify(data)
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		if(data1.result) {
+			$.jGrowl("保存失败:" + data1.result, {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylefail',
+				glue:'before'
+			});
+			if(fail) fail();
+		}else{
+			$.jGrowl("保存成功", {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylesuccess',
+				glue: 'before'
+			});
+			if(success) success();
+		}
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("保存失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue:'before'
+		});
+		if(fail) fail();
+	});
+}
+function SaveStateExaminationSingle(viewer)
+{
+	if($('#form_state_examination_import_single').valid()) {
+		ShowConfirm(null, 500, 200,
+			'导入确认',
+			'确认导入吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+			function () {
+				var data = $('#form_state_examination_import_single').webgisform('getdata');
+				SaveStateExamination(viewer, data);
+			},
+			function () {
+				$('#').dialog("close");
+			}
+		);
+	}
+}
 function ClearEdges2D(viewer, webgis_type)
 {
 	viewer.eachLayer(function (layer) {
@@ -3233,7 +3996,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				</div>\
 			');
 		}
-		if(dlg_id === 'state_examination_import'){
+		if(dlg_id === 'dlg_state_examination_import'){
 			$(document.body).append('\
 				<div id="dlg_state_examination_import" >\
 					<div id="tabs_state_examination_import">\
@@ -3248,6 +4011,30 @@ function CreateDialogSkeleton(viewer, dlg_id)
 							<form id="form_state_examination_import_multiple"></form>\
 						</div>\
 					</div>\
+				</div>\
+			');
+		}
+		if(dlg_id === 'dlg_state_examination_standard')
+		{
+			$(document.body).append('\
+				<div id="dlg_state_examination_standard" >\
+					<form id="form_state_examination_standard"></form>\
+				</div>\
+			');
+		}
+		if(dlg_id === 'dlg_state_examination_import_preview')
+		{
+			$(document.body).append('\
+				<div id="dlg_state_examination_import_preview" >\
+					<div id="div_state_examination_import_preview_grid"></div>\
+				</div>\
+			');
+		}
+		if(dlg_id === 'dlg_state_examination_list')
+		{
+			$(document.body).append('\
+				<div id="dlg_state_examination_list" >\
+					<div id="div_state_examination_list_grid"></div>\
 				</div>\
 			');
 		}
@@ -7882,11 +8669,6 @@ function ShowTowerInfoDialog(viewer, tower)
 					if(selectedEntity)
 					{
 						viewer.trackedEntity = undefined;
-						//var vm = viewer.homeButton.viewModel;
-						//vm.command();
-						//var pos = viewer.scene.globe.ellipsoid.cartesianToCartographic(selectedEntity.position._value);
-						//if(pos.height === 0.0) pos.height = 2000;
-						//FlyToPoint(viewer, Cesium.Math.toDegrees(pos.longitude) , Cesium.Math.toDegrees(pos.latitude), pos.height, 2.8, 1);
 					}
 				}
 			}
@@ -10045,39 +10827,26 @@ function ShowLineDialog(viewer, mode)
 	var i;
     var list = ['08', '09', '10', '11', '12', '13', '15'];
     var voltagelist = [];
-    for (i = 0; i < list.length; i++)
-    {
-        for (var key in $.webgis.data.codes['voltage_level']) {
-            if (key == list[i]) 
-			{
-                voltagelist.push({ value: key, label: $.webgis.data.codes['voltage_level'][key] });
-            }
-        }
-    }
+	_.forIn($.webgis.data.codes['voltage_level'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			voltagelist.push({ value: k, label: $.webgis.data.codes['voltage_level'][k] });
+		}
+	});
     list = ['F000', 'A313'];
 	var equipment_class = [];
-    for (i = 0; i < list.length; i++)
-    {
-		for (var key in $.webgis.data.codes['equipment_class']) 
-		{
-            if (key == list[i]) 
-			{
-				equipment_class.push({ value: key, label: $.webgis.data.codes['equipment_class'][key] });
-			}
+	_.forIn($.webgis.data.codes['equipment_class'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			equipment_class.push({ value: k, label: $.webgis.data.codes['equipment_class'][k] });
 		}
-	}
+	});
+
     list = ['C', 'B', 'D', 'F', 'Q', 'P', 'S'];
 	var object_class = []
-    for (i = 0; i < list.length; i++)
-    {
-		for (var key in $.webgis.data.codes['object_class']) 
-		{
-            if (key == list[i]) 
-			{
-				object_class.push({ value: key, label: $.webgis.data.codes['object_class'][key] });
-			}
+	_.forIn($.webgis.data.codes['object_class'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			object_class.push({ value: k, label: $.webgis.data.codes['object_class'][k] });
 		}
-	}
+	});
 	var line_status = [
 		{ value: '00', label: '测试' },
 		{ value: '20', label: '试运行' },
