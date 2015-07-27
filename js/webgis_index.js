@@ -68,9 +68,9 @@ $(function() {
 					LoadModelsList($.webgis.db.db_name, function(){
 						ShowProgressBar(true, 670, 200, '载入中', '正在载入3D模型信息，请稍候...');
 						LoadModelsMapping($.webgis.db.db_name, function(){
-							if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
+							//if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
 							var extent = GetDefaultExtent($.webgis.db.db_name);
-							FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+							FlyToExtent(viewer, {extent:extent, duration:0});
 							LoadSysRole($.webgis.db.db_name, function(){
 								$('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
 							});
@@ -604,21 +604,21 @@ function InitCesiumViewer()
 			});
 		}
 	}));
-	providerViewModels.push(new Cesium.ProviderViewModel({
-		name : 'Bing卫星图',
-		iconUrl : 'img/bingAerial.png',
-		tooltip : 'Bing卫星图',
-		creationFunction : function() {
-			return new BingImageryFromServerProvider({
-				//url : 'http://dev.virtualearth.net',
-				//mapStyle : Cesium.BingMapsStyle.AERIAL
-				////proxy : proxyIfNeeded
-				url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-				imageType: 'bing_sat',
-				queryType: 'server'
-			});
-		}
-	}));
+	//providerViewModels.push(new Cesium.ProviderViewModel({
+	//	name : 'Bing卫星图',
+	//	iconUrl : 'img/bingAerial.png',
+	//	tooltip : 'Bing卫星图',
+	//	creationFunction : function() {
+	//		return new BingImageryFromServerProvider({
+	//			//url : 'http://dev.virtualearth.net',
+	//			//mapStyle : Cesium.BingMapsStyle.AERIAL
+	//			////proxy : proxyIfNeeded
+	//			url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+	//			imageType: 'bing_sat',
+	//			queryType: 'server'
+	//		});
+	//	}
+	//}));
 	providerViewModels.push(new Cesium.ProviderViewModel({
 		name : '高德地图',
 		iconUrl : 'img/wmts-map.png',
@@ -739,6 +739,7 @@ function ClearSelectColor2D(viewer)
 	});
 	
 }
+
 
 function InitKeyboardEvent(viewer)
 {
@@ -4465,7 +4466,7 @@ function InitSearchBox(viewer)
 					LoadTowerByLineName(viewer, $.webgis.db.db_name, name, function(data){
 						LoadLineByLineName(viewer, $.webgis.db.db_name, name, function(data1){
 							var extent = GetExtentByCzml();
-							FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+							FlyToExtent(viewer, {extent:extent});
 							if($.webgis.config.map_backend === 'cesium')
 							{
 								ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
@@ -4564,7 +4565,7 @@ function LoadAntiBirdTowers(viewer)
 					}
 				});
 				var extent = GetExtentByCzml();
-				FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+				FlyToExtent(viewer, {extent:extent});
 				if ($.webgis.config.map_backend === 'cesium') {
 					ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
 				}
@@ -4585,7 +4586,7 @@ function LoadAntiBirdTowers(viewer)
 			}
 		});
 		var extent = GetExtentByCzml();
-		FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+		FlyToExtent(viewer, {extent:extent});
 		if ($.webgis.config.map_backend === 'cesium') {
 			ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
 		}
@@ -5198,7 +5199,7 @@ function ReloadBorders(viewer, forcereload)
 			
 		}
 	});
-	FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+	FlyToExtent(viewer, {extent:extent});
 }
 
 function LoadSegments(db_name, callback)
@@ -5775,9 +5776,9 @@ function LookAtTargetExtent(viewer, id, dx, dy)
 		var south = Cesium.Math.toRadians(y - dy);
 		var east = Cesium.Math.toRadians(x + dx);
 		var north = Cesium.Math.toRadians(y + dy);
-		var extent = new Cesium.Extent(west, south, east, north);
-		//scene.camera.controller.viewExtent(extent, ellipsoid);
-		FlyToExtent(viewer, west, south, east, north);
+		//var extent = new Cesium.Extent(west, south, east, north);
+		var extent = {west:west,south:south,east:east,north:north};
+		FlyToExtent(viewer, {extent:extent});
 	}
 }
 function ViewExtentByPos(viewer, lng, lat,  dx, dy)
@@ -5825,24 +5826,21 @@ function FlyToPointCart3(viewer, cartopos, duration)
     });	
 }
 
-function FlyToExtent(viewer, west, south, east, north)
+function FlyToExtent(viewer, option)
 {
 	if($.webgis.config.map_backend === 'cesium')
 	{
 		var scene = viewer.scene;
-		var extent = Cesium.Rectangle.fromDegrees(west, south, east, north);
-		//console.log(extent);
-		//scene.camera.flyToRectangle({
-			//destination : extent
-		//});
-		scene.camera.flyTo({
-			destination : extent
-		});
+		var extent = Cesium.Rectangle.fromDegrees(option.extent.west, option.extent.south, option.extent.east, option.extent.north);
+		var opt = { destination : extent };
+		delete option.extent;
+		opt = $.extend(true, opt, option)
+		scene.camera.flyTo(opt);
 	}
 	if($.webgis.config.map_backend === 'leaflet')
 	{
-		var southWest = L.latLng(south, west);
-		var	northEast = L.latLng(north, east);		
+		var southWest = L.latLng(option.extent.south, option.extent.west);
+		var	northEast = L.latLng(option.extent.north, option.extent.east);
 		var bounds = L.latLngBounds(southWest, northEast);
 		viewer.fitBounds(bounds);
 	}
@@ -6271,7 +6269,7 @@ function TowerInfoMixin(viewer)
 		});
 		eventHelper.add(viewer.homeButton.viewModel.command.afterExecute, function(commandInfo){
 			var extent = GetExtentByCzml();
-			FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+			FlyToExtent(viewer, {extent:extent});
 		});
 	}
 
@@ -11666,39 +11664,26 @@ function ShowLineDialog(viewer, mode)
 	var i;
     var list = ['08', '09', '10', '11', '12', '13', '15'];
     var voltagelist = [];
-    for (i = 0; i < list.length; i++)
-    {
-        for (var key in $.webgis.data.codes['voltage_level']) {
-            if (key == list[i]) 
-			{
-                voltagelist.push({ value: key, label: $.webgis.data.codes['voltage_level'][key] });
-            }
-        }
-    }
+	_.forIn($.webgis.data.codes['voltage_level'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			voltagelist.push({ value: k, label: $.webgis.data.codes['voltage_level'][k] });
+		}
+	});
     list = ['F000', 'A313'];
 	var equipment_class = [];
-    for (i = 0; i < list.length; i++)
-    {
-		for (var key in $.webgis.data.codes['equipment_class']) 
-		{
-            if (key == list[i]) 
-			{
-				equipment_class.push({ value: key, label: $.webgis.data.codes['equipment_class'][key] });
-			}
+	_.forIn($.webgis.data.codes['equipment_class'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			equipment_class.push({ value: k, label: $.webgis.data.codes['equipment_class'][k] });
 		}
-	}
+	});
+
     list = ['C', 'B', 'D', 'F', 'Q', 'P', 'S'];
 	var object_class = []
-    for (i = 0; i < list.length; i++)
-    {
-		for (var key in $.webgis.data.codes['object_class']) 
-		{
-            if (key == list[i]) 
-			{
-				object_class.push({ value: key, label: $.webgis.data.codes['object_class'][key] });
-			}
+	_.forIn($.webgis.data.codes['object_class'], function(v, k){
+		if(_.indexOf(list, k) > -1){
+			object_class.push({ value: k, label: $.webgis.data.codes['object_class'][k] });
 		}
-	}
+	});
 	var line_status = [
 		{ value: '00', label: '测试' },
 		{ value: '20', label: '试运行' },

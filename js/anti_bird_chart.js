@@ -19,7 +19,10 @@
         jQuery.fn.extend({
             drawChart:function(imei,view,beginTime,endTime,minSpeed,maxSpeed,token){
                 container=this;
-                var url="/api/statistics/linechart/"+imei+"/"+view+"/"+beginTime+"/"+endTime+"/"+minSpeed+"/"+maxSpeed+"?token="+token;
+                var url="/proxy/api/statistics/linechart/"+imei+"/"+view+"/"+beginTime+"/"+endTime+"/"+minSpeed+"/"+maxSpeed+"?token="+token;
+                if(!token){
+                    url="/proxy/api/statistics/linechart/"+imei+"/"+view+"/"+beginTime+"/"+endTime+"/"+minSpeed+"/"+maxSpeed;
+                }
                 $.ajax({
                     type: "GET",
                     url: url,
