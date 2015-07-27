@@ -246,6 +246,11 @@ function InitWebGISFormDefinition()
 						}
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>' + required + '</' + divorspan + '>');
 						if(fld.defaultvalue) $('#' + fldid).val(fld.defaultvalue);
+						if(_.isFunction(fld.change)){
+							$('#' + fldid).on('change keyup click',function(e){
+								fld.change($(e.target).val());
+							});
+						}
 					}
 					if(fld.type == 'textarea' && fld.group == group)
 					{

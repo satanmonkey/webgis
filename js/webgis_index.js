@@ -3130,7 +3130,7 @@ function ShowStateExaminationListDialog(viewer)
 			}
 		]
 	});
-	var reload_grid = function(list, name_filter, year_filter, voltage_filter) {
+	var reload_grid = function(list, option) {
 		var get_sel = function(name) {
 			var levs = [
 				//{value:'', label:'(请选择等级)'},
@@ -3199,35 +3199,43 @@ function ShowStateExaminationListDialog(viewer)
 				editor: { type: 'select', data: get_sel('unit_8'), valueField: 'unit_8' }
 			}
 		];
-		$('#div_state_examination_list_grid_container').empty();
-		$('#div_state_examination_list_grid_container').append('<div id="div_state_examination_list_grid"></div>');
-		if(_.isString(name_filter)  && name_filter.length )
-		{
-			list = _.filter(list, function(item){
-				return item.line_name.toString() === name_filter;
-			});
-		}
-		if(  _.isString(year_filter) &&  year_filter.length)
-		{
-			list = _.filter(list, function(item){
-				return item.check_year.toString() === year_filter;
-			});
-		}
-		if(  _.isString(voltage_filter) &&  voltage_filter.length)
-		{
-			list = _.filter(list, function(item){
-				return item.voltage.toString() === voltage_filter;
-			});
-		}
 		var tabledata = {Rows:list};
-		$.webgis.data.state_examination.control.list_grid = $('#div_state_examination_list_grid').ligerGrid({
-			columns: columns,
-			data: tabledata,
-			enabledEdit: true,
-			clickToEdit: false,
-			checkbox: true,
-			pageSize: 10
-		});
+		if(option.is_rebuild === true)
+		{
+			$('#div_state_examination_list_grid_container').empty();
+			$('#div_state_examination_list_grid_container').append('<div id="div_state_examination_list_grid"></div>');
+			$.webgis.data.state_examination.control.list_grid = $('#div_state_examination_list_grid').ligerGrid({
+				columns: columns,
+				data: tabledata,
+				enabledEdit: true,
+				clickToEdit: false,
+				checkbox: true,
+				pageSize: 10
+			});
+		}else{
+			if(_.isString(option.line_name)  && option.line_name.length )
+			{
+				list = _.filter(list, function(item){
+					return _.includes(item.line_name, option.line_name);
+				});
+			}
+			if(  _.isString(option.check_year) &&  option.check_year.length)
+			{
+				list = _.filter(list, function(item){
+					//console.log(item.check_year.toString() + '=' + option.check_year.toString());
+					return item.check_year.toString() === option.check_year.toString();
+				});
+			}
+			if(  _.isString(option.voltage) &&  option.voltage.length)
+			{
+				list = _.filter(list, function(item){
+					//console.log(item.voltage.toString().replace('kV', '') + '=' + option.voltage.toString().replace('kV', ''));
+					return item.voltage.toString().replace('kV', '') === option.voltage.toString().replace('kV', '');
+				});
+			}
+			$.webgis.data.state_examination.control.list_grid.loadData({Rows:list});
+		}
+
 	};
 	ShowProgressBar(true, 670, 200, '保存', '正在查询，请稍候...');
 	$.ajax({
@@ -3242,19 +3250,19 @@ function ShowStateExaminationListDialog(viewer)
 		data1 = JSON.parse(data1);
 		$.webgis.data.state_examination.list_data = data1;
 
-		$('#form_state_examination_list_filter_line_name').empty();
-		$('#form_state_examination_list_filter_line_name').append('<option value="">(请选择)</option>');
-		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'line_name')), function(item){
-			$('#form_state_examination_list_filter_line_name').append('<option value="' + item + '">' + item + '</option>');
-		});
-		$('#form_state_examination_list_filter_line_name').multipleSelect('refresh');
+		//$('#form_state_examination_list_filter_line_name').empty();
+		//$('#form_state_examination_list_filter_line_name').append('<option value="">(请选择)</option>');
+		//_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'line_name')), function(item){
+		//	$('#form_state_examination_list_filter_line_name').append('<option value="' + item + '">' + item + '</option>');
+		//});
+		//$('#form_state_examination_list_filter_line_name').multipleSelect('refresh');
 
 		$('#form_state_examination_list_filter_voltage').empty();
 		$('#form_state_examination_list_filter_voltage').append('<option value="">(请选择)</option>');
 		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'voltage')), function(item){
 			$('#form_state_examination_list_filter_voltage').append('<option value="' + item + '">' + item  + '</option>');
 		});
-		$('#form_state_examination_list_filter_line_voltage').multipleSelect('refresh');
+		$('#form_state_examination_list_filter_voltage').multipleSelect('refresh');
 
 		$('#form_state_examination_list_filter_check_year').empty();
 		$('#form_state_examination_list_filter_check_year').append('<option value="">(请选择)</option>');
@@ -3262,7 +3270,7 @@ function ShowStateExaminationListDialog(viewer)
 			$('#form_state_examination_list_filter_check_year').append('<option value="' + item + '">' + item + '</option>');
 		});
 		$('#form_state_examination_list_filter_check_year').multipleSelect('refresh');
-		reload_grid($.webgis.data.state_examination.list_data, '', '', '');
+		reload_grid($.webgis.data.state_examination.list_data, {is_rebuild: true, line_name:'', voltage:'', check_year:''});
 	})
 	.fail(function (jqxhr, textStatus, e) {
 		$.jGrowl("查询失败:" + e, {
@@ -3274,22 +3282,23 @@ function ShowStateExaminationListDialog(viewer)
 	});
 
 	var flds = [
-		{ display: "线路名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
+		//{ display: "线路名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
+		{ display: "线路名称", id: "line_name", newline: true, type: "text",  defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
 			change:function(data2){
 				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
-				reload_grid($.webgis.data.state_examination.list_data, data2, data3.check_year, data3.voltage);
+				reload_grid($.webgis.data.state_examination.list_data, {line_name:data2, voltage:data3.voltage, check_year:data3.check_year});
 			}
 		},
         { display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '过滤条件', width: 350, labelwidth: 120,
 			change:function(data2){
 				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
-				reload_grid($.webgis.data.state_examination.list_data, data3.line_name, data3.check_year, data2);
+				reload_grid($.webgis.data.state_examination.list_data, {line_name:data3.line_name, voltage:data2, check_year:data3.check_year});
 			}
 		},
         { display: "评价年份", id: "check_year", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '过滤条件', width: 350, labelwidth: 120,
 			change:function(data2){
 				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
-				reload_grid($.webgis.data.state_examination.list_data, data3.line_name, data2, data3.voltage);
+				reload_grid($.webgis.data.state_examination.list_data, {line_name:data3.line_name, voltage:data3.voltage, check_year:data2});
 			}
 		}
 	];
@@ -3750,7 +3759,7 @@ function SaveStateExamination(viewer, data, success, fail)
 		return data;
 	};
 	data = data_modifier(data);
-	console.log(data);
+	//console.log(data);
 	ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
 	$.ajax({
 		url:'/state_examination/save',
