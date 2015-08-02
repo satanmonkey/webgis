@@ -12,9 +12,12 @@ $.webgis.mapping.models_mapping = {};
 $.webgis.geometry.segments = [];
 $.webgis.geometry.lines = [];
 $.webgis.data.state_examination = {};
+$.webgis.data.bbn = {};
+$.webgis.data.bbn.control = {};
 $.webgis.data.state_examination.control = {};
 $.webgis.data.state_examination.standard = [];
 $.webgis.data.state_examination.import_excel_data = [];
+$.webgis.data.state_examination.list_data = [];
 $.webgis.config.is_tower_focus = false;
 
 
@@ -34,6 +37,45 @@ $.webgis.config.use_catenary = true;
 
 
 $.webgis.config.max_file_size = 5000000;
+
+$.webgis.data.bbn.graphiz_label = [
+    {
+        "name": "line_state",
+        "display_name": "线路整体评价"
+    },
+    {
+        "name": "unit_1",
+        "display_name": "基础"
+    },
+    {
+        "name": "unit_2",
+        "display_name": "杆塔"
+    },
+    {
+        "name": "unit_3",
+        "display_name": "导地线"
+    },
+    {
+        "name": "unit_4",
+        "display_name": "绝缘子串"
+    },
+    {
+        "name": "unit_5",
+        "display_name": "金具"
+    },
+    {
+        "name": "unit_6",
+        "display_name": "接地装置"
+    },
+    {
+        "name": "unit_7",
+        "display_name": "附属设施"
+    },
+    {
+        "name": "unit_8",
+        "display_name": "通道环境"
+    }
+];
 
 
 /*
@@ -2930,7 +2972,7 @@ function InitToolPanel(viewer)
 	$('#but_state_examination_standard').on('click', function(){
 		ShowStateExaminationStandardDialog(viewer);
 	});
-	$('#but_state_examination_bbn').button({label:'BBN编辑'});
+	$('#but_state_examination_bbn').button({label:'贝叶斯信度网络(BBN)查看'});
 	$('#but_state_examination_bbn').on('click', function(){
 		ShowStateExaminationBBNDialog(viewer);
 	});
@@ -2984,6 +3026,158 @@ function InitToolPanel(viewer)
 	}
 }
 
+function ShowStateExaminationBBNDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn');
+	$('#dlg_state_examination_bbn').dialog({
+		width: 700,
+		height: 720,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'贝叶斯信度网络(BBN)',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	$('#tabs_state_examination_bbn').tabs({
+		collapsible: false,
+		active: 0
+	});
+	var dpilist = _.map(['50','100','200','300'], function(item){
+		return {label:item, value:item};
+	});
+	var rankdirlist = _.map(['LL','LR','RL','RR'], function(item){
+		return {label:item, value:item};
+	});
+	var trimsvg = function(svg){
+		var arr = svg.split('\n');
+		arr = _.slice(arr, 5);
+		svg = arr.join('\n');
+		//console.log(svg);
+		return svg;
+	};
+	var replace_name = function(svg)
+	{
+		$(svg).find('g[class=node]').each(function(i, item){
+			var key = $(item).find('title').html();
+			var id = $(item).attr('id');
+			//console.log(key);
+			var display_name = _.result(_.find($.webgis.data.bbn.graphiz_label, {name: key.replace('f_', '')}), 'display_name');
+			//console.log(display_name);
+			if(display_name)
+			{
+				$('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id).find('title').html(display_name);
+				$('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id).find('text').html(display_name);
+				//console.log($('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id)[0]);
+			}
+		});
+	};
+	var div_resize = function(e){
+		var w =  $('#div_state_examination_bbn_bbn_graphiz').width();
+		$('#div_state_examination_bbn_bbn_graphiz').find('svg').attr('width', w + 'px');
+	};
+	var query_graphiz = function(callback)
+	{
+		var formdata = $("#form_state_examination_bbn_bbn").webgisform('getdata');
+		if(formdata.line_name.length === 0) return;
+		ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+		$.ajax({
+			url:'/bayesian/query/graphiz',
+			method:'post',
+			data: JSON.stringify(formdata)
+		})
+		.always(function () {
+			ShowProgressBar(false);
+		})
+		.done(function (data2) {
+			//console.log(data2);
+			var svg = Viz(data2, 'svg', 'dot');
+			svg = trimsvg(svg);
+			//console.log(svg);
+			$('#div_state_examination_bbn_bbn_graphiz').html(svg);
+			replace_name($('#div_state_examination_bbn_bbn_graphiz').find('svg'));
+			$('#div_state_examination_bbn_bbn_graphiz').find('svg').attr('width', '642px');
+			$('#div_state_examination_bbn_bbn_graphiz').find('svg').attr('height', '300px');
+			$('#div_state_examination_bbn_bbn_graphiz').off();
+			$('#div_state_examination_bbn_bbn_graphiz').on('elementResize', div_resize);
+			//console.log($('#div_state_examination_bbn_bbn_graphiz')[0]);
+			if(callback) callback();
+		});
+	};
+	var flds = [
+        { display: "输电线路", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '查询条件', width: 400, labelwidth: 120,
+			change:function(data1){
+				if(data1.length === 0) return;
+				query_graphiz();
+			}
+		},
+		//{ display: "输出图像dpi", id: "dpi", newline: true, type: "select", editor: { data: dpilist }, defaultvalue: '50', group: '输出选项', width: 450, labelwidth: 120},
+		//{ display: "排列类型", id: "rankdir", newline: true, type: "select", editor: { data: rankdirlist }, defaultvalue: 'LL', group: '输出选项', width: 450, labelwidth: 120},
+		{ display: "刷新", id: "button_refresh", newline: true, type: "button",  defaultvalue: '点击刷新', group: '操作', width: 250, labelwidth: 120,
+			click:function(){
+				query_graphiz();
+			}
+		}
+
+	];
+    $("#form_state_examination_bbn_bbn").webgisform(flds, {
+        prefix: "form_state_examination_bbn_bbn_",
+        maxwidth: 620
+        //margin:10,
+        //groupmargin:10
+    });
+	var build_select = function(){
+		$('#form_state_examination_bbn_bbn_line_name').empty();
+		$('#form_state_examination_bbn_bbn_line_name').append('<option value="">(请选择)</option>');
+		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'line_name')), function(item){
+			$('#form_state_examination_bbn_bbn_line_name').append('<option value="' + item + '">' + item + '</option>');
+		});
+		$('#form_state_examination_bbn_bbn_line_name').multipleSelect('refresh');
+		$('#form_state_examination_bbn_bbn_line_name').multipleSelect('setSelects', ['']);
+		$('#div_state_examination_bbn_bbn_graphiz').empty();
+		//$('#div_state_examination_bbn_bbn_graphiz').on('elementResize', div_resize);
+	};
+	if($.webgis.data.state_examination.list_data.length > 0){
+		build_select();
+	}else{
+		ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+		$.ajax({
+			url:'/state_examination/query',
+			method:'post',
+			data: JSON.stringify({})
+		})
+		.always(function () {
+			ShowProgressBar(false);
+		})
+		.done(function (data1) {
+			data1 = JSON.parse(data1);
+			$.webgis.data.state_examination.list_data = data1;
+			build_select();
+		});
+	}
+
+}
 function ShowStateExaminationStandardDialog(viewer)
 {
 	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
@@ -3237,7 +3431,7 @@ function ShowStateExaminationListDialog(viewer)
 		}
 
 	};
-	ShowProgressBar(true, 670, 200, '保存', '正在查询，请稍候...');
+	ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
 	$.ajax({
 		url:'/state_examination/query',
 		method:'post',
@@ -4111,6 +4305,31 @@ function CreateDialogSkeleton(viewer, dlg_id)
 					</div>\
 				</div>\
 			');
+		}
+		if(dlg_id === 'dlg_state_examination_bbn')
+		{
+			$(document.body).append('\
+				<div id="dlg_state_examination_bbn" >\
+					<div id="tabs_state_examination_bbn">\
+						<ul>\
+							<li><a href="#div_state_examination_bbn_bbn">贝叶斯信度网(BBN)</a></li>\
+							<li><a href="#div_state_examination_bbn_bbn_view">概率节点编辑</a></li>\
+							<li><a href="#div_state_examination_bbn_predict">分析预测</a></li>\
+						</ul>\
+						<div id="div_state_examination_bbn_bbn">\
+							<form id="form_state_examination_bbn_bbn"></form>\
+							<div id="div_state_examination_bbn_bbn_graphiz"></div>\
+						</div>\
+						<div id="div_state_examination_bbn_bbn_view">\
+							<div id="div_state_examination_bbn_bbn_view_grid"></div>\
+						</div>\
+						<div id="div_state_examination_bbn_predict">\
+							<div id="div_state_examination_bbn_predict_grid"></div>\
+						</div>\
+					</div>\
+				</div>\
+			');
+
 		}
 	}
 }

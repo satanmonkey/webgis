@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport" content="width=device-width, height=device-height, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <meta name="description" content="Use the Viewer Widget to start building new applications or easily embed Cesium into existing applications.">
+    <meta name="cesium-sandcastle-labels" content="Beginner, Showcases">
+    <title>KMGD WebGIS Demo v0.01</title>
+	<!--<link rel="stylesheet" href="js/CesiumUnminified/Widgets/widgets.css" />-->
+	<link rel="stylesheet" href="js/Cesium/Widgets/widgets.css" />
+	<link rel="stylesheet" href="css/leaflet.css" />
+	<link rel="stylesheet" href="css/MarkerCluster.css" />
+	<link rel="stylesheet" href="css/MarkerCluster.Default.css" />
+	<link rel="stylesheet" href="css/L.Control.MousePosition.css" />
+	<link rel="stylesheet" href="css/leaflet.label.css" />
+	<link rel="stylesheet" href="css/ligerui-skins/Aqua/css/ligerui-all.css" />
+	<link rel="stylesheet" href="css/ligerui-skins/ligerui-icons.css" />
+	<link rel="stylesheet" href="css/themes/jqueryui-themes/redmond/jquery-ui.min.css" />
+	<link rel="stylesheet" href="css/themes/jqueryui-themes/redmond/theme.css" />
+	<link rel="stylesheet" href="css/DrawHelper.css" />
+	<link rel="stylesheet" href="css/tooltipster.css" />
+	<link rel="stylesheet" href="css/icheck-skins/flat/green.css" />
+	<link rel="stylesheet" href="css/spectrum.css" />
+	<link rel="stylesheet" href="css/jquery.fileupload.css">
+	<link rel="stylesheet" href="css/jquery.fileupload-ui.css">
+	<link rel="stylesheet" href="css/jquery.jgrowl.css">
+	<link rel="stylesheet" href="css/kmgd-tools.css" />
+	<link rel="stylesheet" href="css/kmgd-icon.css" />
+	<link rel="stylesheet" href="css/fotorama.css" />
+	<link rel="stylesheet" href="css/multiple-select.css" />
+	<link rel="stylesheet" href="css/iosbadge.css" />
+	<link rel="stylesheet" href="css/jquery-ui-timepicker-addon.min.css" />
+    <script type="text/javascript" src="js/jquery/jquery-2.1.4.min.js"></script>
+    <script type="text/javascript" src="js/lodash.min.js"></script>
+    <!--<script type="text/javascript" src="js/CesiumUnminified/Cesium.js"></script>-->
+    <script type="text/javascript" src="js/Cesium/Cesium.js"></script>
+    <script type="text/javascript" src="js/CFTTileImageryProvider.js"></script>
+    <script type="text/javascript" src="js/HeightmapAndQuantizedMeshTerrainProvider.js"></script>
+    <script type="text/javascript" src="js/ArcGisMapServerImageryProvider.js"></script>
+    <script type="text/javascript" src="js/BingImageryFromServerProvider.js"></script>
+    <script type="text/javascript" src="js/AMapTileImageryProvider.js"></script>
+    <script type="text/javascript" src="js/ESRIImageryFromServerProvider.js"></script>
+    <script type="text/javascript" src="js/HeatMapImageryProvider.js"></script>
+    <script type="text/javascript" src="js/DrawHelper.js"></script>
+    <script type="text/javascript" src="js/DrawHelper2D.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery-uuid.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery-ui.min.js"></script>
+    <script type="text/javascript" src="js/icheck.js"></script>
+    <script type="text/javascript" src="js/json3.js"></script>
+    <script type="text/javascript" src="js/js.cookie.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery.validate.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery.metadata.js"></script>
+    <script type="text/javascript" src="js/jquery/messages_cn.js"></script>
+    <script type="text/javascript" src="js/moment-with-locales.min.js"></script>
+    <script type="text/javascript" src="js/ligerui.min.js"></script>
+    <script type="text/javascript" src="js/MathLib.min.js"></script>
+    <script type="text/javascript" src="js/tinycolor-min.js"></script>
+    <script type="text/javascript" src="js/fotorama.js"></script>
+    <script type="text/javascript" src="js/geojson-extent.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery.tooltipster.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery.jgrowl.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery.multiple.select.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery-ui-sliderAccess.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-addon.min.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-addon-i18n.min.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-zh-CN.js"></script>
+	<script type="text/javascript" src="js/jquery/jquery.elementresize.min.js"></script>
+	<script type="text/javascript" src="js/iosbadge.min.js"></script>
+	<script type="text/javascript" src="js/spectrum.js"></script>
+    <script type="text/javascript" src="js/catenary.js"></script>
+    <script type="text/javascript" src="js/polyk.js"></script>
+	<script type="text/javascript" src="js/reconnecting-websocket.js"></script>
+	<script type="text/javascript" src="js/encryption/aes.js"></script>
+    <script type="text/javascript" src="js/leaflet/leaflet-src-0.7.3.js"></script>
+    <!--<script type="text/javascript" src="js/leaflet/leaflet-src-0.8-dev.js"></script>-->
+    <script type="text/javascript" src="js/leaflet/leaflet.ChineseTmsProviders.js"></script>
+    <script type="text/javascript" src="js/leaflet/L.Control.MousePosition.js"></script>
+    <script type="text/javascript" src="js/leaflet/leaflet.polylineDecorator.js"></script>
+    <script type="text/javascript" src="js/leaflet/leaflet.markercluster-src.js"></script>
+    <script type="text/javascript" src="js/leaflet/leaflet.label-src.js"></script>
+    <script type="text/javascript" src="js/leaflet/heatmap.js"></script>
+    <script type="text/javascript" src="js/leaflet/leaflet-heatmap.js"></script>
+
+    <script type="text/javascript" src="js/webgis_common.js"></script>
+    <script type="text/javascript" src="js/highcharts.js"></script>
+    <script type="text/javascript" src="js/anti_bird_chart.js"></script>
+    <script type="text/javascript" src="js/FileSaver.min.js"></script>
+    <script type="text/javascript" src="js/canvas-toBlob.js"></script>
+    <script type="text/javascript" src="js/excellentexport.js"></script>
+    <script type="text/javascript" src="js/xlsx.min.js"></script>
+    <script type="text/javascript" src="js/viz.js"></script>
+    <script type="text/javascript" src="js/webgis_form_data.js"></script>
+    <script type="text/javascript" src="test_bayesian_grid.js"></script>
+	<style>
+
+	</style>
+
+</head>
+<body>
+<div id="div_grid">
+
+</div>
+</body>
+</html>
+

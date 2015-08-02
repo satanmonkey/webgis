@@ -1002,7 +1002,7 @@ input[type="button"].btn-block {
     width: 54px;
 	height:54px;
 	border:0px solid #2e6e9e;
-	background:#FFFFFF url(/img/anti_bird_icon.png)  center;
+	background-color:#FFFFFF;
 	background-size:54px 54px;
 	border-radius: 12px;
 }
@@ -1060,7 +1060,7 @@ input[type="button"].btn-block {
 	opacity:0.6;
 	z-index:8;
 	position: absolute;
-	background:#2e6e9e url(/img/anti_bird_icon.png)  center;
+	background-color:#2e6e9e;
 	width:26px;
 	height:26px;
 	border-radius: 5px;
@@ -1133,4 +1133,9 @@ input[type="button"].btn-block {
 	background: transparent url(img/anti_bird_icon_checked.png) center;
 	background-size:26px 26px;
 	border:1px solid #2e6e9e;
+}
+#div_state_examination_bbn_bbn_graphiz
+{
+	border:1px solid #2e6e9e;
+	min-height:370px;
 }
