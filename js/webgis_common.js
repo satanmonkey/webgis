@@ -470,9 +470,7 @@ function InitWebGISFormDefinition()
 						$('#ol_' + fldid ).on('mouseleave', function(e){
 							$('#ol_' + fldid3 ).css('display', 'none');
 						});
-						
 					}
-					
 					if(fld.type == 'color' && fld.group == group)
 					{
 						var colorarr = [255, 0, 0, 128];
