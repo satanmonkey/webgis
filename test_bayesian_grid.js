@@ -185,7 +185,7 @@ function BuildTableList(list)
         o.name = node.name;
         o.display_name = node.display_name;
         o.children = [];
-        o.op = '<a id="bbnnodegridrowadd" href="javascript:void(0);">新增</a>';
+        o.op = '<a id="bbnnodegridrowadd|' + node._id + '" href="javascript:void(0);">新增</a>';
         o.op += '&nbsp;<a id="bbnnodegridrowremove|' + node._id + '" href="javascript:void(0);">删除</a>';
         o.op += '&nbsp;<a id="bbnnodegridcondadd|' + node._id + '" href="javascript:void(0);">新增条件</a>';
         o.op += '&nbsp;<a id="bbnnodegridcondremove|' + node._id + '" href="javascript:void(0);">删除条件</a>';
@@ -339,6 +339,36 @@ function BBNNodeGridLoadData(viewer, data)
         var value = $(this).attr('data-value');
         ShowBBNProbabilityEdit(viewer, id, value);
     });
+    $('a[id^=bbnnodegridrowadd]').off();
+    $('a[id^=bbnnodegridrowadd]').on('click', function(){
+        console.log('add');
+    });
+    $('a[id^=bbnnodegridrowremove]').off();
+    $('a[id^=bbnnodegridrowremove]').on('click', function(){
+        var id = $(this).attr('id').split('|')[1];
+        var name = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'display_name');
+        ShowConfirm(null, 500, 200,
+            '删除确认',
+            '确认删除[' + name + ']吗?',
+            function () {
+                _.remove($.webgis.data.bbn.grid_data, {_id:id});
+                BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+            },
+            function () {
+
+            }
+        );
+    });
+    $('a[id^=bbnnodegridcondadd]').off();
+    $('a[id^=bbnnodegridcondadd]').on('click', function(){
+        var id = $(this).attr('id').split('|')[1];
+    });
+    $('a[id^=bbnnodegridcondremove]').off();
+    $('a[id^=bbnnodegridcondremove]').on('click', function(){
+        var id = $(this).attr('id').split('|')[1];
+    });
+
+
 }
 
 function CreateDialogSkeleton(viewer, dlg_id)
