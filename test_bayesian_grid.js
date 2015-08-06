@@ -1,125 +1,53 @@
 $.webgis.data.bbn = {};
 $.webgis.data.bbn.control = {};
-$.webgis.data.bbn.value_mapping = {
-    true: '真',
-    false: '假',
-    str1: '字符串1',
-    str2: '字符串2',
-    str3: '字符串3',
-    str4: '字符串4',
-    str5: '字符串5'
-};
 $.webgis.data.bbn.grid_data = [];
+$.webgis.data.bbn.domains_range = [
+    {value:true, name: '真'},
+    {value:false, name: '假'},
+    {value:'I', name: 'I级'},
+    {value:'II', name: 'II级'},
+    {value:'III', name: 'III级'},
+    {value:'IV', name: 'IV级'},
+    {value:'high', name: '高'},
+    {value:'low', name: '低'},
+    {value:'medium', name: '中'},
+];
 
-
-
-
-function BBNNodeGridBeginEdit(rowindex)
-{
-	$.webgis.data.bbn.control.node_grid.beginEdit(rowindex);
-}
-function BBNNodeGridDeleteRow(rowindex)
-{
-	ShowConfirm(null, 500, 200,
-		'删除确认',
-		'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
-		function () {
-			var row = $.webgis.data.bbn.control.node_grid.getRow(rowindex);
-			console.log(row);
-			if(row && row._id) {
-				//DeleteStateExamination(null, {_id:row._id}, function () {
-					$.webgis.data.bbn.control.node_grid.deleteRow(rowindex);
-				//},function(){
-				//	$.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-				//});
-			}
-		},
-		function () {
-			//$('#').dialog("close");
-		}
-	);
-}
-function BBNNodeGridEndEdit(rowindex)
-{
-	$.webgis.data.bbn.control.node_grid.endEdit(rowindex);
-    var row = $.webgis.data.bbn.control.node_grid.getRow(rowindex);
-
-    if(row.row_type === '' || _.isUndefined(row.row_type)){
-        $.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-        $.webgis.data.bbn.control.node_grid.updateRow(row, {display_name:'',name:'', value_type:'', probability:'', cond_value:''});
-        return;
-    }
-    if(row.row_type === 'node_edit' && (row.name.length === 0 || row.display_name.length === 0 || row.value_type.length === 0)){
-        $.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-        $.webgis.data.bbn.control.node_grid.updateRow(row, {display_name:'',name:'', value_type:'', probability:'', cond_value:''});
-        return;
-    }
-    if(row.row_type === 'condition_edit' && (row.name.length > 0 || row.display_name.length > 0 || row.value_type.length > 0 || row.probability.length > 0)){
-        $.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-        $.webgis.data.bbn.control.node_grid.updateRow(row, {display_name:'',name:'',value_type:'', probability:'', cond_value:''});
-        return;
-    }
-    if(row.row_type === 'probability_edit' && (row.name.length > 0 || row.display_name.length > 0 || row.value_type.length > 0 || row.cond_value.length > 0)){
-        $.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-        $.webgis.data.bbn.control.node_grid.updateRow(row, {display_name:'',name:'',value_type:'',probability:'', cond_value:''});
-        return ;
-    }
-
-	ShowConfirm(null, 500, 200,
-		'确认',
-		'确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
-		function () {
-
-			_.forIn(row, function(v, k){
-				if(_.startsWith(k, '__'))
-				{
-					delete row[k];
-				}
-			});
-			console.log(row);
-			if(row) {
-				//SaveStateExamination(null, row, function () {
-                $.webgis.data.bbn.control.node_grid.endEdit(rowindex);
-				//},function(){
-				//	$.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-				//});
-			}
-		},
-		function () {
-			//$('#').dialog("close");
-		}
-	);
-
-}
-function BBNNodeGridCancelEdit(rowindex)
-{
-	$.webgis.data.bbn.control.node_grid.cancelEdit(rowindex);
-}
 
 function BuildComboConditions(master, nodes)
 {
     var ret =  $.extend(true, {}, master);
     ret.conditions = [];
-    var l = [];
-    _.forEach(nodes, function(node){
-        var l2 = [];
-        _.forEach(node.domains, function(domain){
-            l2.push([node.name, domain])
+    if(nodes.length)
+    {
+        var l = [];
+        _.forEach(nodes, function (node) {
+            var l2 = [];
+            _.forEach(node.domains, function (domain) {
+                l2.push([node.name, domain])
+            });
+            l.push(l2);
         });
-        l.push(l2);
-    });
-    var cp = Combinatorics.cartesianProduct.apply(this, l);
-    cp = cp.toArray();
-    _.forEach(cp, function(item){
-        var list1 = [];
-        list1.push(item);
+        var cp = Combinatorics.cartesianProduct.apply(this, l);
+        cp = cp.toArray();
+        _.forEach(cp, function (item) {
+            var list1 = [];
+            list1.push(item);
+            var o = {};
+            _.forEach(master.domains, function (domain) {
+                o[domain] = 0.0;
+            });
+            list1.push(o);
+            ret.conditions.push(list1);
+        });
+    }else
+    {
         var o = {};
-        _.forEach(master.domains, function(domain){
+        _.forEach(master.domains, function (domain) {
             o[domain] = 0.0;
         });
-        list1.push(o);
-        ret.conditions.push(list1);
-    });
+        ret.conditions.push([[],o]);
+    }
     return ret;
 }
 var ProbabilityFloatFormat = function(value, digit)
@@ -148,8 +76,11 @@ function BuildTableList(list)
     var get_value_disp = function(value)
     {
         var ret = value;
-        if($.webgis.data.bbn.value_mapping[value]){
-            ret = $.webgis.data.bbn.value_mapping[value];
+        if(value === 'true') value = true;
+        if(value === 'false') value = false;
+        var name = _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+        if(name){
+            ret = name;
         }
         return ret;
     };
@@ -187,9 +118,9 @@ function BuildTableList(list)
         o.children = [];
         o.op = '<a id="bbnnodegridrowadd|' + node._id + '" href="javascript:void(0);">新增</a>';
         o.op += '&nbsp;<a id="bbnnodegridrowremove|' + node._id + '" href="javascript:void(0);">删除</a>';
-        o.op += '&nbsp;<a id="bbnnodegridcondadd|' + node._id + '" href="javascript:void(0);">新增条件</a>';
-        o.op += '&nbsp;<a id="bbnnodegridcondremove|' + node._id + '" href="javascript:void(0);">删除条件</a>';
-        if(node.conditions.length)
+        o.op += '&nbsp;<a id="bbnnodegridcondmodify|' + node._id + '" href="javascript:void(0);">修改关联条件</a>';
+        //o.op += '&nbsp;<a id="bbnnodegridcondremove|' + node._id + '" href="javascript:void(0);">删除条件</a>';
+        if(node.conditions && node.conditions.length)
         {
             if(node.conditions[0][0].length === 0)
             {
@@ -299,8 +230,8 @@ function BBNNodeGridLoadData(viewer, data)
             //    }
             //},
             {display:'', name:'_id', width: 1, hide: true},
-            {display:'结点显示名称', name:'display_name', width: 100},
             {display:'结点名', name:'name', width: 100},
+            {display:'结点显示名称', name:'display_name', width: 100},
             //{display:'结点概率取值类型', name:'value_type', width: 200,
             //    editor: {
             //        type: 'select',
@@ -333,15 +264,16 @@ function BBNNodeGridLoadData(viewer, data)
     }else {
         $.webgis.data.bbn.control.node_grid.loadData(tabledata);
     }
+    $.webgis.data.bbn.control.node_grid.collapseAll();
     $('a[id^=probabilityhref]').off();
     $('a[id^=probabilityhref]').on('click', function(){
         var id = $(this).attr('id');
         var value = $(this).attr('data-value');
-        ShowBBNProbabilityEdit(viewer, id, value);
+        ShowBBNProbabilityEditDialog(viewer, id, value);
     });
     $('a[id^=bbnnodegridrowadd]').off();
     $('a[id^=bbnnodegridrowadd]').on('click', function(){
-        console.log('add');
+        ShowBBNNodeGridAddDialog(viewer);
     });
     $('a[id^=bbnnodegridrowremove]').off();
     $('a[id^=bbnnodegridrowremove]').on('click', function(){
@@ -359,15 +291,218 @@ function BBNNodeGridLoadData(viewer, data)
             }
         );
     });
-    $('a[id^=bbnnodegridcondadd]').off();
-    $('a[id^=bbnnodegridcondadd]').on('click', function(){
+    $('a[id^=bbnnodegridcondmodify]').off();
+    $('a[id^=bbnnodegridcondmodify]').on('click', function(){
         var id = $(this).attr('id').split('|')[1];
+        //console.log(id);
+        ShowBBNNodeGridConditionModifyDialog(viewer, id);
     });
-    $('a[id^=bbnnodegridcondremove]').off();
-    $('a[id^=bbnnodegridcondremove]').on('click', function(){
-        var id = $(this).attr('id').split('|')[1];
-    });
+    //$('a[id^=bbnnodegridcondremove]').off();
+    //$('a[id^=bbnnodegridcondremove]').on('click', function(){
+    //    var id = $(this).attr('id').split('|')[1];
+    //    console.log(id);
+    //});
+}
 
+function ShowBBNNodeGridConditionModifyDialog(viewer, id)
+{
+    var valid_data = function(formdata)
+    {
+        var ret = false;
+        if(formdata.conditions.length)
+        {
+            ret = true;
+        }
+        return ret;
+    };
+    CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_condition_add');
+	$('#dlg_state_examination_bbn_node_grid_condition_add').dialog({
+		width: 520,
+		height: 350,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'新增条件',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "取消",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			},
+			{
+				text: "确定",
+				click: function(e){
+                    var formdata = $('#form_state_examination_bbn_node_grid_condition_midify').webgisform('getdata');
+                    var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
+                    if(idx > -1)
+                    {
+                        var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
+                        var condlist = [];
+                        _.forEach(formdata.conditions, function(condname){
+                            var cond = _.find($.webgis.data.bbn.grid_data, {name: condname});
+                            if(cond){
+                                condlist.push(cond);
+                            }
+                        });
+                        o = BuildComboConditions(o, condlist);
+                        $.webgis.data.bbn.grid_data[idx] = o;
+                        BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+                    }
+                    $(this).dialog("close");
+				}
+			}
+		]
+	});
+
+    var selfname = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'name');
+    var conditions = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'conditions');
+    var defaultvalue = [];
+    if(conditions.length && conditions[0].length && conditions[0][0].length)
+    {
+        _.forEach(conditions[0][0], function(item){
+            defaultvalue.push(item[0]);
+        });
+    }
+    var arr = _.map($.webgis.data.bbn.grid_data, function(item){
+        return {label:item.display_name, value:item.name};
+    });
+    var condlist = _.filter(arr, function(item){
+        return (item.value != selfname) && !_.startsWith(item.value, 'unit_');
+    });
+    var flds = [
+        { display: "可选择条件", id: "conditions", newline: true, type: "multiselect", editor: { data:  condlist}, defaultvalue:defaultvalue,  group: '选择条件结点', width: 250, labelwidth: 120, validate:{required:true}},
+    ];
+
+	$('#form_state_examination_bbn_node_grid_condition_midify').webgisform(flds, {
+		prefix: "form_state_examination_bbn_node_grid_condition_midify_",
+		maxwidth: 430
+		//margin:10,
+		//groupmargin:10
+	});
+
+}
+function ShowBBNNodeGridAddDialog(viewer)
+{
+    var valid_data = function(formdata)
+    {
+        var ret = false;
+        if(formdata.domains.length)
+        {
+            ret = true;
+        }
+        return ret;
+    };
+    var trans_boolean = function(formdata)
+    {
+        if(_.isString(formdata))
+        {
+            if (formdata === 'true') {
+                formdata = true;
+            }
+            if (formdata === 'false') {
+                formdata = false;
+            }
+        }
+        else if(_.isArray(formdata)){
+            formdata = _.map(formdata, function (item) {
+                return trans_boolean(item);
+            });
+        }
+        else if(_.isPlainObject(formdata))
+        {
+            _.forIn(formdata, function (v, k) {
+                formdata[k] = trans_boolean(v);
+            });
+        }
+        return formdata;
+    };
+    CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_node_add');
+	$('#dlg_state_examination_bbn_node_grid_node_add').dialog({
+		width: 520,
+		height: 500,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'新增事件结点',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "取消",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			},
+			{
+				text: "确定",
+				click: function(e){
+                    if($('#form_state_examination_bbn_node_grid_node_add').valid()) {
+                        var formdata = $('#form_state_examination_bbn_node_grid_node_add').webgisform('getdata');
+                        if (valid_data(formdata)) {
+                            formdata = trans_boolean(formdata);
+                            var nullcount = $.webgis.data.bbn.grid_data.length;
+                            formdata._id = 'null_' + (nullcount + 1);
+                            var o = {};
+                            _.forEach(formdata.domains, function(item){
+                                o[item] = 0.0;
+                            });
+                            formdata.conditions = [[[],o]];
+                            console.log(formdata);
+                            $.webgis.data.bbn.grid_data.push(formdata);
+                            BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+                            $(this).dialog("close");
+                        }
+                    }
+				}
+			}
+		]
+	});
+
+    var domainlist = _.map($.webgis.data.bbn.domains_range, function(item){
+        return {label:item.name, value:item.value};
+    });
+    var flds = [
+        { display: "节点名称", id: "name", newline: true, type: "text",  defaultvalue: '', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "显示名称", id: "display_name", newline: true, type: "text",  defaultvalue: '', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "事件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: [true, false], group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "节点描述", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '节点信息', width: 250, height:200, labelwidth: 120},
+    ];
+
+	$('#form_state_examination_bbn_node_grid_node_add').webgisform(flds, {
+		prefix: "form_state_examination_bbn_node_grid_node_add_",
+		maxwidth: 430
+		//margin:10,
+		//groupmargin:10
+	});
 
 }
 
@@ -382,10 +517,24 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				<form id="form_state_examination_bbn_probability_edit"></form>\
 			</div>');
         }
+        if (dlg_id === 'dlg_state_examination_bbn_node_grid_node_add')
+        {
+            $(document.body).append('\
+			<div id="dlg_state_examination_bbn_node_grid_node_add" >\
+				<form id="form_state_examination_bbn_node_grid_node_add"></form>\
+			</div>');
+        }
+        if (dlg_id === 'dlg_state_examination_bbn_node_grid_condition_add')
+        {
+            $(document.body).append('\
+			<div id="dlg_state_examination_bbn_node_grid_condition_add" >\
+				<form id="form_state_examination_bbn_node_grid_condition_midify"></form>\
+			</div>');
+        }
     }
 }
 
-function ShowBBNProbabilityEdit(viewer, id, value)
+function ShowBBNProbabilityEditDialog(viewer, id, value)
 {
     var valid_probability = function(formdata)
     {
@@ -482,10 +631,9 @@ function ShowBBNProbabilityEdit(viewer, id, value)
                 switch_type(data1);
 			}
 		},
-        { display: "概率", id: "probability", newline: true, type: "spinner", min:0.0, max:1.0, step:0.01, defaultvalue: ProbabilityFloatFormat(value), group: '直接输入概率', width: 250, labelwidth: 120},
-        { display: "总数", id: "total", newline: true, type: "spinner", min:0, max:1000000, step:1, defaultvalue: 1000000, group: '输入频次和总数', width: 250, labelwidth: 120},
-        { display: "频次", id: "count", newline: true, type: "spinner", min:0, max:1000000, step:1, defaultvalue: 0, group: '输入频次和总数', width: 250, labelwidth: 120},
-
+        { display: "概率", id: "probability", newline: true, type: "spinner", min:0.0, max:1.0, step:0.01, defaultvalue: ProbabilityFloatFormat(value), group: '直接输入概率', width: 250, labelwidth: 120, validate:{number: true, range:[0, 1]}},
+        { display: "总数", id: "total", newline: true, type: "spinner", min:0, max:1000000, step:1, defaultvalue: 1000000, group: '输入频次和总数', width: 250, labelwidth: 120, validate:{number: true, range:[0, 1000000]}},
+        { display: "频次", id: "count", newline: true, type: "spinner", min:0, max:1000000, step:1, defaultvalue: 0, group: '输入频次和总数', width: 250, labelwidth: 120, validate:{number: true, range:[0, 1000000]}},
     ];
 	$('#form_state_examination_bbn_probability_edit').webgisform(flds, {
 		prefix: "form_state_examination_bbn_probability_edit_",
@@ -551,9 +699,106 @@ function SetBBNNodeGridData(viewer, hrefid, value)
     }
 }
 
+function LoadBBNGridData(viewer, line_name)
+{
+    if(line_name.length)
+    {
+        $.ajax({
+            url: '/bayesian/query/node',
+            method: 'post',
+            data: JSON.stringify({line_name: line_name})
+        })
+        .always(function () {
+            ShowProgressBar(false);
+        })
+        .done(function (data1) {
+            var arr = _.sortBy(JSON.parse(data1), function(n) {
+                return n.name;
+            });
+            $.webgis.data.bbn.grid_data = arr;
+            //console.log(arr);
+            BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+        })
+        .fail(function (jqxhr, textStatus, e) {
+            $.jGrowl("查询失败:" + e, {
+                life: 2000,
+                position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                theme: 'bubblestylefail',
+                glue: 'before'
+            });
+        });
+    }else{
+        BBNNodeGridLoadData(viewer, []);
+    }
+}
+function SaveBBNGridData(viewer, line_name)
+{
+	ShowConfirm(null, 500, 200,
+		'确认',
+		'确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+		function () {
+            var data = _.map($.webgis.data.bbn.grid_data, function(item){
+                if(_.startsWith(item._id, 'null_')){
+                    item._id = null;
+                }
+                item.line_name = line_name;
+                return item;
+            });
+			console.log(data);
+            //if(true) return;
+            ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
+            $.ajax({
+                url:'/bayesian/save/node',
+                method:'post',
+                data: JSON.stringify(data)
+            })
+            .always(function () {
+                ShowProgressBar(false);
+            })
+            .done(function (data1) {
+            })
+            .fail(function (jqxhr, textStatus, e) {
+                $.jGrowl("保存失败:" + e, {
+                    life: 2000,
+                    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                    theme: 'bubblestylefail',
+                    glue:'before'
+                });
+            });
+		},
+		function () {
+			//$('#').dialog("close");
+		}
+	);
+}
 $(function(){
     InitWebGISFormDefinition();
-    $.webgis.data.bbn.grid_data = test_data();
+    $.webgis.data.bbn.grid_data = [];test_data();
     BBNNodeGridLoadData(null, $.webgis.data.bbn.grid_data);
+    $('#save').on('click', function(){
+        var line_name = $('#lines').val();
+        if(line_name.length)
+        {
+            SaveBBNGridData(null, line_name);
+        }
+    });
+    $.ajax({
+        url:'/state_examination/query/line_names',
+        method:'post',
+        data: JSON.stringify({})
+    })
+    .always(function () {
+        //ShowProgressBar(false);
+    })
+    .done(function (data1) {
+        $('#lines').append('<option value=""></option>');
+        var data1 = JSON.parse(data1) ;
+        _.forEach(data1,function(item){
+            $('#lines').append('<option value="' + item + '">' + item + '</option>');
+        });
+        $('#lines').on('change', function(){
+            LoadBBNGridData(null, $(this).val());
+        });
+    })
 });
 

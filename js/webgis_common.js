@@ -15,7 +15,7 @@ $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
 $.webgis.data.anti_bird_towers = [];
 $.webgis.key_event = {};
-$.webgis.remote.localhost = '192.168.1.8';//10.181.160.72
+$.webgis.remote.localhost = '192.168.1.217';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
 $.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
@@ -391,8 +391,11 @@ function InitWebGISFormDefinition()
 					{
 						var dateFormat = "yy-mm-dd";
 						var timeFormat = "HH:mm";
+						var minDateTime, maxDateTime = moment().local().toDate();
 						if(fld.dateFormat) dateFormat = fld.dateFormat;
 						if(fld.timeFormat) timeFormat = fld.timeFormat;
+						if(fld.minDateTime) minDateTime = moment(fld.minDateTime).local().toDate();
+						if(fld.maxDateTime) maxDateTime = moment(fld.maxDateTime).local().toDate();
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><input type="text" class="ui-widget" style="padding:7px 0px 0px 0px;width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '" ' + readonly + '>'  + required + '</' + divorspan + '>');
 						$('#' + fldid ).datetimepicker({
 							dateFormat:  dateFormat,
@@ -411,7 +414,9 @@ function InitWebGISFormDefinition()
 							duration: "slow",
 							showButtonPanel: false,
 							showAnim:"slideDown",
-							yearSuffix: '年'
+							yearSuffix: '年',
+							minDateTime:minDateTime,
+							maxDateTime:maxDateTime
 						});
 						if(fld.defaultvalue) $('#' + fldid).datetimepicker("setDate", fld.defaultvalue);
 					}
