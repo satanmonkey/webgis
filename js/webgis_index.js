@@ -8411,8 +8411,8 @@ function ShowAntiBirdStatisticsDialog(viewer)
 				$('#form_anti_bird_statistics_heatmap').webgisform('setdata',{slider_distinguish_speed:value});
 			}
 		},
-		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
-		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数',  width:300, validate:{required:true}},
+		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数', minDateTime:'2015-06-10 00:00', width:300, validate:{required:true}},
+		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'分布参数', minDateTime:'2015-06-10 00:00', width:300, validate:{required:true}},
 		{display: "生成热图", id: "button_create", newline: true,  type: "button", group:'热图操作', width:350, defaultvalue:'点击生成热度图', click:function(){
 			var data = $('#form_anti_bird_statistics_heatmap').webgisform('getdata');
 			AntiBirdHeatmap(viewer, {
@@ -8948,6 +8948,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 				type: "datetime",
 				group: '统计参数',
 				width: 300,
+				minDateTime:'2015-06-10 00:00',
 				validate: {required: true}
 			},
 			{
@@ -8960,6 +8961,7 @@ function BuildAntiBirdStatisticsForm(viewer)
 				type: "datetime",
 				group: '统计参数',
 				width: 300,
+				minDateTime:'2015-06-10 00:00',
 				validate: {required: true}
 			},
 			{
@@ -9084,8 +9086,8 @@ function BuildAntiBirdInfoChartForm(imei)
 			{
 			}
 		},
-		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
-		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
+		{display: "起始日期时间", id:"start_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", minDateTime:'2015-06-10 00:00', group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
+		{display: "结束日期时间", id:"end_date", dateFormat:"yymmdd", newline: true, is_range:true, type: "datetime", minDateTime:'2015-06-10 00:00', group:'统计参数', labelwidth:120, width:300, validate:{required:true}},
 		{display: "生成统计图", id: "button_create", newline: true,  type: "button", group:'操作', labelwidth:120, width:300, defaultvalue:'点击生成统计图', click:function(){
 			var data = $('#form_anti_bird_info_chart').webgisform('getdata');
 			//console.log(data);
