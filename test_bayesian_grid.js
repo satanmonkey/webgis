@@ -1,17 +1,17 @@
 $.webgis.data.bbn = {};
 $.webgis.data.bbn.control = {};
 $.webgis.data.bbn.grid_data = [];
-$.webgis.data.bbn.domains_range = [
-    {value:true, name: '真'},
-    {value:false, name: '假'},
-    {value:'I', name: 'I级'},
-    {value:'II', name: 'II级'},
-    {value:'III', name: 'III级'},
-    {value:'IV', name: 'IV级'},
-    {value:'high', name: '高'},
-    {value:'low', name: '低'},
-    {value:'medium', name: '中'},
-];
+$.webgis.data.bbn.domains_range = [];
+
+    //{value:true, name: '真'},
+    //{value:false, name: '假'},
+    //{value:'I', name: 'I级'},
+    //{value:'II', name: 'II级'},
+    //{value:'III', name: 'III级'},
+    //{value:'IV', name: 'IV级'},
+    //{value:'high', name: '高'},
+    //{value:'low', name: '低'},
+    //{value:'medium', name: '中'},
 
 
 function BuildComboConditions(master, nodes)
@@ -207,6 +207,30 @@ function test_data()
     return [name1, name2, name3, name4];
 }
 
+function QueryBBNDomainsRange(callback)
+{
+    ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+    $.ajax({
+        url: '/bayesian/query/domains_range',
+        method: 'post',
+        data: JSON.stringify({})
+    })
+    .always(function () {
+        ShowProgressBar(false);
+    })
+    .done(function (data1) {
+        $.webgis.data.bbn.domains_range = JSON.parse(data1);
+        if(callback) callback();
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("查询失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue: 'before'
+        });
+    });
+}
 function BBNNodeGridLoadData(viewer, data)
 {
     var tabledata = {Rows: BuildTableList(data)};
@@ -772,8 +796,11 @@ function SaveBBNGridData(viewer, line_name)
 	);
 }
 $(function(){
+    QueryBBNDomainsRange(function(){
+        //console.log($.webgis.data.bbn.domains_range);
+    });
     InitWebGISFormDefinition();
-    $.webgis.data.bbn.grid_data = [];test_data();
+    $.webgis.data.bbn.grid_data = [];//test_data();
     BBNNodeGridLoadData(null, $.webgis.data.bbn.grid_data);
     $('#save').on('click', function(){
         var line_name = $('#lines').val();

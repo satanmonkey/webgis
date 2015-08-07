@@ -264,7 +264,13 @@ function InitWebGISFormDefinition()
 					}
 					if(fld.type == 'label'  && fld.group == group)
 					{
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label  style="display:inline-block;text-align:center;color:' + fld.editor.color + ';">' + fld.editor.data + ':' + '</label></' + divorspan + '>');
+						var align = 'center';
+						var width = 100;
+						if(fld.width) width = fld.width;
+						if(fld.editor && fld.editor.align){
+							align = fld.editor.align;
+						}
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label id="' + fldid + '" name="' + fldid + '"  style="display:inline-block;text-align:' + align + ';color:' + fld.editor.color + ';width:' + width + 'px">' + fld.editor.data + '' + '</label></' + divorspan + '>');
 					}
 					if(fld.type == 'password' && fld.group == group)
 					{
