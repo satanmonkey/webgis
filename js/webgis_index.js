@@ -42,40 +42,9 @@ $.webgis.config.max_file_size = 5000000;
 
 $.webgis.data.bbn.graphiz_label = [
     {
-        "name": "line_state",
-        "display_name": "线路整体评价"
-    },
-    {
-        "name": "unit_1",
-        "display_name": "基础"
-    },
-    {
-        "name": "unit_2",
-        "display_name": "杆塔"
-    },
-    {
-        "name": "unit_3",
-        "display_name": "导地线"
-    },
-    {
-        "name": "unit_4",
-        "display_name": "绝缘子串"
-    },
-    {
-        "name": "unit_5",
-        "display_name": "金具"
-    },
-    {
-        "name": "unit_6",
-        "display_name": "接地装置"
-    },
-    {
-        "name": "unit_7",
-        "display_name": "附属设施"
-    },
-    {
-        "name": "unit_8",
-        "display_name": "通道环境"
+        name: "line_state",
+        display_name: "线路整体评价",
+		description:"以各个单元评价的最高等级作为线路整体评价的等级"
     }
 ];
 
@@ -2978,7 +2947,7 @@ function InitToolPanel(viewer)
 	$('#but_state_examination_standard').on('click', function(){
 		ShowStateExaminationStandardDialog(viewer);
 	});
-	$('#but_state_examination_bbn').button({label:'贝叶斯信度网络(BBN)查看'});
+	$('#but_state_examination_bbn').button({label:'查看编辑'});
 	$('#but_state_examination_bbn').on('click', function(){
 		ShowStateExaminationBBNDialog(viewer);
 	});
@@ -3089,11 +3058,19 @@ function ShowStateExaminationBBNDialog(viewer)
 			var key = $(item).find('title').html();
 			var id = $(item).attr('id');
 			//console.log(key);
-			var display_name = _.result(_.find($.webgis.data.bbn.graphiz_label, {name: key.replace('f_', '')}), 'display_name');
+			var display_name = _.result(_.find($.webgis.data.bbn.grid_data, {name: key.replace('f_', '')}), 'display_name');
+			if(_.isUndefined(display_name)){
+				display_name = _.result(_.find($.webgis.data.bbn.graphiz_label, {name: key.replace('f_', '')}), 'display_name');
+			}
+			var desc = _.result(_.find($.webgis.data.bbn.grid_data, {name: key.replace('f_', '')}), 'description');
+			if(_.isUndefined(desc)){
+				desc = _.result(_.find($.webgis.data.bbn.graphiz_label, {name: key.replace('f_', '')}), 'description');
+			}
+
 			//console.log(display_name);
 			if(display_name)
 			{
-				$('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id).find('title').html(display_name);
+				$('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id).find('title').html(desc);
 				$('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id).find('text').html(display_name);
 				//console.log($('#div_state_examination_bbn_bbn_graphiz').find('svg').find('#' + id)[0]);
 			}
@@ -3131,14 +3108,24 @@ function ShowStateExaminationBBNDialog(viewer)
 			if(callback) callback();
 		});
 	};
+	var change_line_name = function(line_name)
+	{
+		if(line_name.length === 0){
+			if($.webgis.data.bbn.control.node_grid)
+			{
+				$.webgis.data.bbn.control.node_grid.loadData({Rows: []});
+			}
+		}else{
+			LoadBBNGridData(viewer, line_name, function(){
+				query_graphiz();
+			});
+		}
+		$('#form_state_examination_bbn_bbn_view_grid_line_name').html(line_name);
+	};
 	var flds = [
         { display: "输电线路", id: "line_name", newline: true, type: "select", editor: { data: [] , filter:true}, defaultvalue: '', group: '查询条件', width: 400, labelwidth: 120,
 			change:function(data1){
-				if(data1.length === 0) return;
-				$('#form_state_examination_bbn_bbn_view_grid_line_name').html(data1);
-				LoadBBNGridData(viewer, data1, function(){
-					query_graphiz();
-				});
+				change_line_name(data1);
 			}
 		},
 		//{ display: "输出图像dpi", id: "dpi", newline: true, type: "select", editor: { data: dpilist }, defaultvalue: '50', group: '输出选项', width: 450, labelwidth: 120},
@@ -3189,6 +3176,7 @@ function ShowStateExaminationBBNDialog(viewer)
         //console.log($.webgis.data.bbn.domains_range);
 		BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
     });
+	change_line_name('');
 }
 function ShowStateExaminationStandardDialog(viewer)
 {
@@ -11489,16 +11477,37 @@ function BBNNodeGridLoadData(viewer, data)
     {
 		var flds = [
 			{ display: "输电线路", id: "line_name", newline: true, type: "label", editor: { data: ''}, defaultvalue: '', group: '查询条件', width: 500, labelwidth: 120},
-			{ display: "保存", id: "button_save", newline: true, type: "button",  defaultvalue: '点击保存', group: '操作', width: 250, labelwidth: 120,
+			{ display: "保存", id: "button_save", newline: false, type: "button",  defaultvalue: '点击保存', group: '操作', width: 130, labelwidth: 100,
 				click:function(){
 					var q_formdata = $('#form_state_examination_bbn_bbn').webgisform('getdata');
 					if(q_formdata.line_name.length)
 					{
-						//SaveBBNGridData(viewer, q_formdata.line_name);
-						console.log(q_formdata.line_name);
+						SaveBBNGridData(viewer, q_formdata.line_name);
 					}
 				}
-			}
+			},
+			{
+				display: "",
+				id: "button_collapse",
+				newline: false,
+				type: "button",
+				defaultvalue: '收缩全部',
+				group: '操作',
+				width: 130,
+				labelwidth: 1,
+				click: function () {
+					if(!_.isUndefined($.webgis.data.bbn.control.node_grid)) {
+						$.webgis.data.bbn.control.node_grid.collapseAll();
+					}
+				}
+			},
+			{ display: "", id: "button_expand", newline: false, type: "button",  defaultvalue: '展开全部', group: '操作', width: 130, labelwidth: 1,
+				click: function () {
+					if(!_.isUndefined($.webgis.data.bbn.control.node_grid)) {
+						$.webgis.data.bbn.control.node_grid.expandAll();
+					}
+				}
+			},
 		];
 		$('#form_state_examination_bbn_bbn_view_grid').webgisform(flds, {
 			prefix: "form_state_examination_bbn_bbn_view_grid_",
@@ -11573,18 +11582,10 @@ function BBNNodeGridLoadData(viewer, data)
     $('a[id^=bbnnodegridrowremove]').off();
     $('a[id^=bbnnodegridrowremove]').on('click', function(){
         var id = $(this).attr('id').split('|')[1];
-        var name = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'display_name');
-        ShowConfirm(null, 500, 200,
-            '删除确认',
-            '确认删除[' + name + ']吗?',
-            function () {
-                _.remove($.webgis.data.bbn.grid_data, {_id:id});
-                BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
-            },
-            function () {
-
-            }
-        );
+        DeleteBBNGridData(viewer, id, function(){
+			//console.log($.webgis.data.bbn.grid_data);
+			BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+		});
     });
     $('a[id^=bbnnodegridcondmodify]').off();
     $('a[id^=bbnnodegridcondmodify]').on('click', function(){
@@ -11970,7 +11971,8 @@ function LoadBBNGridData(viewer, line_name, callback)
 {
     if(line_name.length)
     {
-        $.ajax({
+        ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+		$.ajax({
             url: '/bayesian/query/node',
             method: 'post',
             data: JSON.stringify({line_name: line_name})
@@ -11999,7 +12001,7 @@ function LoadBBNGridData(viewer, line_name, callback)
         BBNNodeGridLoadData(viewer, []);
     }
 }
-function SaveBBNGridData(viewer, line_name)
+function SaveBBNGridData(viewer, line_name, callback)
 {
 	ShowConfirm(null, 500, 200,
 		'确认',
@@ -12012,7 +12014,7 @@ function SaveBBNGridData(viewer, line_name)
                 item.line_name = line_name;
                 return item;
             });
-			console.log(data);
+			//console.log(data);
             //if(true) return;
             ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
             $.ajax({
@@ -12024,9 +12026,133 @@ function SaveBBNGridData(viewer, line_name)
                 ShowProgressBar(false);
             })
             .done(function (data1) {
+                $.jGrowl("保存成功:" , {
+                    life: 2000,
+                    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                    theme: 'bubblestylesuccess',
+                    glue:'before'
+                });
+				if(callback) callback();
             })
             .fail(function (jqxhr, textStatus, e) {
                 $.jGrowl("保存失败:" + e, {
+                    life: 2000,
+                    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                    theme: 'bubblestylefail',
+                    glue:'before'
+                });
+            });
+		},
+		function () {
+			//$('#').dialog("close");
+		}
+	);
+}
+function SaveBBNGridDataPartial(viewer, data, callback)
+{
+	ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
+	$.ajax({
+		url:'/bayesian/save/node',
+		method:'post',
+		data: JSON.stringify(data)
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		if(callback) callback();
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("保存失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue:'before'
+		});
+	});
+}
+
+function DeleteBBNGridData(viewer, _id, callback)
+{
+	var remove_related = function(option)
+	{
+		var check_is_in = function(list, name)
+		{
+			var ret = false;
+			_.forEach(list, function(item){
+				var names = _.map(item[0], function(item1){
+					return item1[0];
+				});
+				if(_.indexOf(names, name)>-1){
+					ret = true;
+					return;
+				}
+			});
+			return ret;
+		};
+		var names = _.pluck(_.where($.webgis.data.bbn.grid_data, option), 'name');
+		var ret = [];
+		_.forEach(names, function(name){
+			_.forEach($.webgis.data.bbn.grid_data, function(o){
+				var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', o._id);
+				if(check_is_in(o.conditions, name))
+				{
+					$.webgis.data.bbn.grid_data[idx].conditions = [[[], {}]];
+					_.forEach(o.domains, function (item1) {
+						$.webgis.data.bbn.grid_data[idx].conditions[0][1][item1] = 0.0;
+					});
+					//console.log($.webgis.data.bbn.grid_data[idx].conditions);
+					ret.push($.webgis.data.bbn.grid_data[idx]);
+				}
+			});
+		});
+		return ret;
+	};
+	var name = _.result(_.find($.webgis.data.bbn.grid_data, {_id:_id}), 'name');
+	var display_name = _.result(_.find($.webgis.data.bbn.grid_data, {_id:_id}), 'display_name');
+	if(_.startsWith(name, 'unit_') || _.startsWith(name, 'line_state')){
+		ShowMessage(null, 400, 250, '错误', '禁止删除[' + display_name + '].');
+		return;
+	}
+	_.remove($.webgis.data.bbn.grid_data, {_id:_id});
+	ShowConfirm(null, 500, 200,
+		'删除确认',
+		'删除该节点将影响所有与之有关联的后继节点，确认删除[' + display_name + ']吗?',
+		function () {
+            ShowProgressBar(true, 670, 200, '删除', '正在删除，请稍候...');
+            $.ajax({
+                url:'/bayesian/delete/node',
+                method:'post',
+                data: JSON.stringify({_id:_id})
+            })
+            .always(function () {
+                ShowProgressBar(false);
+            })
+            .done(function (data1) {
+				var data = remove_related({_id:_id});
+				if(data.length)
+				{
+					SaveBBNGridDataPartial(viewer, data, function () {
+						$.jGrowl("删除成功:", {
+							life: 2000,
+							position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+							theme: 'bubblestylesuccess',
+							glue: 'before'
+						});
+						if (callback) callback();
+					});
+				}else{
+					$.jGrowl("删除成功:", {
+						life: 2000,
+						position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+						theme: 'bubblestylesuccess',
+						glue: 'before'
+					});
+					if (callback) callback();
+				}
+            })
+            .fail(function (jqxhr, textStatus, e) {
+                $.jGrowl("删除失败:" + e, {
                     life: 2000,
                     position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
                     theme: 'bubblestylefail',
