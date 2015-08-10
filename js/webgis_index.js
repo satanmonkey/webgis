@@ -3113,7 +3113,8 @@ function ShowStateExaminationBBNDialog(viewer)
 		if(line_name.length === 0){
 			if($.webgis.data.bbn.control.node_grid)
 			{
-				$.webgis.data.bbn.control.node_grid.loadData({Rows: []});
+				$.webgis.data.bbn.grid_data = [];
+				BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
 			}
 		}else{
 			LoadBBNGridData(viewer, line_name, function(){
