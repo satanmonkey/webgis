@@ -3178,6 +3178,7 @@ function ShowStateExaminationBBNDialog(viewer)
 		BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
     });
 	change_line_name('');
+	PredictGridLoad([]);
 }
 function ShowStateExaminationStandardDialog(viewer)
 {
@@ -4326,7 +4327,22 @@ function CreateDialogSkeleton(viewer, dlg_id)
 							<div id="div_state_examination_bbn_bbn_view_grid"></div>\
 						</div>\
 						<div id="div_state_examination_bbn_predict">\
-							<div id="div_state_examination_bbn_predict_grid"></div>\
+							<form id="form_state_examination_bbn_assume">\
+							<fieldset>\
+								<legend>先决条件</legend>\
+								<div id="div_state_examination_bbn_assume_selects">\
+								</div>\
+							</fieldset>\
+							</form>\
+							<form >\
+								<fieldset>\
+								<legend>预测结果</legend>\
+								<div id="div_state_examination_bbn_predict_grid_container">\
+									<div id="div_state_examination_bbn_predict_grid">\
+									</div>\
+								</div>\
+								</fieldset>\
+							</form>\
 						</div>\
 					</div>\
 				</div>\
@@ -11692,7 +11708,6 @@ function ShowBBNNodeGridConditionModifyDialog(viewer, id)
 		//margin:10,
 		//groupmargin:10
 	});
-
 }
 function ShowBBNNodeGridAddDialog(viewer)
 {
@@ -11988,6 +12003,8 @@ function LoadBBNGridData(viewer, line_name, callback)
             $.webgis.data.bbn.grid_data = arr;
             //console.log(arr);
             BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+			RenderPredictSelect();
+
 			if(callback) callback();
         })
         .fail(function (jqxhr, textStatus, e) {
@@ -12000,7 +12017,77 @@ function LoadBBNGridData(viewer, line_name, callback)
         });
     }else{
         BBNNodeGridLoadData(viewer, []);
+		PredictGridLoad([]);
     }
+}
+function PredictGridLoad(alist)
+{
+	if (alist.length === 0)
+	{
+		$('#div_state_examination_bbn_assume_selects').empty();
+	}
+	var tabledata = {Rows:alist};
+    if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
+	{
+		var columns = [
+            //{display:'', name:'_id', width: 1, hide: true},
+            //{display:'预测项', name:'name', width: 200},
+            {display:'预测项', name:'display_name', width: 200},
+            {display:'预测项取值', name:'value', width: 100},
+            {display:'预测项取值概率', name:'probability', width: 200},
+		];
+        $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
+            columns: columns,
+            data: tabledata,
+            enabledEdit: false,
+            clickToEdit: false,
+            //checkbox: true,
+            tree: { columnName: 'display_name' },
+            pageSize: 10
+        });
+
+	}else{
+        $.webgis.data.bbn.control.predict_grid.loadData(tabledata);
+    }
+    $.webgis.data.bbn.control.predict_grid.collapseAll();
+
+}
+function RenderPredictSelect(){
+	var get_assume_selects = function()
+	{
+		var ret = [];
+		$('#div_state_examination_bbn_assume_selects').find('select').each(function(i, item){
+			ret.push({name: $(item).multipleSelect('getSelects', 'text')[0], value:$(item).multipleSelect('getSelects')[0]});
+		});
+		return ret;
+	};
+	var add_assume_selects = function(data){
+		var exists = _.pluck(get_assume_selects(), 'value');
+		console.log(exists);
+		var unusedlist = _.filter($.webgis.data.bbn.grid_data, function(item){
+			return _.indexOf(exists, item.name) < 0;
+		});
+		console.log(unusedlist);
+		var options = '';
+		_.forEach(unusedlist, function(item){
+			options += '<option value="' + item.name + '">' + item.display_name +'</option>';
+		});
+		var uid = $.uuid();
+		$('#div_state_examination_bbn_assume_selects')
+			.append('<select class="assume_selects" id="' + uid + '">' + options + '</select>');
+		$('#' + uid).multipleSelect({
+			single: true,
+			position: 'bottom',
+			multipleWidth: 200
+		});
+		if(!_.isUndefined(data.name)){
+			$('#' + uid).multipleSelect('setSelects', [data.name]);
+		}
+	};
+	add_assume_selects({
+		name:'line_state',
+		value:'I'
+	});
 }
 function SaveBBNGridData(viewer, line_name, callback)
 {

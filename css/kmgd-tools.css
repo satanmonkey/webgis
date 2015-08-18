@@ -1139,3 +1139,17 @@ input[type="button"].btn-block {
 	border:1px solid #2e6e9e;
 	min-height:370px;
 }
+#div_state_examination_bbn_predict_grid_container
+{
+	border:1px solid #2e6e9e;
+	min-height:300px;
+}
+#div_state_examination_bbn_assume_selects
+{
+	border:1px solid #2e6e9e;
+	min-height:150px;
+}
+.assume_selects
+{
+	width:200px;
+}
