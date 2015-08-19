@@ -3192,8 +3192,17 @@ function ShowStateExaminationBBNDialog(viewer)
 		DoPredict();
 	});
 	$('#btn_state_examination_bbn_assume_predict_export').button({label:'导出'});
+	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
+		PredictExport();
+	});
 	$('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起'});
+	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
+		PredictCollapse();
+	});
 	$('#btn_state_examination_bbn_assume_predict_expand').button({label:'展开'});
+	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
+		PredictExpand();
+	});
 }
 
 function ShowStateExaminationStandardDialog(viewer)
@@ -12325,4 +12334,52 @@ function DeleteBBNGridData(viewer, _id, callback)
 		}
 	);
 }
+function DoPredict()
+{
+	var ass = GetAssumeSelects();
+	var msg = '';
+	var list = [];
+	var grid_data = [{name:'line_state', display_name:'线路整体评价', domains:['I', 'II', 'III', 'IV']}];
+	 _.forEach($.webgis.data.bbn.grid_data, function(item){
+		grid_data.push({name:item.name, display_name:item.display_name, domains:item.domains});
+	});
+	_.forEach(ass, function(item){
+		var name = '';
+		if(item.name.length === 0 || item.value.length === 0){
+			if(item.name.length) {
+				name = _.result(_.find(grid_data, {name: item.name}), 'display_name');
+			}
+			msg += '先决条件不能有空值[' + name + ']=[' +  item.value + ']<br/>';
+		}
+		if(item.name.length)
+		{
+			name = _.result(_.find(grid_data, {name: item.name}), 'display_name');
+			if(_.indexOf(list, item.name) === -1) {
+				list.push(item.name);
+			}else{
+				msg += '先决条件不能存在重复值[' + name + ']';
+				return;
+			}
+		}
+	});
+	if(msg.length) {
+		ShowMessage(null, 400, 250, '错误',  msg + '');
+		return;
+	}
+	console.log(ass);
+}
+function PredictExport()
+{
+
+}
+function PredictCollapse()
+{
+
+}
+function PredictExpand()
+{
+
+}
+
+
 
