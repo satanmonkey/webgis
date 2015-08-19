@@ -49,16 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-/*
-	jquery全局初始化函数
-*/
-//window.addEventListener("message", receiveMessage, false);
-//function receiveMessage(event)
-//{
-	//console.log(event.data);
-//}
-
-
+var DEBUG_BAYES = true;
 
 
 
@@ -67,6 +58,7 @@ $(function() {
 	//	return $(element).multipleSelect("getSelects").length > 0;
 	//}, '请选择');
 	var coo = Cookies.get('session_data');
+	console.log(coo);
 	if(coo)
 	{
 		var session_data_string = coo.replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
@@ -114,7 +106,23 @@ $(function() {
 	};
 
 
-	
+	if(DEBUG_BAYES)
+	{
+		viewer = InitLeafletViewer();
+		$.webgis.viewer = viewer;
+		InitSearchBox(viewer);
+		InitWebGISFormDefinition();
+		InitDrawHelper2D(viewer);
+		$.webgis.control.drawhelper.show(false);
+		InitToolPanel(viewer);
+		InitKeyboardEvent(viewer);
+		InitStateExamination();
+		InitScreenSize(viewer);
+		LoadSysRole($.webgis.db.db_name, function(){
+			$('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
+		});
+		return;
+	}
 	try{
 		throw "unsupport_cesium_exception";
 		ShowProgressBar(true, 670, 200, '载入中', '正在载入，请稍候...');
@@ -3179,7 +3187,15 @@ function ShowStateExaminationBBNDialog(viewer)
     });
 	change_line_name('');
 	PredictGridLoad([]);
+	$('#btn_state_examination_bbn_assume_predict').button({label:'进行预测'});
+	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
+		DoPredict();
+	});
+	$('#btn_state_examination_bbn_assume_predict_export').button({label:'导出'});
+	$('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起'});
+	$('#btn_state_examination_bbn_assume_predict_expand').button({label:'展开'});
 }
+
 function ShowStateExaminationStandardDialog(viewer)
 {
 	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
@@ -4324,13 +4340,25 @@ function CreateDialogSkeleton(viewer, dlg_id)
 						</div>\
 						<div id="div_state_examination_bbn_bbn_view">\
 							<form id="form_state_examination_bbn_bbn_view_grid"></form>\
-							<div id="div_state_examination_bbn_bbn_view_grid"></div>\
+							<div id="div_state_examination_bbn_bbn_view_grid_container">\
+								<div id="div_state_examination_bbn_bbn_view_grid"></div>\
+							</div>\
 						</div>\
 						<div id="div_state_examination_bbn_predict">\
 							<form id="form_state_examination_bbn_assume">\
 							<fieldset>\
 								<legend>先决条件</legend>\
 								<div id="div_state_examination_bbn_assume_selects">\
+								</div>\
+							</fieldset>\
+							<fieldset>\
+								<div id="btn_state_examination_bbn_assume_predict">\
+								</div>\
+								<div id="btn_state_examination_bbn_assume_predict_export">\
+								</div>\
+								<div id="btn_state_examination_bbn_assume_predict_collapse">\
+								</div>\
+								<div id="btn_state_examination_bbn_assume_predict_expand">\
 								</div>\
 							</fieldset>\
 							</form>\
@@ -11395,31 +11423,6 @@ function BuildTableList(list)
         return ret;
     };
     var ret = [];
-    //var list = [
-    //    {_id:111,   name:'name1', display_name:'显示名称1',
-    //        children:[
-    //        {
-    //            cond_name: 'cond_name1,cond_name2',
-    //            children: [
-    //                {  cond_name: 'cond_name1', cond_display_name: '条件显示名称1', cond_value: 'cond_value1'},
-    //                {  cond_name: 'cond_name2', cond_display_name: '条件显示名称2', cond_value: 'cond_value2'},
-    //            ]
-    //        },
-    //        {
-    //            event: 'value1', probability: '<a href="javascript:void(0)">0.3333</a>',
-    //        },
-    //        {
-    //            event: 'value2', probability: '<a href="javascript:void(0)">0.2222</a>',
-    //        },
-    //        {
-    //            event: 'value3', probability: '<a href="javascript:void(0)">0.4444</a>',
-    //        },
-    //        {
-    //            event: 'value4', probability: '<a href="javascript:void(0)">0.5555</a>',
-    //        }
-    //        ]
-    //    }
-    //];
     _.forEach(list, function(node){
         var o = {};
         o._id = node._id;
@@ -11985,7 +11988,7 @@ function SetBBNNodeGridData(viewer, hrefid, value)
 
 function LoadBBNGridData(viewer, line_name, callback)
 {
-    if(line_name.length)
+	if(line_name.length)
     {
         ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
 		$.ajax({
@@ -12022,9 +12025,13 @@ function LoadBBNGridData(viewer, line_name, callback)
 }
 function PredictGridLoad(alist)
 {
+    var clear_assume_selects = function(){
+		$('#div_state_examination_bbn_assume_selects').empty();
+		$('#div_state_examination_bbn_assume_selects').append('<div class="blank_assume_selects">请先选择线路</div>')
+	};
 	if (alist.length === 0)
 	{
-		$('#div_state_examination_bbn_assume_selects').empty();
+		clear_assume_selects();
 	}
 	var tabledata = {Rows:alist};
     if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
@@ -12052,42 +12059,107 @@ function PredictGridLoad(alist)
     $.webgis.data.bbn.control.predict_grid.collapseAll();
 
 }
+var GetAssumeSelects = function()
+{
+	var ret = [];
+	$('#div_state_examination_bbn_assume_selects').find('select.assume_selects_name').each(function(i, item){
+		var uid = $(item).attr('id').replace('name_', '');
+		var name = $(item).val();
+		var value = $('#value_' + uid).val();
+		if (value === 'true') value = true;
+		if (value === 'false') value = false;
+		ret.push({name: name, value:value});
+	});
+	return ret;
+};
 function RenderPredictSelect(){
-	var get_assume_selects = function()
+	var change_value = function(uid, alist, v)
 	{
-		var ret = [];
-		$('#div_state_examination_bbn_assume_selects').find('select').each(function(i, item){
-			ret.push({name: $(item).multipleSelect('getSelects', 'text')[0], value:$(item).multipleSelect('getSelects')[0]});
-		});
-		return ret;
+		var options1 = '<option value="">(请选择)</option>';
+		if (v.length === 0) {
+			$('#value_' + uid).html(options1);
+			$('#value_' + uid).multipleSelect('refresh');
+			$('#value_' + uid).multipleSelect('setSelects', ['']);
+		}
+		else
+		{
+			var o = _.find(alist, {name: v});
+			if (o) {
+				_.forEach(o.domains, function (item) {
+					var o1 = _.find($.webgis.data.bbn.domains_range, {value: item});
+					if (o1) {
+						options1 += '<option value="' + o1.value + '">' + o1.name + '</option>';
+					}
+				});
+				$('#value_' + uid).html(options1);
+				$('#value_' + uid).multipleSelect('refresh');
+				$('#value_' + uid).multipleSelect('setSelects', ['']);
+			}
+		}
 	};
-	var add_assume_selects = function(data){
-		var exists = _.pluck(get_assume_selects(), 'value');
-		console.log(exists);
-		var unusedlist = _.filter($.webgis.data.bbn.grid_data, function(item){
-			return _.indexOf(exists, item.name) < 0;
+	var id0;
+	var add_assume_selects = function(){
+		$('#div_state_examination_bbn_assume_selects').find('.blank_assume_selects').remove();
+		var grid_data = [{name:'line_state', display_name:'线路整体评价', domains:['I', 'II', 'III', 'IV']}];
+		 _.forEach($.webgis.data.bbn.grid_data, function(item){
+			grid_data.push({name:item.name, display_name:item.display_name, domains:item.domains});
 		});
-		console.log(unusedlist);
-		var options = '';
-		_.forEach(unusedlist, function(item){
+
+		var options = '<option value="">(请选择)</option>';
+		var options1 = '<option value="">(请选择)</option>';
+		_.forEach(grid_data, function(item){
 			options += '<option value="' + item.name + '">' + item.display_name +'</option>';
 		});
 		var uid = $.uuid();
+		var title1 = '';
+		var exists = GetAssumeSelects();
+		if(exists.length === 0){
+			title1 = '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;当';
+			id0 = uid;
+		}else{
+			title1 = '&nbsp;&nbsp;&nbsp;并且';
+		}
 		$('#div_state_examination_bbn_assume_selects')
-			.append('<select class="assume_selects" id="' + uid + '">' + options + '</select>');
-		$('#' + uid).multipleSelect({
+			.append('<div id="div_' + uid + '" class="div_assume_select">' + title1
+			+ '<select id="name_' + uid + '" class="assume_selects_name" >' + options + '</select>'
+			+ '&nbsp;&nbsp;为&nbsp;&nbsp;'
+			+ '<select id="value_' + uid + '" class="assume_selects_value" >' + options1 + '</select>'
+			+ '&nbsp;'
+			+ '<a class="assume_select_new" href="javascript:void(0);">新增条件</a>'
+			+ '&nbsp;&nbsp;'
+			+ '<a class="assume_select_del" href="javascript:void(0);">删除条件</a>'
+			+ '</div>'
+		);
+		$('#name_' + uid).multipleSelect({
 			single: true,
 			position: 'bottom',
-			multipleWidth: 200
+			multipleWidth: 200,
+			onClick: function(view) {
+                //console.log(view);
+				change_value(uid, grid_data, view.value);
+            }
 		});
-		if(!_.isUndefined(data.name)){
-			$('#' + uid).multipleSelect('setSelects', [data.name]);
-		}
+		$('#value_' + uid).multipleSelect({
+			single: true,
+			position: 'bottom',
+			multipleWidth: 100
+		});
+		$('#name_' + uid).multipleSelect('setSelects', ['']);
+		change_value(uid, grid_data, '');
+		$('#value_' + uid).multipleSelect('setSelects', ['']);
+		$('#div_' + uid).find('a.assume_select_new').off();
+		$('#div_' + uid).find('a.assume_select_del').off();
+		$('#div_' + uid).find('a.assume_select_new').on('click', function(){
+			add_assume_selects();
+		});
+		$('#div_' + uid).find('a.assume_select_del').on('click', function(){
+			var id = $(this).parent().attr('id').replace('div_', '');
+			if(id != id0 ) {
+				$('#div_state_examination_bbn_assume_selects').find('#div_' + id).remove();
+			}
+		});
 	};
-	add_assume_selects({
-		name:'line_state',
-		value:'I'
-	});
+	add_assume_selects();
 }
 function SaveBBNGridData(viewer, line_name, callback)
 {

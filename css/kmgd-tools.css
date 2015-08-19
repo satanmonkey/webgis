@@ -1144,12 +1144,40 @@ input[type="button"].btn-block {
 	border:1px solid #2e6e9e;
 	min-height:300px;
 }
+#div_state_examination_bbn_bbn_view_grid_container
+{
+	overflow-y: auto;
+	min-height:300px;
+	max-height:350px;
+}
 #div_state_examination_bbn_assume_selects
 {
 	border:1px solid #2e6e9e;
-	min-height:150px;
+	min-height:120px;
+	max-height:120px;
+	overflow-y: auto;
 }
-.assume_selects
+.assume_selects_name
 {
 	width:200px;
+}
+.assume_selects_value
+{
+	width:100px;
+}
+.blank_assume_selects
+{
+	text-align: center;
+	vertical-align: middle;
+	line-height: 200px;
+}
+.div_assume_select
+{
+	margin: 10px;
+}
+#div_state_examination_bbn_predict_grid_container
+{
+	overflow-y: auto;
+	min-height:300px;
+	max-height:300px;
 }
