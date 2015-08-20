@@ -1142,11 +1142,14 @@ input[type="button"].btn-block {
 #div_state_examination_bbn_predict_grid_container
 {
 	border:1px solid #2e6e9e;
+	overflow-y: auto;
 	min-height:300px;
+	max-height:300px;
 }
 #div_state_examination_bbn_bbn_view_grid_container
 {
 	overflow-y: auto;
+	overflow-x: auto;
 	min-height:300px;
 	max-height:350px;
 }
@@ -1169,15 +1172,9 @@ input[type="button"].btn-block {
 {
 	text-align: center;
 	vertical-align: middle;
-	line-height: 200px;
+	line-height: 100px;
 }
 .div_assume_select
 {
 	margin: 10px;
-}
-#div_state_examination_bbn_predict_grid_container
-{
-	overflow-y: auto;
-	min-height:300px;
-	max-height:300px;
 }

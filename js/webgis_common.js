@@ -1079,8 +1079,12 @@ function ReadTable(url, success, failed)
 }
 
 
-function ShowProgressBar(show, width, height, title, msg)
+function ShowProgressBar(show, width, height, title, msg, interval)
 {
+	if(_.isUndefined(interval)){
+		interval = 100;
+	}
+	//console.log(interval);
 	$('#dlg_progress_bar').remove();
 	if(show)
 	{
@@ -1101,6 +1105,7 @@ function ShowProgressBar(show, width, height, title, msg)
 			max:100,
 			value:0
 		});
+		clearInterval($.webgis.progress_interval);
 		$.webgis.progress_interval = setInterval(function(){
 			$.webgis.progress_value += 1;
 			if($.webgis.progress_value > 100) $.webgis.progress_value = 100;
@@ -1112,7 +1117,7 @@ function ShowProgressBar(show, width, height, title, msg)
 			{
 				clearInterval($.webgis.progress_interval);
 			}
-		}, 100);
+		}, interval);
 	}
 	else{
 		//document.body.className = document.body.className.replace(/(?:\s|^)loading(?:\s|$)/, ' ');
