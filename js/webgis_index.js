@@ -50,7 +50,7 @@ $.webgis.data.bbn.graphiz_label = [
 
 
 var DEBUG_BAYES = true;
-
+var TREE_COLLAPSE = true;
 
 
 $(function() {
@@ -58,7 +58,6 @@ $(function() {
 	//	return $(element).multipleSelect("getSelects").length > 0;
 	//}, '请选择');
 	var coo = Cookies.get('session_data');
-	console.log(coo);
 	if(coo)
 	{
 		var session_data_string = coo.replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
@@ -3036,6 +3035,18 @@ function ShowStateExaminationBBNDialog(viewer)
 		},
 		buttons:[
 			{
+				text: "查看评价记录",
+				click: function(e){
+					ShowStateExaminationListDialog(viewer);
+				}
+			},
+			{
+				text: "查看评价标准",
+				click: function(e){
+					ShowStateExaminationStandardDialog(viewer);
+				}
+			},
+			{
 				text: "关闭",
 				click: function(e){
 					$( this ).dialog( "close" );
@@ -3197,13 +3208,9 @@ function ShowStateExaminationBBNDialog(viewer)
 	$('#btn_state_examination_bbn_assume_predict_export').on('click', function(){
 		PredictExport();
 	});
-	$('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起'});
+	$('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起/展开'});
 	$('#btn_state_examination_bbn_assume_predict_collapse').on('click', function(){
-		PredictCollapse();
-	});
-	$('#btn_state_examination_bbn_assume_predict_expand').button({label:'展开'});
-	$('#btn_state_examination_bbn_assume_predict_expand').on('click', function(){
-		PredictExpand();
+		PredictCollapseExpand();
 	});
 	$('#cb_state_examination_bbn_assume_predict_display_0').on('click', function(){
 		if(!_.isUndefined($.webgis.data.bbn.predict_grid_data)) {
@@ -3265,7 +3272,7 @@ function ShowStateExaminationStandardDialog(viewer)
 		{value:'IV', label:'IV级'},
 	];
 	var flds = [
-        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, group: '标准依据'},
+        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
         { display: "单元划分", id: "unit", newline: true, type: "select", editor: { data: unitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
 			change:function(data1){
 				var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
@@ -4381,14 +4388,11 @@ function CreateDialogSkeleton(viewer, dlg_id)
 								</div>\
 								<div id="btn_state_examination_bbn_assume_predict_collapse">\
 								</div>\
-								<div id="btn_state_examination_bbn_assume_predict_expand">\
-								</div>\
-								<input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项\
 							</fieldset>\
 							</form>\
 							<form >\
 								<fieldset>\
-								<legend>预测结果</legend>\
+								<legend>预测结果&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项</legend>\
 								<div id="div_state_examination_bbn_predict_grid_container">\
 									<div id="div_state_examination_bbn_predict_grid">\
 									</div>\
@@ -11539,31 +11543,22 @@ function BBNNodeGridLoadData(viewer, data)
 			},
 			{
 				display: "",
-				id: "button_collapse",
+				id: "button_collapse_expand",
 				newline: false,
 				type: "button",
-				defaultvalue: '收缩全部',
+				defaultvalue: '收缩/展开',
 				group: '操作',
-				width: 110,
+				width: 150,
 				labelwidth: 1,
 				click: function () {
 					if(!_.isUndefined($.webgis.data.bbn.control.node_grid)) {
-						$.webgis.data.bbn.control.node_grid.collapseAll();
-					}
-				}
-			},
-			{
-				display: "",
-				id: "button_expand",
-				newline: false,
-				type: "button",
-				defaultvalue: '展开全部',
-				group: '操作',
-				width: 110,
-				labelwidth: 1,
-				click: function () {
-					if(!_.isUndefined($.webgis.data.bbn.control.node_grid)) {
-						$.webgis.data.bbn.control.node_grid.expandAll();
+						if(TREE_COLLAPSE)
+						{
+							$.webgis.data.bbn.control.node_grid.expandAll();
+						}else{
+							$.webgis.data.bbn.control.node_grid.collapseAll();
+						}
+						TREE_COLLAPSE = !TREE_COLLAPSE;
 					}
 				}
 			},
@@ -11854,10 +11849,12 @@ function ShowBBNNodeGridAddDialog(viewer)
                             formdata._id = 'null_' + (nullcount + 1);
                             var o = {};
                             _.forEach(formdata.domains, function(item){
+								//console.log(typeof(item));
+								if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
+								if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
                                 o[item] = 0.0;
                             });
                             formdata.conditions = [[[],o]];
-                            //console.log(formdata);
                             $.webgis.data.bbn.grid_data.push(formdata);
                             BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
                             $(this).dialog("close");
@@ -12025,6 +12022,8 @@ function SetBBNNodeGridData(viewer, hrefid, value)
     var conds = arr[2];
     var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', _id);
     var key = arr[3].split(':')[1]
+	if(key.toLowerCase() === 'true') key = true;
+	if(key.toLowerCase() === 'false') key = false;
     if(idx > -1)
     {
         if (conds.length === 0) {
@@ -12239,13 +12238,14 @@ function SaveBBNGridData(viewer, line_name, callback)
                 item.line_name = line_name;
                 return item;
             });
-            //console.log(data);
+			var datastr = JSON.stringify(data);//.replace('"true"', 'true').replace('"false"', 'false');
+            console.log(datastr);
             //if(true) return;
             ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
             $.ajax({
                 url:'/bayesian/save/node',
                 method:'post',
-                data: JSON.stringify(data)
+                data: datastr
             })
             .always(function () {
                 ShowProgressBar(false);
@@ -12467,15 +12467,39 @@ function DoPredict(callback)
 }
 function PredictExport()
 {
-
+	if(!_.isUndefined($.webgis.data.bbn.control.predict_grid))
+	{
+		if($.webgis.data.bbn.control.predict_grid.rows.length===0){
+			return;
+		}
+		var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+		if (sels.length === 0) {
+			ShowMessage(null, 400, 250, '错误', '请先选择线路');
+			return;
+		}
+		var line_name = sels[0];
+		var table = $('#div_state_examination_bbn_predict_grid .l-grid-body-table');
+		var table1 = table.clone();
+		//console.log(table1);
+		var tableheader = '<thead><tr><td colspan=3>线路名称:' + line_name + '</td></tr></thead>';
+		tableheader += '<thead><tr><td>预测项</td><td>预测项取值</td><td>预测项取值概率</td></tr></thead>';
+		table1.html(tableheader + table1.html());
+		var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
+		window.open(href, '_blank');
+	}
 }
-function PredictCollapse()
+function PredictCollapseExpand()
 {
-	$.webgis.data.bbn.control.predict_grid.collapseAll();
-}
-function PredictExpand()
-{
-	$.webgis.data.bbn.control.predict_grid.expandAll();
+	if(!_.isUndefined($.webgis.data.bbn.control.predict_grid))
+	{
+		if (TREE_COLLAPSE)
+		{
+			$.webgis.data.bbn.control.predict_grid.expandAll();
+		} else {
+			$.webgis.data.bbn.control.predict_grid.collapseAll();
+		}
+		TREE_COLLAPSE = !TREE_COLLAPSE;
+	}
 }
 
 function DrawPredictTable(data)
