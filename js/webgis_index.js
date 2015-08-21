@@ -2398,7 +2398,7 @@ function DrawHeatMapCircle(viewer, hid, list, height_magnifier)
 
 function InitAntiBirdEquipListData(viewer)
 {
-	var url = '/anti_bird_equip_list';
+	var url = '/antibird/get_equip_list';
 	ShowProgressBar(true, 670, 200, '加载中', '正在加载驱鸟设备信息，请稍候...');
 	$.ajax({
 		type:'GET',
@@ -2410,7 +2410,7 @@ function InitAntiBirdEquipListData(viewer)
 		ShowProgressBar(false);
 		var ret = JSON.parse(decodeURIComponent(data1));
 		$.webgis.data.antibird.anti_bird_equip_list = ret;
-		url = '/anti_bird_equip_tower_mapping';
+		url = '/antibird/equip_tower_mapping';
 		ShowProgressBar(true, 670, 200, '加载中', '正在加载驱鸟设备与杆塔绑定信息，请稍候...');
 		
 		
@@ -8568,7 +8568,7 @@ function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 			}else
 			{
 				ShowProgressBar(true, 670, 200, '查询中', '正在查询驱鸟器GPS数据，请稍候...');
-				var url = '/anti_bird_get_latest_records_by_imei';
+				var url = '/antibird/get_latest_records_by_imei';
 				$.get(url, {imei:imei}, function( data1 ){
 					ShowProgressBar(false);
 					//console.log( data1);
@@ -8678,7 +8678,7 @@ function ShowAntiBirdInfoDialog(viewer,  imei, records_num)
 	{
 		records_num = 10;
 	}
-	var url = '/anti_bird_get_latest_records_by_imei?imei=' + imei + '&records_num=' + records_num;
+	var url = '/antibird/get_latest_records_by_imei?imei=' + imei + '&records_num=' + records_num;
 	ShowProgressBar(true, 670, 200, '载入中', '正在载入最新' + records_num + '张图片数据，请稍候...');
 	$.get(url, {is_filter_used:true}, function( data1 ){
 		if($.webgis.websocket.antibird.latest_records === undefined)
