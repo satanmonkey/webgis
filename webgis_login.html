@@ -31,12 +31,58 @@
 			if(callback) callback(data);
 		});
 	}
-	
+
+	function OnEnter()
+	{
+//		if(true) return;
+		$('.ui-button').attr('disabled', 'disabled');
+		if(!$('#loginform').valid()) return;
+		if($('#password').val().length==0)
+		{
+			$('#password').tooltipster('show');
+			return;
+		}
+		ShowProgressBar(true, 670, 200, '登录中', '正在登录，请稍候...');
+		$('#login_msg').html('');
+		Login($('#username').val(),  $('#password').val(), function(data){
+			$('.ui-button').removeAttr('disabled');
+			ShowProgressBar(false);
+		//	console.log(data);
+			if(data.username)
+			{
+		//	var json = encodeURIComponent(JSON.stringify(data));
+		//	var encrypted = CryptoJS.AES.encrypt(json, $.webgis.config.encrypt_key);
+		//	window.location.href = '/webgis_index.html?' + encrypted;
+				window.location.href = '/webgis_index.html' ;
+			}
+			else if(data.result)
+			{
+				$('#login_msg').html(data.result);
+				$.jGrowl(data.result,{
+					life: 2000,
+					position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+					theme: 'bubblestylefail',
+					glue:'before'
+				});
+			}
+			else
+			{
+				$('#login_msg').html("网络异常");
+				$.jGrowl("网络异常",{
+					life: 2000,
+					position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+					theme: 'bubblestylefail',
+					glue:'before'
+				});
+			}
+		});
+	}
+
 	$(function(){
 		$( "#logindialog" ).dialog({
 			dialogClass: "login-no-close",
 			width: 400,
-			height: 230,
+			height: 260,
 			minWidth:200,
 			minHeight: 200,
 			draggable: false,
@@ -46,58 +92,12 @@
 			position:{at: "top"},
 			title:'登录',
 		  
-			buttons: [
-			{
-			  text: "登录",
-			  click: function() {
-				//$( this ).dialog( "close" );
-					$(this).attr('disabled', 'disabled');
-					var that = this;
-					if(!$('#loginform').valid()) return;
-					if($('#password').val().length==0) 
-					{
-						$('#password').tooltipster('show');
-						return;
-					}
-					ShowProgressBar(true, 670, 200, '登录中', '正在登录，请稍候...');
-				  	$('#login_msg').html('');
-					Login($('#username').val(),  $('#password').val(), function(data){
-						$(that).removeAttr('disabled');
-						ShowProgressBar(false);
-//						console.log(data);
-						if(data.username) {
-//							var json = encodeURIComponent(JSON.stringify(data));
-//							var encrypted = CryptoJS.AES.encrypt(json, $.webgis.config.encrypt_key);
-//							window.location.href = '/webgis_index.html?' + encrypted;
-							window.location.href = '/webgis_index.html' ;
-						}
-						else if(data.result)
-						{
-							$('#login_msg').html(data.result);
-							$.jGrowl(data.result,{
-								life: 2000,
-								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-								theme: 'bubblestylefail',
-								glue:'before'
-							});
-						}
-						else
-						{
-							$('#login_msg').html("网络异常");
-							$.jGrowl("网络异常",{
-								life: 2000,
-								position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-								theme: 'bubblestylefail',
-								glue:'before'
-							});
-						}
-					});
-				
-				
-				
-			  }
-			}
-		  ]
+			buttons: [{
+			  	text: "登录",
+			  	click: function() {
+					OnEnter();
+			  	}
+			}]
 		});	
 	
 		$('#loginform').validate({
@@ -122,7 +122,17 @@
 			onlyOne: false, 
 			position: 'left'
 		});					
-				
+		$('#username').on('keydown', function(e){
+			if(e.keyCode === 13){
+				OnEnter();
+			}
+		});
+		$('#password').on('keydown', function(e){
+			if(e.keyCode === 13){
+				OnEnter();
+			}
+		});
+
 	});
 	</script>
 </header>

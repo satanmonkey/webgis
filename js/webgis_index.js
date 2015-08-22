@@ -11442,8 +11442,8 @@ function BuildTableList(list)
     var get_value_disp = function(value)
     {
         var ret = value;
-        if(value === 'true') value = true;
-        if(value === 'false') value = false;
+        //if(value === 'true') value = true;
+        //if(value === 'false') value = false;
         var name = _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
         if(name){
             ret = name;
@@ -11537,7 +11537,9 @@ function BBNNodeGridLoadData(viewer, data)
 					var q_formdata = $('#form_state_examination_bbn_bbn').webgisform('getdata');
 					if(q_formdata.line_name.length)
 					{
-						SaveBBNGridData(viewer, q_formdata.line_name);
+						SaveBBNGridData(viewer, q_formdata.line_name, function(data1){
+							BBNNodeGridLoadData(viewer, data1);
+						});
 					}
 				}
 			},
@@ -11788,12 +11790,12 @@ function ShowBBNNodeGridAddDialog(viewer)
     {
         if(_.isString(formdata))
         {
-            if (formdata === 'true') {
-                formdata = true;
-            }
-            if (formdata === 'false') {
-                formdata = false;
-            }
+            //if (formdata === 'true') {
+            //    formdata = true;
+            //}
+            //if (formdata === 'false') {
+            //    formdata = false;
+            //}
         }
         else if(_.isArray(formdata)){
             formdata = _.map(formdata, function (item) {
@@ -11850,8 +11852,8 @@ function ShowBBNNodeGridAddDialog(viewer)
                             var o = {};
                             _.forEach(formdata.domains, function(item){
 								//console.log(typeof(item));
-								if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
-								if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
+								//if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
+								//if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
                                 o[item] = 0.0;
                             });
                             formdata.conditions = [[[],o]];
@@ -12022,8 +12024,8 @@ function SetBBNNodeGridData(viewer, hrefid, value)
     var conds = arr[2];
     var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', _id);
     var key = arr[3].split(':')[1]
-	if(key.toLowerCase() === 'true') key = true;
-	if(key.toLowerCase() === 'false') key = false;
+	//if(key.toLowerCase() === 'true') key = true;
+	//if(key.toLowerCase() === 'false') key = false;
     if(idx > -1)
     {
         if (conds.length === 0) {
@@ -12033,14 +12035,14 @@ function SetBBNNodeGridData(viewer, hrefid, value)
             var arr1 = conds.split(',');
             _.forEach(arr1, function(item){
                 var arr2 = item.split(':');
-                if(arr2[1] === 'true'){
-                    condlist.push([arr2[0],true]);
-                }
-                else if(arr2[1] === 'false'){
-                    condlist.push([arr2[0],false]);
-                }else{
+                //if(arr2[1] === 'true'){
+                //    condlist.push([arr2[0],true]);
+                //}
+                //else if(arr2[1] === 'false'){
+                //    condlist.push([arr2[0],false]);
+                //}else{
                     condlist.push([arr2[0],arr2[1]]);
-                }
+                //}
             });
             var idx1 = get_cond_idx($.webgis.data.bbn.grid_data[idx].conditions, condlist);
             if(idx1>-1){
@@ -12130,8 +12132,8 @@ var GetAssumeSelects = function()
 		var uid = $(item).attr('id').replace('name_', '');
 		var name = $(item).val();
 		var value = $('#value_' + uid).val();
-		if (value === 'true') value = true;
-		if (value === 'false') value = false;
+		//if (value === 'true') value = true;
+		//if (value === 'false') value = false;
 		ret.push({name: name, value:value});
 	});
 	return ret;
@@ -12238,7 +12240,7 @@ function SaveBBNGridData(viewer, line_name, callback)
                 item.line_name = line_name;
                 return item;
             });
-			var datastr = JSON.stringify(data);//.replace('"true"', 'true').replace('"false"', 'false');
+			var datastr = JSON.stringify(data);
             console.log(datastr);
             //if(true) return;
             ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
@@ -12257,7 +12259,11 @@ function SaveBBNGridData(viewer, line_name, callback)
                     theme: 'bubblestylesuccess',
                     glue:'before'
                 });
-				if(callback) callback();
+				data1 = _.sortBy(JSON.parse(data1), function(n) {
+					return n.name;
+				});
+				$.webgis.data.bbn.grid_data = data1;
+				if(callback) callback(data1);
             })
             .fail(function (jqxhr, textStatus, e) {
                 $.jGrowl("保存失败:" + e, {
@@ -12285,7 +12291,11 @@ function SaveBBNGridDataPartial(viewer, data, callback)
 		ShowProgressBar(false);
 	})
 	.done(function (data1) {
-		if(callback) callback();
+		data1 = _.sortBy(JSON.parse(data1), function(n) {
+			return n.name;
+		});
+		$.webgis.data.bbn.grid_data = data1;
+		if(callback) callback(data1);
 	})
 	.fail(function (jqxhr, textStatus, e) {
 		$.jGrowl("保存失败:" + e, {
@@ -12357,14 +12367,14 @@ function DeleteBBNGridData(viewer, _id, callback)
 				var data = remove_related({_id:_id});
 				if(data.length)
 				{
-					SaveBBNGridDataPartial(viewer, data, function () {
+					SaveBBNGridDataPartial(viewer, data, function (data1) {
 						$.jGrowl("删除成功:", {
 							life: 2000,
 							position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
 							theme: 'bubblestylesuccess',
 							glue: 'before'
 						});
-						if (callback) callback();
+						if (callback) callback(data1);
 					});
 				}else{
 					$.jGrowl("删除成功:", {
