@@ -263,7 +263,13 @@ function InitWebGISFormDefinition()
 					}
 					if(fld.type == 'label'  && fld.group == group)
 					{
-						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label  style="display:inline-block;text-align:center;color:' + fld.editor.color + ';">' + fld.editor.data + ':' + '</label></' + divorspan + '>');
+						var align = 'center';
+						var width = 100;
+						if(fld.width) width = fld.width;
+						if(fld.editor && fld.editor.align){
+							align = fld.editor.align;
+						}
+						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label id="' + fldid + '" name="' + fldid + '"  style="display:inline-block;text-align:' + align + ';color:' + fld.editor.color + ';width:' + width + 'px">' + fld.editor.data + '' + '</label></' + divorspan + '>');
 					}
 					if(fld.type == 'password' && fld.group == group)
 					{
@@ -475,9 +481,7 @@ function InitWebGISFormDefinition()
 						$('#ol_' + fldid ).on('mouseleave', function(e){
 							$('#ol_' + fldid3 ).css('display', 'none');
 						});
-						
 					}
-					
 					if(fld.type == 'color' && fld.group == group)
 					{
 						var colorarr = [255, 0, 0, 128];
@@ -1075,8 +1079,12 @@ function ReadTable(url, success, failed)
 }
 
 
-function ShowProgressBar(show, width, height, title, msg)
+function ShowProgressBar(show, width, height, title, msg, interval)
 {
+	if(_.isUndefined(interval)){
+		interval = 100;
+	}
+	//console.log(interval);
 	$('#dlg_progress_bar').remove();
 	if(show)
 	{
@@ -1097,6 +1105,7 @@ function ShowProgressBar(show, width, height, title, msg)
 			max:100,
 			value:0
 		});
+		clearInterval($.webgis.progress_interval);
 		$.webgis.progress_interval = setInterval(function(){
 			$.webgis.progress_value += 1;
 			if($.webgis.progress_value > 100) $.webgis.progress_value = 100;
@@ -1108,7 +1117,7 @@ function ShowProgressBar(show, width, height, title, msg)
 			{
 				clearInterval($.webgis.progress_interval);
 			}
-		}, 100);
+		}, interval);
 	}
 	else{
 		//document.body.className = document.body.className.replace(/(?:\s|^)loading(?:\s|$)/, ' ');
