@@ -3485,7 +3485,11 @@ function ShowStateExaminationListDialog(viewer)
 			{
 				list = _.filter(list, function(item){
 					//console.log(item.voltage.toString().replace('kV', '') + '=' + option.voltage.toString().replace('kV', ''));
-					return item.voltage.toString().replace('kV', '') === option.voltage.toString().replace('kV', '');
+					if(item.voltage) {
+						return item.voltage.toString().replace('kV', '') === option.voltage.toString().replace('kV', '');
+					}else{
+						return false;
+					}
 				});
 			}
 			$.webgis.data.state_examination.control.list_grid.loadData({Rows:list});
