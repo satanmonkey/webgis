@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = true;
+var DEBUG_BAYES = false;
 var TREE_COLLAPSE = true;
 
 
@@ -3442,6 +3442,7 @@ function ShowStateExaminationListDialog(viewer)
 			}
 		];
 		var tabledata = {Rows:list};
+		//console.log(list);
 		if(option.is_rebuild === true)
 		{
 			$('#div_state_examination_list_grid_container').empty();
@@ -3452,7 +3453,19 @@ function ShowStateExaminationListDialog(viewer)
 				enabledEdit: true,
 				clickToEdit: false,
 				checkbox: true,
-				pageSize: 10
+				pageSize: 10,
+				onSelectRow:function(rowdata, rowid, rowobj){
+					//console.log(rowdata);
+					//console.log(rowobj);
+					$(rowobj).find('td').each(function (i, item) {
+						var id = $(item).attr('id');
+						if(_.endsWith(id, 'c106') || _.endsWith(id, 'c107'))
+						{
+							var div = $(item).find('div');
+							$(div).attr('title', $(div).html());
+						}
+					});
+				}
 			});
 		}else{
 			if(_.isString(option.line_name)  && option.line_name.length )
