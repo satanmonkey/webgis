@@ -61,9 +61,61 @@
                     case "tower":
                         draw_tower(json.data);
                         break
+                    case "hour":
+                        draw_hour(json.data);
+                        break
                 }
             }
         });
+    function draw_hour(data){
+        container.empty();
+        var x=[],y=[];
+        for(i in data){
+            var e=data[i];
+            x.push(e.hour);
+            y.push(e.count);
+        }
+        container.highcharts({
+            chart: {
+                type: 'column',
+                backgroundColor:""
+            },
+            legend:{
+                itemStyle:{color:"#ffffff"}
+            },
+            title: {
+                text: '鸟类活动情况(按时间(小时)统计)',
+                style:{color:"#ffffff"}
+            },
+            xAxis: {
+                type:'category',
+                categories:x,
+                title:{
+                    text:"时间段",
+                    style:{color:"#ffffff"}
+                },
+                lineColor:"#ffffff",
+                labels:{
+                    style:{color:"#ffffff"}
+                }
+            },
+            yAxis: {
+                title:{
+                    text:"次数",
+                    style:{color:"#ffffff"}
+                },
+                lineColor:"#ffffff",
+                labels:{
+                    style:{color:"#ffffff"}
+                }
+            },
+            series: [{
+                type:"column",
+                name: '鸟类活动',
+                data: y
+            }]
+        });
+    }
     function draw_tower(data){
         container.empty();
         var x=[],y=[];

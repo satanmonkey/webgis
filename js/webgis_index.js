@@ -8932,7 +8932,8 @@ function BuildAntiBirdStatisticsForm(viewer)
 					{'value': 'TOWER', 'label': '按杆塔统计'},
 					{'value': 'LINE', 'label': '按杆塔所在线路统计'},
 					//{'value': 'ALTITUDE', 'label': '按杆塔所在海拔统计'},
-					{'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'}
+					{'value': 'WEATHER', 'label': '按杆塔所在天气情况统计'},
+					{'value': 'HOUR', 'label': '按小时时段统计'}
 				]},
 				validate: {required: true},
 				change: function (value) {
@@ -9250,7 +9251,21 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 				towersdata.Rows.push(o);
 			});
 		}
-
+		if(type === 'HOUR')
+		{
+			//console.log(data1);
+			_.forEach(data1, function (item) {
+				var o = {};
+				//o.name = item.weather;
+				//o.beginTime = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				//o.endTime = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYYMMDD HH:mm');
+				if(item.hour<10) item.hour = '0' + item.hour;
+				o.beginTime = item.hour + ':00:00';
+				o.endTime = item.hour + ':59:59';
+				o.count = item.count;
+				towersdata.Rows.push(o);
+			});
+		}
 		return towersdata;
 	};
 	var towers_list = $.extend(true, [], option.towers);
@@ -9279,6 +9294,12 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 				}
 				if(option.type === 'WEATHER'){
 					tableheader = '<thead><tr><td>天气类型</td><td>起始时间</td><td>结束时间</td><td>触发次数</td></tr></thead>';
+				}
+				if(option.type === 'HOUR'){
+					var s1 = moment(option.beginTime, 'YYYYMMDDHHmm').local().format('YYYY-MM-DD HH:mm');
+					var s2 = moment(option.endTime, 'YYYYMMDDHHmm').local().format('YYYY-MM-DD HH:mm');
+					tableheader = '<thead><tr><td colspan="3">统计日期范围:' + s1 + '至' + s2 +  '</td></tr></thead>';
+					tableheader += '<thead><tr><td>起始时刻</td><td>结束时刻</td><td>触发次数</td></tr></thead>';
 				}
 				table1.html(tableheader + table1.html());
 				var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
@@ -9378,6 +9399,14 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 				{display: '触发次数', name: 'count', align: 'left', width: 100}
 			];
 		}
+		if (option.type === 'HOUR') {
+			columns = [
+				//{display: '天气类型', name: 'name', align: 'left', width: 160},
+				{display: '起始时刻', name: 'beginTime', align: 'left', width: 130},
+				{display: '结束时刻', name: 'endTime', align: 'left', width: 130},
+				{display: '触发次数', name: 'count', align: 'left', width: 100}
+			];
+		}
 		$('#div_anti_bird_statistics_result_table').ligerGrid({
 			columns: columns,
 			width: '100%',
@@ -9402,6 +9431,9 @@ function DrawAntiBirdStatisticsResult(viewer, option)
 		}
 		if (option.type === 'WEATHER') {
 			type = 'weather';
+		}
+		if (option.type === 'HOUR') {
+			type = 'hour';
 		}
 		url += type + '/' + option.beginTime + '/' + option.endTime + '/' + option.minSpeed + '/' + option.maxSpeed;
 		ShowProgressBar(true, 670, 200, '加载中', '正在计算统计信息，请稍候...');
