@@ -11699,8 +11699,7 @@ function BindProbabilityEditEvent(viewer)
 	$('a[id^=bbnnodegridrowremove]').off();
 	$('a[id^=bbnnodegridrowremove]').on('click', function () {
 		var id = $(this).attr('id').split('|')[1];
-		DeleteBBNGridData1(viewer, id, function () {
-			//console.log($.webgis.data.bbn.grid_data);
+		ShowBBNNodeGridConditionDeleteDialog(viewer, id, function () {
 			BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
 		});
 	});
@@ -11805,8 +11804,24 @@ function ShowBBNNodeGridConditionModifyDialog(viewer, id)
 	});
 }
 
-function ShowBBNNodeGridConditionDeleteDialog(viewer, id)
+function ShowBBNNodeGridConditionDeleteDialog(viewer, id, callback)
 {
+    var get_names_arr = function(obj)
+    {
+        var ret = [];
+		_.forEach(obj.conditions, function(cond){
+			//console.log(cond[0]);
+			if(cond.length && cond[0].length ){
+				_.forEach(cond[0], function(item){
+					if(item.length){
+						ret.push(item[0]);
+					}
+				});
+			}
+		});
+		ret = _.uniq(ret);
+        return ret;
+    };
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_condition_add');
 	$('#dlg_state_examination_bbn_node_grid_condition_add').dialog({
 		width: 520,
@@ -11840,30 +11855,72 @@ function ShowBBNNodeGridConditionDeleteDialog(viewer, id)
 			{
 				text: "确定",
 				click: function(e){
-					var o = _.find()
+					var that = this;
+					var formdata = $('#form_state_examination_bbn_node_grid_condition_midify').webgisform('getdata');
+					var ids = [], names = [],  null_names = [];
+					_.forEach(formdata.conditions, function(name){
+						var o = _.find($.webgis.data.bbn.grid_data, {name:name});
+						if(o){
+							if(_.startsWith('null_', o._id)){
+								ids.push(o._id);
+								names.push(o.name);
+							}else{
+								null_names.push(o.name);
+							}
+						}
+					});
+					if(null_names.length){
+						_.forEach(null_names, function(name){
+							_.remove($.webgis.data.bbn.grid_data, {name:name});
+						});
+						_.forEach(null_names, function(name){
+							_.forEach($.webgis.data.bbn.grid_data, function(item){
+								var idx = _.indexOf($.webgis.data.bbn.grid_data, item);
+								_.forEach(item.conditions, function(cond) {
+									var idx1 = _.indexOf(item.conditions, cond);
+									if(cond[0].length){
+										_.remove(cond[0], function(n){
+											return name === n[0];
+										});
+											//_.remove(item.conditions, function(n){
+											//
+											//});
+									}
+									item.conditions[idx1] = cond;
+								});
+								$.webgis.data.bbn.grid_data[idx] = item;
+							});
+						});
+						BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+					}
+					if(ids.length){
+						ShowConfirm(null, 500, 200,
+							'删除确认',
+							'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+							function(){
+								DeleteBBNGridData1(viewer, ids, formdata.names,  callback);
+								$(that).dialog("close");
+							},
+							function(){
+								$(that).dialog("close");
+						});
+					}
                     $(this).dialog("close");
 				}
 			}
 		]
 	});
-
-    var selfname = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'name');
-    var conditions = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'conditions');
-    var defaultvalue = [];
-    if(conditions.length && conditions[0].length && conditions[0][0].length)
-    {
-        _.forEach(conditions[0][0], function(item){
-            defaultvalue.push(item[0]);
-        });
-    }
-    var arr = _.map($.webgis.data.bbn.grid_data, function(item){
-        return {label:item.display_name, value:item.name};
-    });
-    var condlist = _.filter(arr, function(item){
-        return (item.value != selfname) && !_.startsWith(item.value, 'unit_');
-    });
+	var o = _.find($.webgis.data.bbn.grid_data, {_id:id});
+    var names = get_names_arr(o);
+	var arr = [];
+	_.forEach(names, function(name){
+		var oo = _.find($.webgis.data.bbn.grid_data, {name:name});
+		if(oo){
+			arr.push({label:oo.display_name, value:oo.name});
+		}
+	});
     var flds = [
-        { display: "可删除条件", id: "conditions", newline: true, type: "multiselect", editor: { data:  condlist}, defaultvalue:defaultvalue,  group: '选择条件结点', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "可删除条件", id: "conditions", newline: true, type: "multiselect", editor: { data:  arr},  group: '选择条件', width: 250, labelwidth: 120, validate:{required:true}},
     ];
 
 	$('#form_state_examination_bbn_node_grid_condition_midify').webgisform(flds, {
@@ -12611,9 +12668,10 @@ function DeleteBBNGridData(viewer, _id, callback)
 		}
 	);
 }
-function DeleteBBNGridData1(viewer, id, callback)
+function DeleteBBNGridData1(viewer, idlist, namelist, callback)
 {
-
+	console.log(idlist);
+	console.log(namelist);
 }
 
 function DoPredict(callback)
