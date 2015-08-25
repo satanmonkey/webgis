@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = false;
+var DEBUG_BAYES = true;
 var TREE_COLLAPSE = true;
 
 
@@ -57,6 +57,12 @@ $(function() {
 	//$.validator.addMethod("select_required", function(value, element) {
 	//	return $(element).multipleSelect("getSelects").length > 0;
 	//}, '请选择');
+
+	$.validator.addMethod("alpha", function(value, element) {
+		  return this.optional(element) || /^[A-Za-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]+$/.test(value); // just ascii letters
+	},"请输入英文、数字或常见符号，禁止输入中文");
+
+
 	var coo = Cookies.get('session_data');
 	if(coo)
 	{
@@ -4433,6 +4439,13 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
 			<div id="dlg_state_examination_bbn_node_grid_node_add" >\
 				<form id="form_state_examination_bbn_node_grid_node_add"></form>\
+			</div>');
+        }
+        if (dlg_id === 'dlg_state_examination_bbn_node_grid_node_add1')
+        {
+            $(document.body).append('\
+			<div id="dlg_state_examination_bbn_node_grid_node_add1" >\
+				<form id="form_state_examination_bbn_node_grid_node_add1"></form>\
 			</div>');
         }
         if (dlg_id === 'dlg_state_examination_bbn_node_grid_condition_add')
@@ -11459,8 +11472,6 @@ function BuildTableList(list)
     var get_value_disp = function(value)
     {
         var ret = value;
-        //if(value === 'true') value = true;
-        //if(value === 'false') value = false;
         var name = _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
         if(name){
             ret = name;
@@ -11474,10 +11485,9 @@ function BuildTableList(list)
         o.name = node.name;
         o.display_name = node.display_name;
         o.children = [];
-        o.op = '<a id="bbnnodegridrowadd|' + node._id + '" href="javascript:void(0);">新增</a>';
-        o.op += '&nbsp;<a id="bbnnodegridrowremove|' + node._id + '" href="javascript:void(0);">删除</a>';
-        o.op += '&nbsp;<a id="bbnnodegridcondmodify|' + node._id + '" href="javascript:void(0);">修改关联条件</a>';
-        //o.op += '&nbsp;<a id="bbnnodegridcondremove|' + node._id + '" href="javascript:void(0);">删除条件</a>';
+        o.op = '<a id="bbnnodegridrowadd|' + node._id + '" href="javascript:void(0);">新增关联条件</a>';
+        o.op += '&nbsp;<a id="bbnnodegridrowremove|' + node._id + '" href="javascript:void(0);">删除关联条件</a>';
+        //o.op += '&nbsp;<a id="bbnnodegridcondmodify|' + node._id + '" href="javascript:void(0);">修改关联条件</a>';
         if(node.conditions && node.conditions.length)
         {
             if(node.conditions[0][0].length === 0)
@@ -11489,9 +11499,14 @@ function BuildTableList(list)
             else{
                 _.forEach(node.conditions, function(item){
                     var o1 = {};
-                    o1.cond_name = _.map(item[0], function(item1){
-                        return item1[0];
-                    }).join(',');
+                    //o1.cond_name = _.map(item[0], function(item1){
+                    //    return item1[0];
+                    //}).join(',');
+                    //o1.cond_display_name = _.map(item[0], function(item1){
+                    //    return get_disp_name(item1[0]);
+                    //}).join(',');
+                    //o1.cond_display_name = '(...)';
+                    //o1.event = '(...)';
                     o1.children = [];
                     var pairlist = [];
                     _.forEach(item[0], function(item1){
@@ -11506,7 +11521,9 @@ function BuildTableList(list)
                 });
             }
         }
-        ret.push(o);
+		if(_.startsWith(o.name, 'unit_')){
+			ret.push(o);
+		}
     });
     return ret;
 }
@@ -11630,26 +11647,19 @@ function BBNNodeGridLoadData(viewer, data)
             //    }
             //},
             {display:'', name:'_id', width: 1, hide: true},
-            {display:'结点名', name:'name', width: 100},
-            {display:'结点显示名称', name:'display_name', width: 100},
-            //{display:'结点概率取值类型', name:'value_type', width: 200,
-            //    editor: {
-            //        type: 'select',
-            //        data: [{value_type:'boolean',text:'布尔型(真/假)'},{value_type:'array',text:'字符串数组'}],
-            //        valueField: 'value_type'
-            //    }
-            //},
-            {display:'条件名称', name:'cond_name', width: 100},
-            {display:'条件显示名称', name:'cond_display_name', width: 100},
-            {display:'条件取值', name:'cond_value', width: 100,
+            {display:'结点名', name:'name', width: 100, hide: true},
+            {display:'单元名称', name:'display_name', width: 100},
+            {display:'条件名称', name:'cond_name', width: 100, hide: true},
+            {display:'关联条件名称', name:'cond_display_name', width: 100},
+            {display:'关联条件取值', name:'cond_value', width: 100,
                 editor: {
                     type: 'select',
                     data: [{value:'cond_value1',text:'cond_value1'},{value:'cond_value2',text:'cond_value2'}],
                     valueField: 'value'
                 }
             },
-            {display:'结点事件分类', name:'event', width: 100},
-            {display:'结点事件概率值', name:'probability', width: 100},
+            {display:'单元事件分类', name:'event', width: 100},
+            {display:'单元事件概率值', name:'probability', width: 100},
             {display:'操作', name:'op', width: 200},
         ];
         $.webgis.data.bbn.control.node_grid = $('#div_state_examination_bbn_bbn_view_grid').ligerGrid({
@@ -11682,12 +11692,14 @@ function BindProbabilityEditEvent(viewer)
 	});
 	$('a[id^=bbnnodegridrowadd]').off();
 	$('a[id^=bbnnodegridrowadd]').on('click', function () {
-		ShowBBNNodeGridAddDialog(viewer);
+		//ShowBBNNodeGridAddDialog(viewer);
+		var id = $(this).attr('id').split('|')[1];
+		ShowBBNNodeGridAddDialog1(viewer, id);
 	});
 	$('a[id^=bbnnodegridrowremove]').off();
 	$('a[id^=bbnnodegridrowremove]').on('click', function () {
 		var id = $(this).attr('id').split('|')[1];
-		DeleteBBNGridData(viewer, id, function () {
+		DeleteBBNGridData1(viewer, id, function () {
 			//console.log($.webgis.data.bbn.grid_data);
 			BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
 		});
@@ -11792,6 +11804,188 @@ function ShowBBNNodeGridConditionModifyDialog(viewer, id)
 		//groupmargin:10
 	});
 }
+
+function ShowBBNNodeGridConditionDeleteDialog(viewer, id)
+{
+    CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_condition_add');
+	$('#dlg_state_examination_bbn_node_grid_condition_add').dialog({
+		width: 520,
+		height: 350,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'删除条件',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "取消",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			},
+			{
+				text: "确定",
+				click: function(e){
+					var o = _.find()
+                    $(this).dialog("close");
+				}
+			}
+		]
+	});
+
+    var selfname = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'name');
+    var conditions = _.result(_.find($.webgis.data.bbn.grid_data, {_id:id}), 'conditions');
+    var defaultvalue = [];
+    if(conditions.length && conditions[0].length && conditions[0][0].length)
+    {
+        _.forEach(conditions[0][0], function(item){
+            defaultvalue.push(item[0]);
+        });
+    }
+    var arr = _.map($.webgis.data.bbn.grid_data, function(item){
+        return {label:item.display_name, value:item.name};
+    });
+    var condlist = _.filter(arr, function(item){
+        return (item.value != selfname) && !_.startsWith(item.value, 'unit_');
+    });
+    var flds = [
+        { display: "可删除条件", id: "conditions", newline: true, type: "multiselect", editor: { data:  condlist}, defaultvalue:defaultvalue,  group: '选择条件结点', width: 250, labelwidth: 120, validate:{required:true}},
+    ];
+
+	$('#form_state_examination_bbn_node_grid_condition_midify').webgisform(flds, {
+		prefix: "form_state_examination_bbn_node_grid_condition_midify_",
+		maxwidth: 430
+		//margin:10,
+		//groupmargin:10
+	});
+}
+
+function ShowBBNNodeGridAddDialog1(viewer, id)
+{
+    var get_names_arr = function(obj)
+    {
+        var ret = [];
+		_.forEach(obj.conditions, function(cond){
+			//console.log(cond[0]);
+			if(cond.length && cond[0].length ){
+				_.forEach(cond[0], function(item){
+					if(item.length){
+						ret.push(item[0]);
+					}
+				});
+			}
+		});
+		ret = _.uniq(ret);
+        return ret;
+    };
+    CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_node_add1');
+	$('#dlg_state_examination_bbn_node_grid_node_add1').dialog({
+		width: 520,
+		height: 500,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'新增关联条件',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "取消",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			},
+			{
+				text: "确定",
+				click: function(e){
+                    if($('#form_state_examination_bbn_node_grid_node_add1').valid()) {
+                        var formdata = $('#form_state_examination_bbn_node_grid_node_add1').webgisform('getdata');
+						formdata.domains = ['true', 'false'];
+						var nullcount = $.webgis.data.bbn.grid_data.length;
+						formdata._id = 'null_' + (nullcount + 1);
+						var o = {};
+						_.forEach(formdata.domains, function(item){
+							//console.log(typeof(item));
+							//if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
+							//if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
+							o[item] = 0.5;
+						});
+						formdata.conditions = [[[],o]];
+						$.webgis.data.bbn.grid_data.push(formdata);
+
+						var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
+						if(idx > -1)
+						{
+							var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
+							var namesarr = get_names_arr(o);
+							namesarr.push(formdata.name);
+							namesarr = _.uniq(namesarr)
+							var condlist = [];
+							_.forEach(namesarr, function(name){
+								var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
+								if(cond){
+									condlist.push(cond);
+								}
+							});
+							o = BuildComboConditions(o, condlist);
+							$.webgis.data.bbn.grid_data[idx] = o;
+							//console.log(o);
+						}
+						BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+						$(this).dialog("close");
+                        //}
+                    }
+				}
+			}
+		]
+	});
+
+    var domainlist = _.map($.webgis.data.bbn.domains_range, function(item){
+        return {label:item.name, value:item.value};
+    });
+    var flds = [
+        { display: "条件名称", id: "name", newline: true, type: "text",  defaultvalue: '',addition:'(仅限英文)', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true, alpha:true}},
+        { display: "条件中文名称", id: "display_name", newline: true, type: "text",  defaultvalue: '', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        //{ display: "事件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: [true, false], group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "节点描述", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '节点信息', width: 250, height:100, labelwidth: 120},
+    ];
+
+	$('#form_state_examination_bbn_node_grid_node_add1').webgisform(flds, {
+		prefix: "form_state_examination_bbn_node_grid_node_add1_",
+		maxwidth: 490
+		//margin:10,
+		//groupmargin:10
+	});
+
+}
+
 function ShowBBNNodeGridAddDialog(viewer)
 {
     var valid_data = function(formdata)
@@ -12417,6 +12611,11 @@ function DeleteBBNGridData(viewer, _id, callback)
 		}
 	);
 }
+function DeleteBBNGridData1(viewer, id, callback)
+{
+
+}
+
 function DoPredict(callback)
 {
 	var ass = GetAssumeSelects();
