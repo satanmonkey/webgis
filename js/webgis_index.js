@@ -3206,8 +3206,11 @@ function ShowStateExaminationBBNDialog(viewer)
 	PredictGridLoad([]);
 	$('#btn_state_examination_bbn_assume_predict').button({label:'进行预测'});
 	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
-		DoPredict(function(data1){
-			DrawPredictTable(data1);
+		//DoPredict(function(data1){
+		//	DrawPredictTable(data1);
+		//});
+		DoPredict1(function(data1){
+			DrawPredictTable1(data1);
 		});
 	});
 	$('#btn_state_examination_bbn_assume_predict_export').button({label:'导出'});
@@ -4399,7 +4402,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 						</div>\
 						<div id="div_state_examination_bbn_predict">\
 							<form id="form_state_examination_bbn_assume">\
-							<fieldset>\
+							<fieldset style="display: none;">\
 								<legend>先决条件</legend>\
 								<div id="div_state_examination_bbn_assume_selects">\
 								</div>\
@@ -4413,6 +4416,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 								</div>\
 							</fieldset>\
 							</form>\
+							<p>&nbsp;<p>&nbsp;<p>\
 							<form >\
 								<fieldset>\
 								<legend>预测结果&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项</legend>\
@@ -11647,8 +11651,8 @@ function BBNNodeGridLoadData(viewer, data)
             //    }
             //},
             {display:'', name:'_id', width: 1, hide: true},
-            {display:'结点名', name:'name', width: 100, hide: true},
-            {display:'单元名称', name:'display_name', width: 100},
+            {display:'单元名称', name:'name', width: 100},
+            {display:'单元中文名称', name:'display_name', width: 100},
             {display:'条件名称', name:'cond_name', width: 100, hide: true},
             {display:'关联条件名称', name:'cond_display_name', width: 100},
             {display:'关联条件取值', name:'cond_value', width: 100,
@@ -11862,10 +11866,10 @@ function ShowBBNNodeGridConditionDeleteDialog(viewer, id, callback)
 						var o = _.find($.webgis.data.bbn.grid_data, {name:name});
 						if(o){
 							if(_.startsWith('null_', o._id)){
+								null_names.push(o.name);
+							}else{
 								ids.push(o._id);
 								names.push(o.name);
-							}else{
-								null_names.push(o.name);
 							}
 						}
 					});
@@ -11882,12 +11886,23 @@ function ShowBBNNodeGridConditionDeleteDialog(viewer, id, callback)
 										_.remove(cond[0], function(n){
 											return name === n[0];
 										});
-											//_.remove(item.conditions, function(n){
-											//
-											//});
 									}
 									item.conditions[idx1] = cond;
 								});
+								var existlist = [], conditions = [];
+								_.forEach(item.conditions, function(cond) {
+									var key = ''
+									_.forEach(cond[0], function(item1){
+										key += item1[0] + '|' + item1[1] + '|';
+									});
+									//console.log(key);
+									if(_.indexOf(existlist, key) < 0)
+									{
+										existlist.push(key);
+										conditions.push(cond);
+									}
+								});
+								item.conditions = conditions;
 								$.webgis.data.bbn.grid_data[idx] = item;
 							});
 						});
@@ -11898,7 +11913,7 @@ function ShowBBNNodeGridConditionDeleteDialog(viewer, id, callback)
 							'删除确认',
 							'确认删除吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
 							function(){
-								DeleteBBNGridData1(viewer, ids, formdata.names,  callback);
+								DeleteBBNGridData1(viewer, ids, names,  callback);
 								$(that).dialog("close");
 							},
 							function(){
@@ -12393,6 +12408,38 @@ function PredictGridLoad(alist)
     }
     $.webgis.data.bbn.control.predict_grid.collapseAll();
 }
+
+function PredictGridLoad1(alist)
+{
+	var tabledata = {Rows:alist};
+    if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
+	{
+		var columns = [
+            //{display:'', name:'_id', width: 1, hide: true},
+            //{display:'预测项', name:'name', width: 200},
+            {display:'线路预测等级', name:'line_state', width: 200},
+            {display:'预测项名称', name:'display_name', width: 200},
+            {display:'预测项取值', name:'value', width: 200},
+            {display:'预测项取值概率', name:'probability', width: 200},
+		];
+        $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
+            columns: columns,
+            data: tabledata,
+            enabledEdit: false,
+            clickToEdit: false,
+            //checkbox: true,
+            tree: { columnName: 'display_name' },
+            pageSize: 50
+        });
+
+	}else{
+        $.webgis.data.bbn.control.predict_grid.loadData(tabledata);
+    }
+    $.webgis.data.bbn.control.predict_grid.collapseAll();
+}
+
+
+
 var GetAssumeSelects = function()
 {
 	var ret = [];
@@ -12436,7 +12483,9 @@ function RenderPredictSelect(){
 		$('#div_state_examination_bbn_assume_selects').find('.blank_assume_selects').remove();
 		var grid_data = [{name:'line_state', display_name:'线路整体评价', domains:['I', 'II', 'III', 'IV']}];
 		 _.forEach($.webgis.data.bbn.grid_data, function(item){
-			grid_data.push({name:item.name, display_name:item.display_name, domains:item.domains});
+			if(_.startsWith(item.name, 'unit_')) {
+				grid_data.push({name: item.name, display_name: item.display_name, domains: item.domains});
+			}
 		});
 
 		var options = '<option value="">(请选择)</option>';
@@ -12509,7 +12558,7 @@ function SaveBBNGridData(viewer, line_name, callback)
                 return item;
             });
 			var datastr = JSON.stringify(data);
-            console.log(datastr);
+            //console.log(datastr);
             //if(true) return;
             ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
             $.ajax({
@@ -12670,8 +12719,43 @@ function DeleteBBNGridData(viewer, _id, callback)
 }
 function DeleteBBNGridData1(viewer, idlist, namelist, callback)
 {
-	console.log(idlist);
-	console.log(namelist);
+	//console.log(idlist);
+	//console.log(namelist);
+
+	var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+	if (sels.length === 0) {
+		ShowMessage(null, 400, 250, '错误', '请先选择线路');
+		return;
+	}
+	var line_name = sels[0];
+	ShowProgressBar(true, 670, 200, '删除', '正在删除，请稍候...');
+	$.ajax({
+		url:'/bayesian/delete/node',
+		method:'post',
+		data: JSON.stringify({line_name:line_name, _id:idlist, names:namelist})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+			$.jGrowl("删除成功:", {
+				life: 2000,
+				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+				theme: 'bubblestylesuccess',
+				glue: 'before'
+			});
+			data1 = JSON.parse(data1);
+			$.webgis.data.bbn.grid_data = data1;
+			if (callback) callback(data1);
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("删除失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue:'before'
+		});
+	});
 }
 
 function DoPredict(callback)
@@ -12749,6 +12833,51 @@ function DoPredict(callback)
 		});
 	});
 }
+function DoPredict1(callback)
+{
+	var msg = '';
+	var list = [];
+	//console.log(ass);
+	var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+	if(sels.length === 0){
+		ShowMessage(null, 400, 250, '错误',  '请先选择线路');
+		return;
+	}
+	var line_name = sels[0];
+	var data = {line_name: line_name};
+	//_.forEach(ass, function(item){
+	//	data[item.name] = item.value;
+	//});
+	data['line_state'] = ['II', 'III', 'IV'];
+	ShowProgressBar(true, 670, 200, '查询', '正在查询预测，请稍候...', 140);
+	$.ajax({
+		url: '/bayesian/query/predict',
+		method: 'post',
+		data: JSON.stringify(data)
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		data1 = JSON.parse(data1);
+		var names = _.pluck(ass, 'name');
+		data1 = _.filter(data1, function(item){
+			return _.indexOf(names, item.name) < 0;
+		});
+		$.webgis.data.bbn.predict_grid_data	= data1;
+		$('#cb_state_examination_bbn_assume_predict_display_0').removeAttr('checked');
+		if(callback) callback(data1);
+	})
+	.fail(function (jqxhr, textStatus, e) {
+		$.jGrowl("查询失败:" + e, {
+			life: 2000,
+			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+			theme: 'bubblestylefail',
+			glue: 'before'
+		});
+	});
+}
+
 function PredictExport()
 {
 	if(!_.isUndefined($.webgis.data.bbn.control.predict_grid))
@@ -12849,6 +12978,51 @@ function DrawPredictTable(data)
 		list.push(o);
 	});
 	PredictGridLoad(list);
+}
+
+function DrawPredictTable1(data)
+{
+	var get_p = function(alist, name, value)
+	{
+		var ret;
+		var o = _.result(_.find(alist, {name:name, value:value}), 'p');
+		if(!_.isUndefined(o)) {
+			ret = o.toFixed(2);
+		}
+		return ret;
+	};
+	var get_domain_name = function(value)
+	{
+		return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+	};
+	var is_in_assume = function(assume, name)
+	{
+		return !_.isUndefined(_.find(assume, {name:name}));
+	};
+	var list = [];
+	_.forEach($.webgis.data.bbn.grid_data, function(item){
+		if(is_in_assume(assume, item.name)){
+			return true;
+		}
+		var o = {display_name:item.display_name};
+		o.children = [];
+		var value = '';
+		var probability = '';
+		_.forEach(item.domains, function(domain){
+			var v = get_domain_name(domain);
+			var p = get_p(data, item.name, domain);
+			if(!_.isUndefined(p))
+			{
+				o.children.push({value: v, probability: p});
+				value += v + ',';
+				probability += p + ',';
+			}
+		});
+		o.value = value;
+		o.probability = probability;
+		list.push(o);
+	});
+	PredictGridLoad1(list);
 }
 
 function ResetBBNUnit(viewer, line_name, callback)
