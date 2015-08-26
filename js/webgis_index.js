@@ -3203,7 +3203,8 @@ function ShowStateExaminationBBNDialog(viewer)
 		BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
     });
 	change_line_name('');
-	PredictGridLoad([]);
+	//PredictGridLoad([]);
+	PredictGridLoad1([]);
 	$('#btn_state_examination_bbn_assume_predict').button({label:'进行预测'});
 	$('#btn_state_examination_bbn_assume_predict').on('click', function(){
 		//DoPredict(function(data1){
@@ -3224,16 +3225,36 @@ function ShowStateExaminationBBNDialog(viewer)
 	$('#cb_state_examination_bbn_assume_predict_display_0').on('click', function(){
 		if(!_.isUndefined($.webgis.data.bbn.predict_grid_data)) {
 			if($(this).is(':checked')){
-				var list = _.filter($.webgis.data.bbn.predict_grid_data, function(item){
-					return item.p > 0;
-				});
-				DrawPredictTable(list);
+				//DrawPredictTable(FilterNonZero());
+				DrawPredictTable1(FilterNonZero1());
 			}else{
-				DrawPredictTable($.webgis.data.bbn.predict_grid_data);
+				//DrawPredictTable($.webgis.data.bbn.predict_grid_data);
+				//console.log($.webgis.data.bbn.predict_grid_data);
+				DrawPredictTable1($.webgis.data.bbn.predict_grid_data);
 			}
 		}
 	});
 }
+function FilterNonZero()
+{
+	var list = $.extend(true, [], $.webgis.data.bbn.predict_grid_data);
+	list = _.filter(list, function(item){
+		return item.p > 0;
+	});
+	return list;
+}
+function FilterNonZero1()
+{
+	var list = $.extend(true, [], $.webgis.data.bbn.predict_grid_data);
+	list = _.map(list, function(item){
+		item.result = _.filter(item.result, function(item1){
+			return item1.p > 0;
+		});
+		return item;
+	});
+	return list;
+}
+
 
 function ShowStateExaminationStandardDialog(viewer)
 {
@@ -12370,7 +12391,8 @@ function LoadBBNGridData(viewer, line_name, callback)
         });
     }else{
         BBNNodeGridLoadData(viewer, []);
-		PredictGridLoad([]);
+		//PredictGridLoad([]);
+		PredictGridLoad1([]);
     }
 }
 function PredictGridLoad(alist)
@@ -12411,16 +12433,18 @@ function PredictGridLoad(alist)
 
 function PredictGridLoad1(alist)
 {
+	//console.log(alist);
 	var tabledata = {Rows:alist};
     if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
 	{
 		var columns = [
             //{display:'', name:'_id', width: 1, hide: true},
             //{display:'预测项', name:'name', width: 200},
-            {display:'线路预测等级', name:'line_state', width: 200},
-            {display:'预测项名称', name:'display_name', width: 200},
-            {display:'预测项取值', name:'value', width: 200},
-            {display:'预测项取值概率', name:'probability', width: 200},
+            {display:'线路预测等级', name:'line_state', width: 100},
+            {display:'预测项名称', name:'display_name', width: 100},
+            {display:'预测项取值', name:'value', width: 120},
+            {display:'预测项取值概率', name:'probability', width: 130},
+            {display:'检修建议', name:'suggestion', width: 150},
 		];
         $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
             columns: columns,
@@ -12435,7 +12459,7 @@ function PredictGridLoad1(alist)
 	}else{
         $.webgis.data.bbn.control.predict_grid.loadData(tabledata);
     }
-    $.webgis.data.bbn.control.predict_grid.collapseAll();
+    $.webgis.data.bbn.control.predict_grid.expandAll();
 }
 
 
@@ -12849,7 +12873,8 @@ function DoPredict1(callback)
 	//	data[item.name] = item.value;
 	//});
 	data['line_state'] = ['II', 'III', 'IV'];
-	ShowProgressBar(true, 670, 200, '查询', '正在查询预测，请稍候...', 140);
+	//ShowProgressBar(true, 670, 200, '查询', '正在查询预测，请稍候...', 140);
+	ShowProgressBar(true, 670, 200, '查询', '正在查询预测，请稍候...', 400);
 	$.ajax({
 		url: '/bayesian/query/predict',
 		method: 'post',
@@ -12860,10 +12885,6 @@ function DoPredict1(callback)
 	})
 	.done(function (data1) {
 		data1 = JSON.parse(data1);
-		var names = _.pluck(ass, 'name');
-		data1 = _.filter(data1, function(item){
-			return _.indexOf(names, item.name) < 0;
-		});
 		$.webgis.data.bbn.predict_grid_data	= data1;
 		$('#cb_state_examination_bbn_assume_predict_display_0').removeAttr('checked');
 		if(callback) callback(data1);
@@ -12894,8 +12915,8 @@ function PredictExport()
 		var table = $('#div_state_examination_bbn_predict_grid .l-grid-body-table');
 		var table1 = table.clone();
 		//console.log(table1);
-		var tableheader = '<thead><tr><td colspan=3>线路名称:' + line_name + '</td></tr></thead>';
-		tableheader += '<thead><tr><td>预测项</td><td>预测项取值</td><td>预测项取值概率</td></tr></thead>';
+		var tableheader = '<thead><tr><td colspan=5>线路名称:' + line_name + '</td></tr></thead>';
+		tableheader += '<thead><tr><td>线路预测等级</td><td>预测项名称</td><td>预测项取值</td><td>预测项取值概率</td><td>检修建议</td></tr></thead>';
 		table1.html(tableheader + table1.html());
 		var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
 		window.open(href, '_blank');
@@ -13000,26 +13021,31 @@ function DrawPredictTable1(data)
 		return !_.isUndefined(_.find(assume, {name:name}));
 	};
 	var list = [];
-	_.forEach($.webgis.data.bbn.grid_data, function(item){
-		if(is_in_assume(assume, item.name)){
-			return true;
-		}
-		var o = {display_name:item.display_name};
-		o.children = [];
-		var value = '';
-		var probability = '';
-		_.forEach(item.domains, function(domain){
-			var v = get_domain_name(domain);
-			var p = get_p(data, item.name, domain);
-			if(!_.isUndefined(p))
-			{
-				o.children.push({value: v, probability: p});
-				value += v + ',';
-				probability += p + ',';
+	var assume = [{name:'line_state'}];
+	_.forEach(data, function(dataitem){
+		var o = {line_state: get_domain_name(dataitem.line_state), children:[]};
+		_.forEach($.webgis.data.bbn.grid_data, function(item){
+			if(is_in_assume(assume, item.name)){
+				return true;
 			}
+			var o1 = {display_name:item.display_name};
+			o1.children = [];
+			var value = '';
+			var probability = '';
+			_.forEach(item.domains, function(domain){
+				var v = get_domain_name(domain);
+				var p = get_p(dataitem.result, item.name, domain);
+				if(!_.isUndefined(p))
+				{
+					o1.children.push({value: v, probability: p});
+					value += v + ',';
+					probability += p + ',';
+				}
+			});
+			o1.value = value;
+			o1.probability = probability;
+			o.children.push(o1);
 		});
-		o.value = value;
-		o.probability = probability;
 		list.push(o);
 	});
 	PredictGridLoad1(list);
