@@ -212,6 +212,14 @@ function InitStateExamination()
 	.done(function( data ){
 		//if(success) success(data);
 		$.webgis.data.state_examination.standard = data;
+		$.getJSON( 'js/jianxiucelv.json')
+		.done(function( data1 ){
+			//if(success) success(data);
+			$.webgis.data.bbn.maintain_strategy_standard = data1;
+		})
+		.fail(function( jqxhr ){
+
+		});
 	})
 	.fail(function( jqxhr ){
 
@@ -12020,10 +12028,11 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
 				click: function(e){
                     if($('#form_state_examination_bbn_node_grid_node_add1').valid()) {
                         var formdata = $('#form_state_examination_bbn_node_grid_node_add1').webgisform('getdata');
-						formdata.domains = ['true', 'false'];
+						//formdata.domains = ['true', 'false'];
 						var nullcount = $.webgis.data.bbn.grid_data.length;
 						formdata._id = 'null_' + (nullcount + 1);
 						var o = {};
+
 						_.forEach(formdata.domains, function(item){
 							//console.log(typeof(item));
 							//if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
@@ -12066,7 +12075,7 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
     var flds = [
         { display: "条件名称", id: "name", newline: true, type: "text",  defaultvalue: '',addition:'(仅限英文)', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true, alpha:true}},
         { display: "条件中文名称", id: "display_name", newline: true, type: "text",  defaultvalue: '', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
-        //{ display: "事件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: [true, false], group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "条件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: ['true', 'false'], group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
         { display: "节点描述", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '节点信息', width: 250, height:100, labelwidth: 120},
     ];
 
@@ -12768,8 +12777,10 @@ function DeleteBBNGridData1(viewer, idlist, namelist, callback)
 				theme: 'bubblestylesuccess',
 				glue: 'before'
 			});
-			data1 = JSON.parse(data1);
-			$.webgis.data.bbn.grid_data = data1;
+            var arr = _.sortBy(JSON.parse(data1), function(n) {
+                return n.name;
+            });
+            $.webgis.data.bbn.grid_data = arr;
 			if (callback) callback(data1);
 	})
 	.fail(function (jqxhr, textStatus, e) {
@@ -13032,18 +13043,35 @@ function DrawPredictTable1(data)
 			o1.children = [];
 			var value = '';
 			var probability = '';
+			var max_v;
 			_.forEach(item.domains, function(domain){
 				var v = get_domain_name(domain);
 				var p = get_p(dataitem.result, item.name, domain);
+
 				if(!_.isUndefined(p))
 				{
 					o1.children.push({value: v, probability: p});
 					value += v + ',';
 					probability += p + ',';
+					if(p>0){
+						max_v = domain;
+					}
+
 				}
 			});
 			o1.value = value;
 			o1.probability = probability;
+			if(max_v){
+				var ms = maintain_strategy(item.name, max_v);
+				if(!_.isUndefined(ms.suggestion)){
+					if(max_v === 'I'){
+						o1.suggestion = '检修策略:' + ms.strategy + ', 建议时限:' + ms.timeline ;
+					}else
+					{
+						o1.suggestion = '检修策略:' + ms.strategy + ', 建议时限:' + ms.timeline + ', 措施:' + ms.suggestion;
+					}
+				}
+			}
 			o.children.push(o1);
 		});
 		list.push(o);
