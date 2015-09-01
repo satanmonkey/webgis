@@ -12462,7 +12462,18 @@ function PredictGridLoad1(alist)
             clickToEdit: false,
             //checkbox: true,
             tree: { columnName: 'display_name' },
-            pageSize: 50
+            pageSize: 50,
+			onSelectRow:function(rowdata, rowid, rowobj){
+				//console.log(rowobj);
+				$(rowobj).find('td').each(function (i, item) {
+					var id = $(item).attr('id');
+					if(_.endsWith(id, 'c105') )
+					{
+						var div = $(item).find('div');
+						$(div).attr('title', $(div).html());
+					}
+				});
+			}
         });
 
 	}else{
@@ -13065,10 +13076,10 @@ function DrawPredictTable1(data)
 				var ms = maintain_strategy(item.name, max_v);
 				if(!_.isUndefined(ms.suggestion)){
 					if(max_v === 'I'){
-						o1.suggestion = '检修策略:' + ms.strategy + ', 建议时限:' + ms.timeline ;
+						o1.suggestion = '检修策略:' + ms.strategy + '。\n建议时限:' + ms.timeline + '。';
 					}else
 					{
-						o1.suggestion = '检修策略:' + ms.strategy + ', 建议时限:' + ms.timeline + ', 措施:' + ms.suggestion;
+						o1.suggestion = '检修策略:' + ms.strategy + '。\n建议时限:' + ms.timeline + '。\n措施:' + ms.suggestion + '。';
 					}
 				}
 			}
