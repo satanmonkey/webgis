@@ -1178,4 +1178,14 @@ input[type="button"].btn-block {
 {
 	margin: 10px;
 }
-
+.span_probability_bar
+{
+	float:left;
+	margin:2px;
+	height:20px;
+}
+#iframe_maintain_strategy_standard
+{
+	width: 700px;
+	height: 500px;
+}

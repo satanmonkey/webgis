@@ -3049,6 +3049,12 @@ function ShowStateExaminationBBNDialog(viewer)
 		},
 		buttons:[
 			{
+				text: "查看检修策略标准",
+				click: function(e){
+					ShowMaintainStrategyStandardDialog(viewer);
+				}
+			},
+			{
 				text: "查看评价记录",
 				click: function(e){
 					ShowStateExaminationListDialog(viewer);
@@ -3263,7 +3269,74 @@ function FilterNonZero1()
 	return list;
 }
 
+function ShowMaintainStrategyStandardDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_maintain_strategy_standard');
+	$('#dlg_maintain_strategy_standard').dialog({
+		width: 750,
+		height: 660,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'状态评价标准',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+    //var pdf = new PDFObject({
+    //  url: "/jxcl.pdf",
+    //  id: "pdfRendered",
+    //  pdfOpenParams: {
+    //    view: "FitH"
+    //  }
+    //}).embed("iframe_maintain_strategy_standard");
 
+    //PDFJS.getDocument('/jxcl.pdf').then(function (pdf) {
+    //    // Using promise to fetch the page
+    //    pdf.getPage(1).then(function (page) {
+    //        var scale = 1.0;
+    //        var viewport = page.getViewport(scale);
+    //
+    //        //
+    //        // Prepare canvas using PDF page dimensions
+    //        //
+    //        var canvas = document.getElementById('canvas_maintain_strategy_standard');
+    //        var context = canvas.getContext('2d');
+    //        canvas.height = viewport.height;
+    //        canvas.width = viewport.width;
+    //
+    //        //
+    //        // Render PDF page into canvas context
+    //        //
+    //        var renderContext = {
+    //            canvasContext: context,
+    //            viewport: viewport
+    //        };
+    //        page.render(renderContext);
+    //    });
+    //});
+
+}
 function ShowStateExaminationStandardDialog(viewer)
 {
 	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
@@ -4486,6 +4559,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
 			<div id="dlg_state_examination_bbn_node_grid_condition_add" >\
 				<form id="form_state_examination_bbn_node_grid_condition_midify"></form>\
+			</div>');
+        }
+        if (dlg_id === 'dlg_maintain_strategy_standard')
+        {
+				//<canvas id="canvas_maintain_strategy_standard"></canvas>\
+            $(document.body).append('\
+			<div id="dlg_maintain_strategy_standard" >\
+				<iframe id="iframe_maintain_strategy_standard" src="/ViewerJS/index.html#/架空输电线路状态检修策略.pdf" allowfullscreen webkitallowfullscreen></iframe>\
 			</div>');
         }
 	}
@@ -12443,6 +12524,54 @@ function PredictGridLoad(alist)
 function PredictGridLoad1(alist)
 {
 	//console.log(alist);
+	var bar_grid_width = 160;
+	var get_width = function(domain, value){
+		if(domain === 'I级' && value === 1){
+			return 0;
+		}
+		return Math.floor((bar_grid_width-50) * value);
+	};
+	var get_p_format = function(value)
+	{
+		var ret;
+		if(!_.isUndefined(value)) {
+			ret = (value*100).toFixed(0) + '%';
+		}
+		return ret;
+	};
+	var color_gradient = function(domain, value){
+		//var v = value * 100;
+		//var R = (255 * v) / 100;
+		//var G = (255 * (100 - v)) / 100;
+		//var B = 0;//(255 * (100 - v)) / 100;
+		//var c = tinycolor('rgb ' + Math.floor(R) + ' ' + Math.floor(G) + ' ' + Math.floor(B));
+		var ret = '#ffffff';
+		var diff = 1;
+		var k0;
+		_.forIn($.webgis.mapping.probability_gradient, function(v, k){
+			if(diff > Math.abs(parseFloat(k) - value)){
+				diff = Math.abs(parseFloat(k) - value);
+				k0 = k;
+			}
+		});
+		//console.log(value);
+		if(domain === 'I级' && value === 1){
+			return ret;
+		}
+		if(!_.isUndefined(k0)){
+			ret = $.webgis.mapping.probability_gradient[k0];
+		}
+		//console.log(ret);
+		return ret;
+	};
+	var add_bar = function(domain, p, p_format){
+		var ret;
+		if(!_.isUndefined(p)){
+			ret = '<span class="span_probability_bar" style="opacity:' + p + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
+		}
+		return ret;
+	};
+
 	var tabledata = {Rows:alist};
     if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
 	{
@@ -12452,8 +12581,17 @@ function PredictGridLoad1(alist)
             {display:'线路预测等级', name:'line_state', width: 100},
             {display:'预测项名称', name:'display_name', width: 100},
             {display:'预测项取值', name:'value', width: 120},
-            {display:'预测项取值概率', name:'probability', width: 130},
-            {display:'检修建议', name:'suggestion', width: 150},
+            {display:'预测项取值概率', name:'probability', width: bar_grid_width, render:function (rowdata, rowindex, value){
+				if(_.isNumber(value)) {
+					//console.log(rowdata);
+					var domain = rowdata.value;
+					var p_format = get_p_format(value);
+					return add_bar(domain, value, p_format);
+				}else {
+					return '';
+				}
+			}},
+            {display:'检修建议', name:'suggestion', width: 130},
 		];
         $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
             columns: columns,
@@ -13030,7 +13168,7 @@ function DrawPredictTable1(data)
 		var ret;
 		var o = _.result(_.find(alist, {name:name, value:value}), 'p');
 		if(!_.isUndefined(o)) {
-			ret = o.toFixed(2);
+			ret = o;
 		}
 		return ret;
 	};
@@ -13041,6 +13179,14 @@ function DrawPredictTable1(data)
 	var is_in_assume = function(assume, name)
 	{
 		return !_.isUndefined(_.find(assume, {name:name}));
+	};
+	var get_p_format = function(value)
+	{
+		var ret;
+		if(!_.isUndefined(value)) {
+			ret = (value*100).toFixed(0) + '%';
+		}
+		return ret;
 	};
 	var list = [];
 	var assume = [{name:'line_state'}];
@@ -13058,12 +13204,13 @@ function DrawPredictTable1(data)
 			_.forEach(item.domains, function(domain){
 				var v = get_domain_name(domain);
 				var p = get_p(dataitem.result, item.name, domain);
-
 				if(!_.isUndefined(p))
 				{
+					var p_format = get_p_format(p);
+					//var bar = add_bar(p, p_format);
 					o1.children.push({value: v, probability: p});
 					value += v + ',';
-					probability += p + ',';
+					probability += p_format + ',';
 					if(p>0){
 						max_v = domain;
 					}

@@ -108,6 +108,18 @@ $.webgis.mapping.heat_map_gradient_stops = {
   '0.88': 0xff5500ff,  //
   '1.00': 0xff0000ff  //red
 };
+$.webgis.mapping.probability_gradient = {
+  '0.00': '#ffffff',
+  '0.11': '#aaffaa', //
+  '0.22': '#55ff55', //
+  '0.33': '#00ff00', //green
+  '0.44': '#55ff00', //
+  '0.55': '#aaff00', //
+  '0.66': '#ffff00', //yellow
+  '0.77': '#ffaa00',  //
+  '0.88': '#ff5500',  //
+  '1.00': '#ff0000'  //red
+};
 
 
 
