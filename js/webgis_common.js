@@ -41,7 +41,7 @@ $.webgis.mapping.phase_color_mapping = {
 	'R':'#000000'
 };
 $.webgis.mapping.style_mapping = {
-	'point_tower' :		{icon_img:'img/features/powerlinepole.png', color:[255, 255, 0, 255],outlineColor:[0, 0, 0, 255], outlineWidth:1, pixelSize:10, labelFillColor:[128, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
+	'point_tower' :		{icon_img:'img/features/powerlinepole.png', color:[128, 128, 255, 255],outlineColor:[0, 0, 0, 255], outlineWidth:1, pixelSize:10, labelFillColor:[128, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
 	'point_hazard' :	{icon_img:'img/features/radiation.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:3, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
 	'point_marker' :	{icon_img:'img/marker30x48.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:3, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
 	'point_dn_switch' :	{icon_img:'img/features/metronetwork.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},

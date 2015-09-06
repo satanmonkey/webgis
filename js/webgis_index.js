@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = true;
+var DEBUG_BAYES = false;
 var TREE_COLLAPSE = true;
 
 
@@ -3158,6 +3158,22 @@ function ShowStateExaminationBBNDialog(viewer)
 		}else{
 			LoadBBNGridData(viewer, line_name, function(){
 				query_graphiz();
+				LoadTowerByLineName(viewer, $.webgis.db.db_name, line_name, function(data){
+					//console.log(data);
+					if(data.length){
+						LoadLineByLineName(viewer, $.webgis.db.db_name, line_name, function(data1){
+							var extent = GetExtentByCzml();
+							FlyToExtent(viewer, {extent:extent});
+							if($.webgis.config.map_backend === 'cesium')
+							{
+								ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+							}
+						});
+					}
+				});
+
+
+
 			});
 		}
 		$('#form_state_examination_bbn_bbn_view_grid_line_name').html(line_name);
@@ -3497,6 +3513,7 @@ function ShowStateExaminationListDialog(viewer)
 				o[name] = item.value;
 				return o;
 			});
+			//console.log(ret);
 			return ret;
 		};
 		var columns = [
@@ -3517,7 +3534,9 @@ function ShowStateExaminationListDialog(viewer)
                 }
 			},
 			{display:'', name:'id', width: 1, hide: true},
-			{display:'评价年份', name:'check_year', width: 50, editor: { type: 'text' }},
+			{display:'评价年份', name:'check_year', width: 70, editor: { type: 'text' }},
+			//{display:'电压等级', name:'voltage', width: 70, editor: { type: 'select', date: [{voltage:'500kV',text:'500kV'},{voltage:'220kV',text:'220kV'},{voltage:'110kV',text:'110kV'}],  valueField: 'voltage'}},
+			{display:'电压等级', name:'voltage', width: 70, editor: { type: 'text'}},
 			{display:'线路名称', name:'line_name', width: 100, editor: { type: 'text' }},
 			{display:'情况描述', name:'description', width: 200, editor: { type: 'text' }},
 			{display:'检修策略', name:'suggestion', width: 200, editor: { type: 'text' }},
@@ -3570,7 +3589,7 @@ function ShowStateExaminationListDialog(viewer)
 					//console.log(rowobj);
 					$(rowobj).find('td').each(function (i, item) {
 						var id = $(item).attr('id');
-						if(_.endsWith(id, 'c106') || _.endsWith(id, 'c107'))
+						if(_.endsWith(id, 'c107') || _.endsWith(id, 'c108'))
 						{
 							var div = $(item).find('div');
 							$(div).attr('title', $(div).html());
@@ -3630,7 +3649,10 @@ function ShowStateExaminationListDialog(viewer)
 		$('#form_state_examination_list_filter_voltage').empty();
 		$('#form_state_examination_list_filter_voltage').append('<option value="">(请选择)</option>');
 		_.forEach(_.uniq(_.pluck($.webgis.data.state_examination.list_data, 'voltage')), function(item){
-			$('#form_state_examination_list_filter_voltage').append('<option value="' + item + '">' + item  + '</option>');
+			if(!_.isUndefined(item))
+			{
+				$('#form_state_examination_list_filter_voltage').append('<option value="' + item + '">' + item  + '</option>');
+			}
 		});
 		$('#form_state_examination_list_filter_voltage').multipleSelect('refresh');
 
@@ -3652,7 +3674,6 @@ function ShowStateExaminationListDialog(viewer)
 	});
 
 	var flds = [
-		//{ display: "线路名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
 		{ display: "线路名称", id: "line_name", newline: true, type: "text",  defaultvalue:'', group: '过滤条件', width: 350, labelwidth: 120 ,
 			change:function(data2){
 				var data3 = $('#form_state_examination_list_filter').webgisform('getdata');
@@ -5557,7 +5578,6 @@ function InitSearchBox(viewer)
 				var name = ui.item.geojson.properties.name;
 				if(name)
 				{
-
 					LoadTowerByLineName(viewer, $.webgis.db.db_name, name, function(data){
 						LoadLineByLineName(viewer, $.webgis.db.db_name, name, function(data1){
 							var extent = GetExtentByCzml();
@@ -6494,29 +6514,6 @@ function LoadTowerByLineName(viewer, db_name,  name,  callback)
 					$.webgis.control.leaflet_geojson_layer.addData(item);
 				}
 			});
-
-			//for(var i in data)
-			//{
-			//	var _id = data[i]['_id'];
-			//	var geojson = data[i];
-			//
-			//	if(!$.webgis.data.geojsons[_id])
-			//	{
-			//		$.webgis.data.geojsons[_id] = geojson;
-			//	}
-			//	if($.webgis.config.map_backend === 'cesium')
-			//	{
-			//		if(!$.webgis.data.czmls[_id])
-			//		{
-			//			$.webgis.data.czmls[_id] = CreateCzmlFromGeojson($.webgis.data.geojsons[_id]);
-			//		}
-			//	}
-			//	if($.webgis.config.map_backend === 'leaflet')
-			//	{
-			//		//console.log(geojson);
-			//		$.webgis.control.leaflet_geojson_layer.addData(geojson);
-			//	}
-			//}
 			if(callback) callback(data);
 	});
 }
