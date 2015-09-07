@@ -83,11 +83,10 @@ $(function() {
 			LoadLineData($.webgis.db.db_name, function(){
 				ShowProgressBar(true, 670, 200, '载入中', '正在载入架空线路信息，请稍候...');
 				LoadSegments($.webgis.db.db_name, function(){
-					ShowProgressBar(true, 670, 200, '载入中', '正在载入3D模型信息，请稍候...');
-					LoadModelsList($.webgis.db.db_name, function(){
-						ShowProgressBar(true, 670, 200, '载入中', '正在载入3D模型信息，请稍候...');
+					ShowProgressBar(true, 670, 200, '载入中', '正在载入杆塔信息，请稍候...');
+					//LoadModelsList($.webgis.db.db_name, function(){
+					//	ShowProgressBar(true, 670, 200, '载入中', '正在载入3D模型信息，请稍候...');
 						LoadModelsMapping($.webgis.db.db_name, function(){
-							//if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
 							var extent = GetDefaultExtent($.webgis.db.db_name);
 							FlyToExtent(viewer, {extent:extent, duration:0});
 							LoadSysRole($.webgis.db.db_name, function(){
@@ -104,7 +103,7 @@ $(function() {
 							//});
 						//});
 					
-					});
+					//});
 				});
 			});
 		});
@@ -178,6 +177,7 @@ $(function() {
 		InitKeyboardEvent(viewer);
 		load_init_data();
 		InitStateExamination();
+		TranslateToCN();
 		InitScreenSize(viewer);
 	}
 	
@@ -3150,6 +3150,7 @@ function ShowStateExaminationBBNDialog(viewer)
 	var change_line_name = function(line_name)
 	{
 		if(line_name.length === 0){
+			$('#form_state_examination_bbn_assume .form_state_examination_bbn_assume_line_name').html('(请选择线路名称)');
 			if($.webgis.data.bbn.control.node_grid)
 			{
 				$.webgis.data.bbn.grid_data = [];
@@ -3171,12 +3172,10 @@ function ShowStateExaminationBBNDialog(viewer)
 						});
 					}
 				});
-
-
-
 			});
 		}
 		$('#form_state_examination_bbn_bbn_view_grid_line_name').html(line_name);
+		$('#form_state_examination_bbn_assume .form_state_examination_bbn_assume_line_name').html(line_name);
 	};
 	var flds = [
         { display: "输电线路", id: "line_name", newline: true, type: "select", editor: { data: [] , filter:true}, defaultvalue: '', group: '查询条件', width: 400, labelwidth: 120,
@@ -3285,6 +3284,41 @@ function FilterNonZero1()
 	return list;
 }
 
+function ShowStateExaminationDetailDocDialog(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_detail_doc');
+	$('#dlg_state_examination_detail_doc').dialog({
+		width: 750,
+		height: 660,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'状态评价细则',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+}
 function ShowMaintainStrategyStandardDialog(viewer)
 {
 	CreateDialogSkeleton(viewer, 'dlg_maintain_strategy_standard');
@@ -3297,7 +3331,7 @@ function ShowMaintainStrategyStandardDialog(viewer)
 		resizable: true,
 		modal: false,
 		position:{at: "center"},
-		title:'状态评价标准',
+		title:'检修策略标准',
 		close: function(event, ui){
 		},
 		show: {
@@ -3351,7 +3385,6 @@ function ShowMaintainStrategyStandardDialog(viewer)
     //        page.render(renderContext);
     //    });
     //});
-
 }
 function ShowStateExaminationStandardDialog(viewer)
 {
@@ -3379,6 +3412,12 @@ function ShowStateExaminationStandardDialog(viewer)
 			duration: 200
 		},
 		buttons:[
+			{
+				text: "查看细则",
+				click: function(e){
+					ShowStateExaminationDetailDocDialog(viewer);
+				}
+			},
 			{
 				text: "关闭",
 				click: function(e){
@@ -4531,6 +4570,10 @@ function CreateDialogSkeleton(viewer, dlg_id)
 								</div>\
 							</fieldset>\
 							<fieldset>\
+								<legend>线路名称</legend>\
+								<div class="form_state_examination_bbn_assume_line_name">请选择线路名称</div>\
+							</fieldset>\
+							<fieldset>\
 								<div id="btn_state_examination_bbn_assume_predict">\
 								</div>\
 								<div id="btn_state_examination_bbn_assume_predict_export">\
@@ -4588,6 +4631,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
 			<div id="dlg_maintain_strategy_standard" >\
 				<iframe id="iframe_maintain_strategy_standard" src="/ViewerJS/index.html#/架空输电线路状态检修策略.pdf" allowfullscreen webkitallowfullscreen></iframe>\
+			</div>');
+        }
+        if (dlg_id === 'dlg_state_examination_detail_doc')
+        {
+				//<canvas id="canvas_maintain_strategy_standard"></canvas>\
+            $(document.body).append('\
+			<div id="dlg_state_examination_detail_doc" >\
+				<iframe id="iframe_state_examination_detail_doc" src="/ViewerJS/index.html#/架空输电线路设备状态评价（20091013）.pdf" allowfullscreen webkitallowfullscreen></iframe>\
 			</div>');
         }
 	}

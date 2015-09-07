@@ -1189,3 +1189,18 @@ input[type="button"].btn-block {
 	width: 700px;
 	height: 500px;
 }
+#iframe_state_examination_detail_doc
+{
+	width: 700px;
+	height: 500px;
+}
+.form_state_examination_bbn_assume_line_name
+{
+	width:620px;
+	text-align: center;
+	border:1px solid #2e6e9e;
+	min-height: 50px;
+	vertical-align:middle;
+	line-height: 50px;
+	margin-bottom: 16px;
+}
