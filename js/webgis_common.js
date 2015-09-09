@@ -303,7 +303,9 @@ function InitWebGISFormDefinition()
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':' + '</label><select  style="width:' + fld.width + 'px;" id="' + fldid + '" name="' + fldid + '"></select>' + required + '</' + divorspan + '>');
 						_.forEach(source, function(src)
 						{
-							$('#' + fldid).append('<option value="' + src.value + '">' + src.label + '</option>');
+							if(src){
+								$('#' + fldid).append('<option value="' + src.value + '">' + src.label + '</option>');
+							}
 						});
 						var position = 'bottom';
 						var filter = false;
@@ -541,9 +543,9 @@ function InitWebGISFormDefinition()
 						if(fld.defaultvalue) checked = true;
 						$('#' + 'fieldset_' + uid).append('<' + divorspan + ' style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline + '">'
 						+ '<' + divorspan + '  style="display:inline-block;width:24px;height:24px;border:0px ' + $.webgis.color.base_color + ' solid;">'
-						+ '<input type="checkbox" id="' + fldid + '" name="' + fldid + '" >' + required 
+						+ '<input type="checkbox" id="' + fldid + '" name="' + fldid + '" >' + required
 						+ '</' + divorspan + '>'
-						+ '<label for="' + fldid + '" style="display:inline-block;text-align:left;width:' + that.options.labelwidth + 'px;">' + fld.display + '</label>'
+						+ '<label for="' + fldid + '"  style="display:inline-block;text-align:left;width:' + that.options.labelwidth + 'px;">' + fld.display + '</label>'
 						+ '</' + divorspan + '>');
 						var id = fldid;
 						$('#' + id).iCheck({

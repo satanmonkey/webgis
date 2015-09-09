@@ -12124,8 +12124,8 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
     };
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_node_grid_node_add1');
 	$('#dlg_state_examination_bbn_node_grid_node_add1').dialog({
-		width: 520,
-		height: 500,
+		width: 550,
+		height: 570,
 		minWidth:200,
 		minHeight: 200,
 		draggable: true,
@@ -12155,44 +12155,81 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
 			{
 				text: "确定",
 				click: function(e){
-                    if($('#form_state_examination_bbn_node_grid_node_add1').valid()) {
-                        var formdata = $('#form_state_examination_bbn_node_grid_node_add1').webgisform('getdata');
-						//formdata.domains = ['true', 'false'];
-						var nullcount = $.webgis.data.bbn.grid_data.length;
-						formdata._id = 'null_' + (nullcount + 1);
-						var o = {};
-
-						_.forEach(formdata.domains, function(item){
-							//console.log(typeof(item));
-							//if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
-							//if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
-							o[item] = 0.5;
-						});
-						formdata.conditions = [[[],o]];
-						$.webgis.data.bbn.grid_data.push(formdata);
-
-						var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
-						if(idx > -1)
+					var formdata = $('#form_state_examination_bbn_node_grid_node_add1').webgisform('getdata');
+					//formdata.domains = ['true', 'false'];
+					if(formdata.is_use_exist === false)
+					{
+						if($('#form_state_examination_bbn_node_grid_node_add1').valid())
 						{
-							var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
-							var namesarr = get_names_arr(o);
-							namesarr.push(formdata.name);
-							namesarr = _.uniq(namesarr)
-							var condlist = [];
-							_.forEach(namesarr, function(name){
-								var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
-								if(cond){
-									condlist.push(cond);
-								}
+							var nullcount = $.webgis.data.bbn.grid_data.length;
+							formdata._id = 'null_' + (nullcount + 1);
+							var o = {};
+							var preset = 0.5;
+							if (formdata.domains.length > 0) {
+								preset = 1.0 / formdata.domains.length;
+							}
+							if (preset === 1) {
+								preset = 0.5;
+							}
+							_.forEach(formdata.domains, function (item) {
+								//console.log(typeof(item));
+								//if(typeof(item) != 'boolean' && item.toLowerCase() === 'true') item = true;
+								//if(typeof(item) != 'boolean' && item.toLowerCase() === 'false') item = false;
+								o[item] = preset;
 							});
-							o = BuildComboConditions(o, condlist);
-							$.webgis.data.bbn.grid_data[idx] = o;
-							//console.log(o);
+							formdata.conditions = [[[], o]];
+							delete formdata.is_use_exist;
+							delete formdata.exist_nodes;
+							$.webgis.data.bbn.grid_data.push(formdata);
+
+							var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
+							if (idx > -1) {
+								var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
+								var namesarr = get_names_arr(o);
+								namesarr.push(formdata.name);
+								namesarr = _.uniq(namesarr)
+								var condlist = [];
+								_.forEach(namesarr, function (name) {
+									var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
+									if (cond) {
+										condlist.push(cond);
+									}
+								});
+								o = BuildComboConditions(o, condlist);
+								$.webgis.data.bbn.grid_data[idx] = o;
+							}
+							BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+							$(this).dialog("close");
 						}
-						BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
-						$(this).dialog("close");
-                        //}
-                    }
+					}else{
+						if(formdata.exist_nodes.length>0)
+						{
+							var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
+							if(idx > -1)
+							{
+								var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
+								var namesarr = get_names_arr(o);
+								namesarr.push(formdata.exist_nodes);
+								namesarr = _.uniq(namesarr)
+								var condlist = [];
+								_.forEach(namesarr, function(name){
+									var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
+									if(cond){
+										condlist.push(cond);
+									}
+								});
+								o = BuildComboConditions(o, condlist);
+								$.webgis.data.bbn.grid_data[idx] = o;
+							}
+							BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+							$(this).dialog("close");
+						}else{
+							var that = this;
+							ShowMessage(null, 400, 250, '错误', '请选择一个已存在节点。', function(){
+								$(that).dialog("close");
+							});
+						}
+					}
 				}
 			}
 		]
@@ -12201,11 +12238,19 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
     var domainlist = _.map($.webgis.data.bbn.domains_range, function(item){
         return {label:item.name, value:item.value};
     });
+	var existnodelist = _.map($.webgis.data.bbn.grid_data, function(item){
+		if(!_.startsWith(item.name, 'unit_')){
+			return {label:item.display_name, value:item.name};
+		}
+	});
+	existnodelist.unshift({label:'(请选择)', value:''});
     var flds = [
-        { display: "条件名称", id: "name", newline: true, type: "text",  defaultvalue: '',addition:'(仅限英文)', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true, alpha:true}},
-        { display: "条件中文名称", id: "display_name", newline: true, type: "text",  defaultvalue: '', group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
-        { display: "条件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: ['true', 'false'], group: '节点信息', width: 250, labelwidth: 120, validate:{required:true}},
-        { display: "节点描述", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '节点信息', width: 250, height:100, labelwidth: 120},
+        { display: "是否已存在节点", id: "is_use_exist", newline: true, type: "checkbox",  group: '判断', width: 220, height:100, labelwidth: 150},
+        { display: "条件名称", id: "name", newline: true, type: "text",  defaultvalue: '',addition:'(仅限英文)', group: '新增节点信息', width: 250, labelwidth: 120, validate:{required:true, alpha:true}},
+        { display: "条件中文名称", id: "display_name", newline: true, type: "text",  defaultvalue: '', group: '新增节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "条件取值范围", id: "domains", newline: true, type: "multiselect", editor: { data:  domainlist}, defaultvalue: ['true', 'false'], group: '新增节点信息', width: 250, labelwidth: 120, validate:{required:true}},
+        { display: "节点描述", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '新增节点信息', width: 250, height:100, labelwidth: 120},
+        { display: "添加已存在节点", id: "exist_nodes", newline: true, type: "select",  editor: { data:  existnodelist},  group: '已存在节点', width: 220, height:100, labelwidth: 150},
     ];
 
 	$('#form_state_examination_bbn_node_grid_node_add1').webgisform(flds, {
@@ -12214,7 +12259,21 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
 		//margin:10,
 		//groupmargin:10
 	});
-
+	$('#form_state_examination_bbn_node_grid_node_add1_exist_nodes').multipleSelect("disable");
+	$('#form_state_examination_bbn_node_grid_node_add1_is_use_exist').on('ifChecked', function(e){
+		$('#form_state_examination_bbn_node_grid_node_add1_exist_nodes').multipleSelect("enable");
+		$('#form_state_examination_bbn_node_grid_node_add1_domains').multipleSelect("disable");
+		$('#form_state_examination_bbn_node_grid_node_add1_name').attr('readonly', 'readonly');
+		$('#form_state_examination_bbn_node_grid_node_add1_display_name').attr('readonly', 'readonly');
+		$('#form_state_examination_bbn_node_grid_node_add1_description').attr('readonly', 'readonly');
+	});
+	$('#form_state_examination_bbn_node_grid_node_add1_is_use_exist').on('ifUnchecked', function(e){
+		$('#form_state_examination_bbn_node_grid_node_add1_exist_nodes').multipleSelect("disable");
+		$('#form_state_examination_bbn_node_grid_node_add1_domains').multipleSelect("enable");
+		$('#form_state_examination_bbn_node_grid_node_add1_name').removeAttr('readonly');
+		$('#form_state_examination_bbn_node_grid_node_add1_display_name').removeAttr('readonly');
+		$('#form_state_examination_bbn_node_grid_node_add1_description').removeAttr('readonly');
+	});
 }
 
 function ShowBBNNodeGridAddDialog(viewer)
@@ -12656,6 +12715,11 @@ function PredictGridLoad1(alist)
 					if(_.endsWith(id, 'c105') )
 					{
 						var div = $(item).find('div');
+						$(div).attr('title', $(div).html());
+					}
+					if(_.endsWith(id, 'c102') )
+					{
+						var div = $(item).find('span');
 						$(div).attr('title', $(div).html());
 					}
 				});
