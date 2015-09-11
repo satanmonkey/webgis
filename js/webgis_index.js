@@ -3386,6 +3386,7 @@ function ShowMaintainStrategyStandardDialog(viewer)
     //    });
     //});
 }
+
 function ShowStateExaminationStandardDialog(viewer)
 {
 	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
@@ -3432,13 +3433,14 @@ function ShowStateExaminationStandardDialog(viewer)
 	});
 	var levs = [
 		{value:'', label:'(请选择等级)'},
-		{value:'I', label:'I级'},
-		{value:'II', label:'II级'},
-		{value:'III', label:'III级'},
-		{value:'IV', label:'IV级'},
+		{value:'I', label:'正常'},
+		{value:'II', label:'注意'},
+		{value:'III', label:'异常'},
+		{value:'IV', label:'严重'},
 	];
 	var flds = [
-        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
+        //{ display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
+        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《南方电网公司35kV～500kV架空线路状态评价导则（试行）》制作', color:'#FF0000' }, width:540, group: '标准依据'},
         { display: "单元划分", id: "unit", newline: true, type: "select", editor: { data: unitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
 			change:function(data1){
 				var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
@@ -3473,7 +3475,6 @@ function ShowStateExaminationStandardDialog(viewer)
 			}
 		},
         { display: "等级描述", id: "desc", newline: true, type: "textarea",  defaultvalue: '', group: '等级明细', width: 350,height:130, labelwidth: 120}
-
 	];
 	$('#form_state_examination_standard').webgisform(flds, {
 		prefix: "form_state_examination_standard_",
@@ -3482,6 +3483,117 @@ function ShowStateExaminationStandardDialog(viewer)
 		//groupmargin:10
 	});
 
+}
+function ShowStateExaminationStandardDialog2014(viewer)
+{
+	CreateDialogSkeleton(viewer, 'dlg_state_examination_standard2014');
+	$('#dlg_state_examination_standard2014').dialog({
+		width: 600,
+		height: 600,
+		minWidth:200,
+		minHeight: 200,
+		draggable: true,
+		resizable: true,
+		modal: false,
+		position:{at: "center"},
+		title:'状态评价标准2014',
+		close: function(event, ui){
+		},
+		show: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		hide: {
+			effect: "blind",
+			//direction: "right",
+			duration: 200
+		},
+		buttons:[
+			{
+				text: "查看细则",
+				click: function(e){
+					ShowStateExaminationDetailDocDialog(viewer);
+				}
+			},
+			{
+				text: "关闭",
+				click: function(e){
+					$( this ).dialog( "close" );
+				}
+			}
+		]
+	});
+	var list = _.uniq(_.pluck($.webgis.data.state_examination.standard2014, 'parent'));
+	var unitlist = _.map(list, function(item){
+		return {value:item, label:item};
+	});
+	var subunitlist = [];
+	var levs = [
+		{value:'', label:'(请选择等级)'},
+		{value:'I', label:'正常'},
+		{value:'II', label:'注意'},
+		{value:'III', label:'异常'},
+		{value:'IV', label:'严重'},
+	];
+	var flds = [
+        //{ display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
+        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《南方电网公司35kV～500kV架空线路状态评价导则（试行）》制作', color:'#FF0000' }, width:540, group: '标准依据'},
+        { display: "单元划分", id: "unit", newline: true, type: "select", editor: { data: unitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
+			change:function(data1){
+				var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
+				$('#form_state_examination_standard2014_name').empty();
+				//$('#form_state_examination_standard2014_name' ).append('<option value="">(请选择)</option>');
+				_.forEach(list, function(item)
+				{
+					$('#form_state_examination_standard2014_name' ).append('<option value="' + item + '">' + item + '</option>');
+				});
+				$('#form_state_examination_standard2014_name').multipleSelect('refresh');
+				$('#form_state_examination_standard2014').webgisform('setdata', {'level':'', 'desc':''});
+			}
+		},
+        { display: "单元子分类", id: "subunit", newline: true, type: "select", editor: { data: subunitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
+			change:function(data1){
+				var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
+				$('#form_state_examination_standard2014_name').empty();
+				//$('#form_state_examination_standard2014_name' ).append('<option value="">(请选择)</option>');
+				_.forEach(list, function(item)
+				{
+					$('#form_state_examination_standard2014_name' ).append('<option value="' + item + '">' + item + '</option>');
+				});
+				$('#form_state_examination_standard2014_name').multipleSelect('refresh');
+				$('#form_state_examination_standard2014').webgisform('setdata', {'level':'', 'desc':''});
+			}
+		},
+        { display: "状态量名称", id: "name", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
+			change:function(data1){
+				$('#form_state_examination_standard').webgisform('setdata', {'level':'', 'desc':''});
+			}
+		},
+        { display: "状态等级划分", id: "level", newline: true, type: "select", editor: { data: levs }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
+			change:function(data1){
+				var name = $('#form_state_examination_standard').webgisform('getdata').name;
+				if(name && name.length && data1.length){
+					var levels = _.result(_.find($.webgis.data.state_examination.standard, {name:name}), 'levels');
+					if(levels[data1]){
+						$('#form_state_examination_standard').webgisform('setdata', {'desc':levels[data1].according});
+					}else{
+						$('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+					}
+				}else{
+					$('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+				}
+			}
+		},
+        { display: "等级描述", id: "desc", newline: true, type: "textarea",  defaultvalue: '', group: '等级明细', width: 350,height:130, labelwidth: 120}
+
+	];
+	$('#form_state_examination_standard').webgisform(flds, {
+		prefix: "form_state_examination_standard_",
+		maxwidth: 540
+		//margin:10,
+		//groupmargin:10
+	});
 }
 
 function ShowStateExaminationListDialog(viewer)
@@ -3542,10 +3654,10 @@ function ShowStateExaminationListDialog(viewer)
 		var get_sel = function(name) {
 			var levs = [
 				//{value:'', label:'(请选择等级)'},
-				{value: 'I', text: 'I级'},
-				{value: 'II', text: 'II级'},
-				{value: 'III', text: 'III级'},
-				{value: 'IV', text: 'IV级'},
+				{value: 'I', text: '正常'},
+				{value: 'II', text: '注意'},
+				{value: 'III', text: '异常'},
+				{value: 'IV', text: '严重'},
 			];
 			var ret = _.map(levs, function(item){
 				var o = {text:item.text};
@@ -3999,10 +4111,10 @@ function ShowStateExaminationImportDialog(viewer)
 	var unitlist = _.uniq(_.pluck($.webgis.data.state_examination.standard, 'parent'));
 	var levs = [
 		//{value:'', label:'(请选择等级)'},
-		{value:'I', label:'I级'},
-		{value:'II', label:'II级'},
-		{value:'III', label:'III级'},
-		{value:'IV', label:'IV级'},
+		{value:'I', label:'正常'},
+		{value:'II', label:'注意'},
+		{value:'III', label:'异常'},
+		{value:'IV', label:'严重'},
 	];
 	var lines = _.map($.webgis.data.lines, function(item){
 		return {label:item.properties.name, value:item._id};
@@ -4522,6 +4634,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				</div>\
 			');
 		}
+		if(dlg_id === 'dlg_state_examination_standard2014')
+		{
+			$(document.body).append('\
+				<div id="dlg_state_examination_standard2014" >\
+					<form id="form_state_examination_standard2014"></form>\
+				</div>\
+			');
+		}
 		if(dlg_id === 'dlg_state_examination_import_preview')
 		{
 			$(document.body).append('\
@@ -4638,7 +4758,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
 				//<canvas id="canvas_maintain_strategy_standard"></canvas>\
             $(document.body).append('\
 			<div id="dlg_state_examination_detail_doc" >\
-				<iframe id="iframe_state_examination_detail_doc" src="/ViewerJS/index.html#/架空输电线路设备状态评价（20091013）.pdf" allowfullscreen webkitallowfullscreen></iframe>\
+				<iframe id="iframe_state_examination_detail_doc" src="/ViewerJS/index.html#/南方电网公司35kV～500kV架空线路状态评价导则（试行）.pdf" allowfullscreen webkitallowfullscreen></iframe>\
 			</div>');
         }
 	}
