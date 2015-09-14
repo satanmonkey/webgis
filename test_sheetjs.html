@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>test bokeh</title>
+    <link rel="stylesheet" href="css/handsontable.full.min.css" />
+    <script type="text/javascript" src="js/jquery/jquery-2.1.4.min.js"></script>
+    <!--<script type="text/javascript" src="js/lodash.min.js"></script>-->
+    <script type="text/javascript" src="js/xlsx.min.js"></script>
+    <script type="text/javascript" src="js/handsontable.full.min.js"></script>
+</head>
+<script type="text/javascript">
+    var g_tablesheet;
+    function load_xls(file)
+    {
+        if(file && file.name)
+        {
+//                if(!_.endsWith(f.name, '.xls')){
+//                    ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+//                    return;
+//                }
+            var reader = new FileReader();
+            reader.onload = function (e)
+            {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var list = to_json(wb);
+                $('#sheet_name').html(list[0].sheet_name);
+                var listdata = dict_to_list(list[0].sheet_data, ['日期', '凭证号数', '科目编码', '科目名称', '摘要','方向', '数量', '外币', '金额']);
+//                    console.log(listdata);
+                var container = $('#tablesheet')[0];
+                g_tablesheet = new Handsontable(container,
+                {
+                    data: listdata,
+                    height: 600,
+                    colHeaders: true,
+                    rowHeaders: true,
+                    stretchH: 'all',
+                    columnSorting: true,
+                    contextMenu: true
+                });
+            };
+            reader.readAsBinaryString(file);
+        }
+    }
+    function to_json(workbook) {
+        var result = [];
+        workbook.SheetNames.forEach(function(sheetName) {
+            var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+            if(roa.length > 0){
+                result.push({sheet_name:sheetName, sheet_data:roa});
+            }
+        });
+        return result;
+    }
+    function dict_to_list(alist, header)
+    {
+        var ret = [];
+        ret.push(header);
+        $.each(alist, function(idx, item){
+            var o = [];
+            $.each(header,  function(idx1, item1){
+                if(item[item1]){
+                    o.push(item[item1]);
+                }
+            });
+            ret.push(o);
+        });
+        return ret;
+    }
+    $(function() {
+        $('#myfile').on('change', function(e){
+            var files = e.target.files;
+            var f = files[0];
+            console.log(f.name);
+            load_xls(f);
+        });
+        $('#clear').on('click', function(){
+            $('#myfile').val('');
+            $('#sheet_name').html('');
+            if(g_tablesheet){
+                g_tablesheet.destroy();
+            }
+
+        });
+    });
+</script>
+
+<input type="file" id="myfile"/>
+<button type="button"   id="clear">清空</button>
+<div id="sheet_name"></div>
+<div id="tablesheet"></div>
+</body>
+</html>
