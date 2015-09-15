@@ -208,14 +208,22 @@ $(function() {
 
 function InitStateExamination()
 {
-    $.getJSON( 'js/jiakongztpj.json')
-    .done(function( data ){
-        //if(success) success(data);
-        $.webgis.data.state_examination.standard = data;
-        $.getJSON( 'js/jianxiucelv.json')
-        .done(function( data1 ){
+    $.getJSON( 'js/jiakongztpj2014.json')
+    .done(function( data0 ){
+        $.webgis.data.state_examination.standard2014 = data0;
+        $.getJSON( 'js/jiakongztpj.json')
+        .done(function( data ){
             //if(success) success(data);
-            $.webgis.data.bbn.maintain_strategy_standard = data1;
+            $.webgis.data.state_examination.standard = data;
+            $.getJSON( 'js/jianxiucelv.json')
+            .done(function( data1 ){
+                //if(success) success(data);
+                $.webgis.data.bbn.maintain_strategy_standard = data1;
+                QueryBBNDomainsRange();
+            })
+            .fail(function( jqxhr ){
+
+            });
         })
         .fail(function( jqxhr ){
 
@@ -2966,7 +2974,8 @@ function InitToolPanel(viewer)
     });
     $('#but_state_examination_standard').button({label:'查看标准'});
     $('#but_state_examination_standard').on('click', function(){
-        ShowStateExaminationStandardDialog(viewer);
+        //ShowStateExaminationStandardDialog(viewer);
+        ShowStateExaminationStandardDialog2014(viewer);
     });
     $('#but_state_examination_bbn').button({label:'查看编辑'});
     $('#but_state_examination_bbn').on('click', function(){
@@ -3026,7 +3035,7 @@ function ShowStateExaminationBBNDialog(viewer)
 {
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn');
     $('#dlg_state_examination_bbn').dialog({
-        width: 740,
+        width: 720,
         height: 760,
         minWidth:200,
         minHeight: 200,
@@ -3063,7 +3072,8 @@ function ShowStateExaminationBBNDialog(viewer)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    ShowStateExaminationStandardDialog(viewer);
+                    //ShowStateExaminationStandardDialog(viewer);
+                    ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
             {
@@ -3169,6 +3179,22 @@ function ShowStateExaminationBBNDialog(viewer)
                             {
                                 ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
                             }
+                            if(_.isUndefined($.webgis.data.state_examination.list_data_current_line))
+                            {
+                                ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+                                $.ajax({
+                                    url:'/state_examination/query',
+                                    method:'post',
+                                    data: JSON.stringify({line_name:line_name})
+                                })
+                                .always(function () {
+                                    ShowProgressBar(false);
+                                })
+                                .done(function (data2) {
+                                    data2 = JSON.parse(data2);
+                                    $.webgis.data.state_examination.list_data_current_line = data2;
+                                });
+                            }
                         });
                     }
                 });
@@ -3227,10 +3253,10 @@ function ShowStateExaminationBBNDialog(viewer)
             build_select();
         });
     }
-    QueryBBNDomainsRange(function(){
+    //QueryBBNDomainsRange(function(){
         //console.log($.webgis.data.bbn.domains_range);
-        BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
-    });
+    BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
+    //});
     change_line_name('');
     //PredictGridLoad([]);
     PredictGridLoad1([]);
@@ -3251,6 +3277,11 @@ function ShowStateExaminationBBNDialog(viewer)
     $('#btn_state_examination_bbn_assume_predict_collapse').on('click', function(){
         PredictCollapseExpand();
     });
+    $('#btn_state_examination_bbn_assume_predict_summary').button({label:'查看结论'});
+    $('#btn_state_examination_bbn_assume_predict_summary').on('click', function(){
+        PredictSummary();
+    });
+
     $('#cb_state_examination_bbn_assume_predict_display_0').on('click', function(){
         if(!_.isUndefined($.webgis.data.bbn.predict_grid_data)) {
             if($(this).is(':checked')){
@@ -3263,6 +3294,15 @@ function ShowStateExaminationBBNDialog(viewer)
             }
         }
     });
+    var options = '';
+    _.forEach(_.range(1, 6), function(item){
+        options += '<option value="' + item + '">' + item + '年</option>';
+    });
+    $('#form_state_examination_bbn_assume_years').append(options);
+    $('#form_state_examination_bbn_assume_years').multipleSelect({
+        single:true
+    });
+    $('#form_state_examination_bbn_assume_years').multipleSelect('setSelects', ["1"]);
 }
 function FilterNonZero()
 {
@@ -3433,10 +3473,10 @@ function ShowStateExaminationStandardDialog(viewer)
     });
     var levs = [
         {value:'', label:'(请选择等级)'},
-        {value:'I', label:'正常'},
-        {value:'II', label:'注意'},
-        {value:'III', label:'异常'},
-        {value:'IV', label:'严重'},
+        {value: 'I', label: GetDomainName('I')},
+        {value: 'II', label: GetDomainName('II')},
+        {value: 'III', label: GetDomainName('III')},
+        {value: 'IV', label: GetDomainName('IV')},
     ];
     var flds = [
         //{ display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
@@ -3528,74 +3568,71 @@ function ShowStateExaminationStandardDialog2014(viewer)
     var unitlist = _.map(list, function(item){
         return {value:item, label:item};
     });
-    var subunitlist = [];
-    var levs = [
-        {value:'', label:'(请选择等级)'},
-        {value:'I', label:'正常'},
-        {value:'II', label:'注意'},
-        {value:'III', label:'异常'},
-        {value:'IV', label:'严重'},
-    ];
     var flds = [
-        //{ display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《架空输电线路状态评价细则细则》制作', color:'#FF0000' }, width:540, group: '标准依据'},
-        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2009年所颁布的《南方电网公司35kV～500kV架空线路状态评价导则（试行）》制作', color:'#FF0000' }, width:540, group: '标准依据'},
+        { display: "", id: "label", newline: true, type: "label", editor: { data: '依据昆明供电局输电管理2014年所颁布的《南方电网公司35kV～500kV架空线路状态评价导则（试行）》制作', color:'#FF0000' }, width:540, group: '标准依据'},
         { display: "单元划分", id: "unit", newline: true, type: "select", editor: { data: unitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
             change:function(data1){
-                var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
+                var list = _.pluck(_.where($.webgis.data.state_examination.standard2014, {parent:data1}), 'name');
                 $('#form_state_examination_standard2014_name').empty();
-                //$('#form_state_examination_standard2014_name' ).append('<option value="">(请选择)</option>');
                 _.forEach(list, function(item)
                 {
                     $('#form_state_examination_standard2014_name' ).append('<option value="' + item + '">' + item + '</option>');
                 });
                 $('#form_state_examination_standard2014_name').multipleSelect('refresh');
-                $('#form_state_examination_standard2014').webgisform('setdata', {'level':'', 'desc':''});
-            }
-        },
-        { display: "单元子分类", id: "subunit", newline: true, type: "select", editor: { data: subunitlist }, defaultvalue: '', group: '线路单元', width: 350, labelwidth: 120,
-            change:function(data1){
-                var list = _.pluck(_.where($.webgis.data.state_examination.standard, {parent:data1}), 'name');
-                $('#form_state_examination_standard2014_name').empty();
-                //$('#form_state_examination_standard2014_name' ).append('<option value="">(请选择)</option>');
-                _.forEach(list, function(item)
-                {
-                    $('#form_state_examination_standard2014_name' ).append('<option value="' + item + '">' + item + '</option>');
-                });
-                $('#form_state_examination_standard2014_name').multipleSelect('refresh');
-                $('#form_state_examination_standard2014').webgisform('setdata', {'level':'', 'desc':''});
+                $('#form_state_examination_standard2014').webgisform('setdata', { 'desc':''});
             }
         },
         { display: "状态量名称", id: "name", newline: true, type: "select", editor: { data: [] }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
             change:function(data1){
-                $('#form_state_examination_standard').webgisform('setdata', {'level':'', 'desc':''});
-            }
-        },
-        { display: "状态等级划分", id: "level", newline: true, type: "select", editor: { data: levs }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
-            change:function(data1){
-                var name = $('#form_state_examination_standard').webgisform('getdata').name;
-                if(name && name.length && data1.length){
-                    var levels = _.result(_.find($.webgis.data.state_examination.standard, {name:name}), 'levels');
-                    if(levels[data1]){
-                        $('#form_state_examination_standard').webgisform('setdata', {'desc':levels[data1].according});
-                    }else{
-                        $('#form_state_examination_standard').webgisform('setdata', {'desc':''});
-                    }
+                if(data1.length > 0)
+                {
+                    var levels = _.result(_.find($.webgis.data.state_examination.standard2014, {name:data1}), 'levels');
+                    var desc = '';
+                    _.forEach(levels, function(lvl){
+                        desc += '劣化级别:' + lvl.level + '\n'
+                            + '基础扣分:' + lvl.base_score + ',' + '权重:' + lvl.weight + ',' + '合计扣分:' + (lvl.base_score * lvl.weight) + '\n'
+                            + '评分依据:' + lvl.according  + '。' + '\n\n';
+                    });
+                    $('#form_state_examination_standard2014').webgisform('setdata', {'desc':desc});
                 }else{
-                    $('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+                    $('#form_state_examination_standard2014').webgisform('setdata', { 'desc':''});
                 }
             }
         },
-        { display: "等级描述", id: "desc", newline: true, type: "textarea",  defaultvalue: '', group: '等级明细', width: 350,height:130, labelwidth: 120}
+        //{ display: "状态等级划分", id: "level", newline: true, type: "select", editor: { data: levs }, defaultvalue: '', group: '状态评价', width: 350, labelwidth: 120,
+        //    change:function(data1){
+        //        var name = $('#form_state_examination_standard').webgisform('getdata').name;
+        //        if(name && name.length && data1.length){
+        //            var levels = _.result(_.find($.webgis.data.state_examination.standard, {name:name}), 'levels');
+        //            if(levels[data1]){
+        //                $('#form_state_examination_standard').webgisform('setdata', {'desc':levels[data1].according});
+        //            }else{
+        //                $('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+        //            }
+        //        }else{
+        //            $('#form_state_examination_standard').webgisform('setdata', {'desc':''});
+        //        }
+        //    }
+        //},
+        { display: "", id: "desc", newline: true, type: "textarea",  defaultvalue: '', group: '等级描述', width: 530,height:130, labelwidth: 1}
 
     ];
-    $('#form_state_examination_standard').webgisform(flds, {
-        prefix: "form_state_examination_standard_",
+    $('#form_state_examination_standard2014').webgisform(flds, {
+        prefix: "form_state_examination_standard2014_",
         maxwidth: 540
         //margin:10,
         //groupmargin:10
     });
 }
+function GetDomainName(value)
+{
+    return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+}
 
+function RenderLevelName(item, a1, a2)
+{
+    return GetDomainName(a2);
+}
 function ShowStateExaminationListDialog(viewer)
 {
     CreateDialogSkeleton(viewer, 'dlg_state_examination_list');
@@ -3654,13 +3691,13 @@ function ShowStateExaminationListDialog(viewer)
         var get_sel = function(name) {
             var levs = [
                 //{value:'', label:'(请选择等级)'},
-                {value: 'I', text: '正常'},
-                {value: 'II', text: '注意'},
-                {value: 'III', text: '异常'},
-                {value: 'IV', text: '严重'},
+                {value: 'I', label: GetDomainName('I')},
+                {value: 'II', label: GetDomainName('II')},
+                {value: 'III', label: GetDomainName('III')},
+                {value: 'IV', label: GetDomainName('IV')},
             ];
             var ret = _.map(levs, function(item){
-                var o = {text:item.text};
+                var o = {text:item.label};
                 o[name] = item.value;
                 return o;
             });
@@ -3692,34 +3729,40 @@ function ShowStateExaminationListDialog(viewer)
             {display:'情况描述', name:'description', width: 200, editor: { type: 'text' }},
             {display:'检修策略', name:'suggestion', width: 200, editor: { type: 'text' }},
             {display:'线路整体评价', name:'line_state', width: 100,
-                editor: { type: 'select', data: get_sel('line_state'), valueField: 'line_state' }
+                editor: { type: 'select', data: get_sel('line_state'), valueField: 'line_state' },
+                render: RenderLevelName
             },
             {display:'基础', name:'unit_1', width: 50,
-                editor: { type: 'select', data: get_sel('unit_1'), valueField: 'unit_1' }
-                //render:function (item){
-                //    return item.label;
-                //}
+                editor: { type: 'select', data: get_sel('unit_1'), valueField: 'unit_1' },
+                render: RenderLevelName
             },
             {display:'杆塔', name:'unit_2', width: 50,
-                editor: { type: 'select', data: get_sel('unit_2'), valueField: 'unit_2' }
+                editor: { type: 'select', data: get_sel('unit_2'), valueField: 'unit_2' },
+                render: RenderLevelName
             },
             {display:'导地线', name:'unit_3', width: 50,
-                editor: { type: 'select', data: get_sel('unit_3'), valueField: 'unit_3' }
+                editor: { type: 'select', data: get_sel('unit_3'), valueField: 'unit_3' },
+                render: RenderLevelName
             },
             {display:'绝缘子', name:'unit_4', width: 50,
-                editor: { type: 'select', data: get_sel('unit_4'), valueField: 'unit_4' }
+                editor: { type: 'select', data: get_sel('unit_4'), valueField: 'unit_4' },
+                render: RenderLevelName
             },
             {display:'金具', name:'unit_5', width: 50,
-                editor: { type: 'select', data: get_sel('unit_5'), valueField: 'unit_5' }
+                editor: { type: 'select', data: get_sel('unit_5'), valueField: 'unit_5' },
+                render: RenderLevelName
             },
             {display:'接地装置', name:'unit_6', width: 50,
-                editor: { type: 'select', data: get_sel('unit_6'), valueField: 'unit_6' }
+                editor: { type: 'select', data: get_sel('unit_6'), valueField: 'unit_6' },
+                render: RenderLevelName
             },
             {display:'附属设施', name:'unit_7', width: 50,
-                editor: { type: 'select', data: get_sel('unit_7'), valueField: 'unit_7' }
+                editor: { type: 'select', data: get_sel('unit_7'), valueField: 'unit_7' },
+                render: RenderLevelName
             },
             {display:'通道环境', name:'unit_8', width: 50,
-                editor: { type: 'select', data: get_sel('unit_8'), valueField: 'unit_8' }
+                editor: { type: 'select', data: get_sel('unit_8'), valueField: 'unit_8' },
+                render: RenderLevelName
             }
         ];
         var tabledata = {Rows:list};
@@ -4029,9 +4072,9 @@ function PreviewStateExaminationMultiple(viewer)
         {display:'导地线', name:'unit_3', width: 50},
         {display:'绝缘子', name:'unit_4', width: 50},
         {display:'金具', name:'unit_5', width: 50},
-        {display:'接地装置', name:'unit_6', width: 50},
+        {display:'接地装置(拉线)', name:'unit_6', width: 50},
         {display:'附属设施', name:'unit_7', width: 50},
-        {display:'通道环境', name:'unit_8', width: 50}
+        {display:'通道环境(特殊区段)', name:'unit_8', width: 50}
     ];
     $('#div_state_examination_import_preview_grid').ligerGrid({
         columns:columns,
@@ -4068,7 +4111,8 @@ function ShowStateExaminationImportDialog(viewer)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    ShowStateExaminationStandardDialog(viewer);
+                    //ShowStateExaminationStandardDialog(viewer);
+                    ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
             {
@@ -4111,10 +4155,10 @@ function ShowStateExaminationImportDialog(viewer)
     var unitlist = _.uniq(_.pluck($.webgis.data.state_examination.standard, 'parent'));
     var levs = [
         //{value:'', label:'(请选择等级)'},
-        {value:'I', label:'正常'},
-        {value:'II', label:'注意'},
-        {value:'III', label:'异常'},
-        {value:'IV', label:'严重'},
+        {value: 'I', label: GetDomainName('I')},
+        {value: 'II', label: GetDomainName('II')},
+        {value: 'III', label: GetDomainName('III')},
+        {value: 'IV', label: GetDomainName('IV')},
     ];
     var lines = _.map($.webgis.data.lines, function(item){
         return {label:item.properties.name, value:item._id};
@@ -4694,24 +4738,26 @@ function CreateDialogSkeleton(viewer, dlg_id)
                                 <div class="form_state_examination_bbn_assume_line_name">请选择线路名称</div>\
                             </fieldset>\
                             <fieldset>\
+                                <legend></legend>\
+                                <label for="form_state_examination_bbn_assume_years">请选择预测年限:</label><select id="form_state_examination_bbn_assume_years" name="form_state_examination_bbn_assume_years"></select>\
+                            </fieldset>\
+                            <fieldset>\
                                 <div id="btn_state_examination_bbn_assume_predict">\
                                 </div>\
                                 <div id="btn_state_examination_bbn_assume_predict_export">\
                                 </div>\
                                 <div id="btn_state_examination_bbn_assume_predict_collapse">\
                                 </div>\
+                                <div id="btn_state_examination_bbn_assume_predict_summary">\
+                                </div>\
                             </fieldset>\
                             </form>\
                             <p>&nbsp;<p>&nbsp;<p>\
-                            <form >\
-                                <fieldset>\
-                                <legend>预测结果&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项</legend>\
-                                <div id="div_state_examination_bbn_predict_grid_container">\
-                                    <div id="div_state_examination_bbn_predict_grid">\
-                                    </div>\
+                            <input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项\
+                            <div id="div_state_examination_bbn_predict_grid_container">\
+                                <div id="div_state_examination_bbn_predict_grid">\
                                 </div>\
-                                </fieldset>\
-                            </form>\
+                            </div>\
                         </div>\
                     </div>\
                 </div>\
@@ -12753,7 +12799,7 @@ function PredictGridLoad1(alist)
     //console.log(alist);
     var bar_grid_width = 160;
     var get_width = function(domain, value){
-        if(domain === 'I级' && value === 1){
+        if(domain === '正常' && value === 1){
             return 0;
         }
         return Math.floor((bar_grid_width-50) * value);
@@ -12782,7 +12828,7 @@ function PredictGridLoad1(alist)
             }
         });
         //console.log(value);
-        if(domain === 'I级' && value === 1){
+        if(domain === '正常' && value === 1){
             return ret;
         }
         if(!_.isUndefined(k0)){
@@ -12818,7 +12864,8 @@ function PredictGridLoad1(alist)
                     return '';
                 }
             }},
-            {display:'检修建议', name:'suggestion', width: 130},
+            {display:'详细描述', name:'description', width: 230},
+            {display:'检修建议', name:'suggestion', width: 230},
         ];
         $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
             columns: columns,
@@ -12833,6 +12880,11 @@ function PredictGridLoad1(alist)
                 $(rowobj).find('td').each(function (i, item) {
                     var id = $(item).attr('id');
                     if(_.endsWith(id, 'c105') )
+                    {
+                        var div = $(item).find('div');
+                        $(div).attr('title', $(div).html());
+                    }
+                    if(_.endsWith(id, 'c106') )
                     {
                         var div = $(item).find('div');
                         $(div).attr('title', $(div).html());
@@ -13308,7 +13360,7 @@ function PredictExport()
         var table1 = table.clone();
         //console.log(table1);
         var tableheader = '<thead><tr><td colspan=5>线路名称:' + line_name + '</td></tr></thead>';
-        tableheader += '<thead><tr><td>线路预测等级</td><td>预测项名称</td><td>预测项取值</td><td>预测项取值概率</td><td>检修建议</td></tr></thead>';
+        tableheader += '<thead><tr><td>线路预测等级</td><td>预测项名称</td><td>预测项取值</td><td>预测项取值概率</td><td>详细描述</td><td>检修建议</td></tr></thead>';
         table1.html(tableheader + table1.html());
         var href = ExcellentExport.excel(null, table1[0], 'Sheet1');
         window.open(href, '_blank');
@@ -13339,10 +13391,10 @@ function DrawPredictTable(data)
         }
         return ret;
     };
-    var get_domain_name = function(value)
-    {
-        return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
-    };
+    //var get_domain_name = function(value)
+    //{
+    //    return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+    //};
     var is_in_assume = function(assume, name)
     {
         return !_.isUndefined(_.find(assume, {name:name}));
@@ -13356,7 +13408,7 @@ function DrawPredictTable(data)
         var value = '';
         var probability = '';
         _.forEach(['I', 'II', 'III', 'IV'], function(item){
-            var v = get_domain_name(item);
+            var v = GetDomainName(item);
             var p = get_p(data, 'line_state', item);
             if(!_.isUndefined(p)){
                 o.children.push({value:v, probability:p});
@@ -13377,7 +13429,7 @@ function DrawPredictTable(data)
         var value = '';
         var probability = '';
         _.forEach(item.domains, function(domain){
-            var v = get_domain_name(domain);
+            var v = GetDomainName(domain);
             var p = get_p(data, item.name, domain);
             if(!_.isUndefined(p))
             {
@@ -13404,10 +13456,10 @@ function DrawPredictTable1(data)
         }
         return ret;
     };
-    var get_domain_name = function(value)
-    {
-        return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
-    };
+    //var get_domain_name = function(value)
+    //{
+    //    return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+    //};
     var is_in_assume = function(assume, name)
     {
         return !_.isUndefined(_.find(assume, {name:name}));
@@ -13420,10 +13472,46 @@ function DrawPredictTable1(data)
         }
         return ret;
     };
+    var get_description = function(line_state)
+    {
+        //console.log(line_state);
+        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:line_state}), 'description');
+        if(_.isUndefined(ret)){
+            ret = '';
+        }else{
+            ret = ret.join('\n');
+        }
+        return ret;
+    };
+    var get_suggestion = function(line_state)
+    {
+        //console.log(line_state);
+        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:line_state}), 'suggestion');
+        if(_.isUndefined(ret)){
+            ret = '';
+        }else{
+            ret = ret.join('\n');
+            ret = ret.replace(' ', '');
+        }
+        console.log(ret);
+        return ret;
+    };
     var list = [];
     var assume = [{name:'line_state'}];
+
+    //var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+    //if (sels.length === 0) {
+    //    ShowMessage(null, 400, 250, '错误', '请先选择线路');
+    //    return;
+    //}
+    //var line_name = sels[0];
     _.forEach(data, function(dataitem){
-        var o = {line_state: get_domain_name(dataitem.line_state), children:[]};
+        var o = {
+            line_state: GetDomainName(dataitem.line_state),
+            children:[],
+            description:get_description(dataitem.line_state),
+            suggestion:get_suggestion(dataitem.line_state),
+        };
         _.forEach($.webgis.data.bbn.grid_data, function(item){
             if(is_in_assume(assume, item.name)){
                 return true;
@@ -13434,7 +13522,7 @@ function DrawPredictTable1(data)
             var probability = '';
             var max_v;
             _.forEach(item.domains, function(domain){
-                var v = get_domain_name(domain);
+                var v = GetDomainName(domain);
                 var p = get_p(dataitem.result, item.name, domain);
                 if(!_.isUndefined(p))
                 {
@@ -13508,6 +13596,11 @@ function ResetBBNUnit(viewer, line_name, callback)
 
         }
     );
+}
+
+function PredictSummary()
+{
+
 }
 
 

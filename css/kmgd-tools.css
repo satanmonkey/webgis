@@ -1141,8 +1141,9 @@ input[type="button"].btn-block {
 }
 #div_state_examination_bbn_predict_grid_container
 {
-	border:1px solid #2e6e9e;
+	/*border:1px solid #2e6e9e;*/
 	overflow-y: auto;
+	overflow-x: auto;
 	min-height:300px;
 	max-height:300px;
 }
@@ -1203,4 +1204,9 @@ input[type="button"].btn-block {
 	vertical-align:middle;
 	line-height: 50px;
 	margin-bottom: 16px;
+}
+#form_state_examination_bbn_assume_years
+{
+	width:200px;
+	margin: 10px;
 }
