@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = false;
+var DEBUG_BAYES = true;
 var TREE_COLLAPSE = true;
 
 
@@ -3279,7 +3279,7 @@ function ShowStateExaminationBBNDialog(viewer)
     });
     $('#btn_state_examination_bbn_assume_predict_summary').button({label:'查看结论'});
     $('#btn_state_examination_bbn_assume_predict_summary').on('click', function(){
-        PredictSummary();
+        PredictSummaryDialog(viewer);
     });
 
     $('#cb_state_examination_bbn_assume_predict_display_0').on('click', function(){
@@ -4741,6 +4741,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
                                 <legend></legend>\
                                 <label for="form_state_examination_bbn_assume_years">请选择预测年限:</label><select id="form_state_examination_bbn_assume_years" name="form_state_examination_bbn_assume_years"></select>\
                             </fieldset>\
+                            <div style="height:20px;"></div>\
                             <fieldset>\
                                 <div id="btn_state_examination_bbn_assume_predict">\
                                 </div>\
@@ -4801,11 +4802,25 @@ function CreateDialogSkeleton(viewer, dlg_id)
         }
         if (dlg_id === 'dlg_state_examination_detail_doc')
         {
-                //<canvas id="canvas_maintain_strategy_standard"></canvas>\
             $(document.body).append('\
             <div id="dlg_state_examination_detail_doc" >\
                 <iframe id="iframe_state_examination_detail_doc" src="/ViewerJS/index.html#/南方电网公司35kV～500kV架空线路状态评价导则（试行）.pdf" allowfullscreen webkitallowfullscreen></iframe>\
             </div>');
+        }
+        if (dlg_id === 'dlg_state_examination_bbn_predict_summary')
+        {
+            $(document.body).append('\
+            <div id="dlg_state_examination_bbn_predict_summary" >\
+                <fieldset>\
+                    <legend>预测趋势图</legend>\
+                    <div id="div_state_examination_bbn_predict_summary_graph_container"  >\
+                        <div id="div_state_examination_bbn_predict_summary_graph"  >\
+                        </div>\
+                    </div>\
+                </fieldset>\
+                <form id="form_state_examination_bbn_predict_summary"></form>\
+            </div>\
+            ');
         }
     }
 }
@@ -13491,9 +13506,14 @@ function DrawPredictTable1(data)
             ret = '';
         }else{
             ret = ret.join('\n');
-            ret = ret.replace(' ', '');
+            ret = ret.replace(/\s+/g, '');
+            var re = /\d\.[ABCDE]/g;
+            var matchlist = ret.match(re);
+            _.forEach(matchlist, function(item){
+                var rr = new RegExp(item, 'g');
+                ret = ret.replace(rr, '\n'+ item);
+            });
         }
-        console.log(ret);
         return ret;
     };
     var list = [];
@@ -13598,9 +13618,87 @@ function ResetBBNUnit(viewer, line_name, callback)
     );
 }
 
-function PredictSummary()
+function PredictSummaryDialog(viewer)
+{
+    CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_predict_summary');
+    $('#dlg_state_examination_bbn_predict_summary').dialog({
+        width: 580,
+        height: 650,
+        minWidth:200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position:{at: "center"},
+        title:'预测汇总',
+        close: function(event, ui){
+        },
+        show: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        hide: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        buttons:[
+            {
+                text: "导出",
+                click: function(e){
+                    PredictSummaryExport(viewer);
+                }
+            },
+            {
+                text: "确定",
+                click: function(e){
+                    $( this ).dialog( "close" );
+                }
+            }
+        ]
+    });
+    var flds = [
+        { display: "重点关注", id: "description", newline: true, type: "text",  defaultvalue: '', group: '检修意见', width: 400, labelwidth: 120},
+        { display: "历史劣化记录", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '检修意见', width: 400, height:100, labelwidth: 120},
+        { display: "检修建议", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '检修意见', width: 400, height:100, labelwidth: 120},
+    ];
+    $('#form_state_examination_bbn_predict_summary').webgisform(flds, {
+        prefix: "form_state_examination_bbn_predict_summary_",
+        maxwidth: 530
+        //margin:10,
+        //groupmargin:10
+    });
+    var get_latest_record = function(){
+        var years = _.pluck($.webgis.data.state_examination.list_data_current_line, 'check_year');
+        var latest_year = _.max(years);
+        return _.find($.webgis.data.state_examination.list_data_current_line, {check_year:latest_year});
+    };
+    var test = function(){
+        var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+        if (sels.length === 0) {
+            ShowMessage(null, 400, 250, '错误', '请先选择线路');
+            return;
+        }
+        var line_name = sels[0];
+        $.ajax({
+            url:'/state_examination/query',
+            method:'post',
+            data: JSON.stringify({line_name:line_name})
+        })
+        .always(function () {
+            ShowProgressBar(false);
+        })
+        .done(function (data2) {
+            data2 = JSON.parse(data2);
+            $.webgis.data.state_examination.list_data_current_line = data2;
+            var rec = get_latest_record();
+            var nextyear = calc_next_year_probability(rec);
+        });
+    };
+    test();
+}
+function PredictSummaryExport(viewer)
 {
 
 }
-
-
