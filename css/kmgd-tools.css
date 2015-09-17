@@ -1210,8 +1210,9 @@ input[type="button"].btn-block {
 	width:200px;
 	margin: 10px;
 }
-#div_state_examination_bbn_predict_summary_graph_container
+#div_state_examination_bbn_predict_summary_graph
 {
 	min-height:380px;
 	border:1px solid #2e6e9e;
 }
+

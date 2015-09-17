@@ -13674,6 +13674,50 @@ function PredictSummaryDialog(viewer)
         var latest_year = _.max(years);
         return _.find($.webgis.data.state_examination.list_data_current_line, {check_year:latest_year});
     };
+    var draw_chart = function(){
+        var sels = $('#form_state_examination_bbn_assume_years').multipleSelect('getSelects');
+        var ys = parseInt(sels[0]);
+        //console.log(ys);
+        var probs = calc_future_probability_series($.webgis.data.state_examination.list_data_current_line, ys);
+        var check_year = _.pluck(probs, 'check_year');
+        var prob = {line_state:{}};
+        var graph_data = {line_state:{}};
+        _.forEach(_.range(1, 9), function(i){
+            prob['unit_' + i] = {};
+            graph_data['unit_' + i] = {};
+        });
+        _.forEach(['I', 'II', 'III', 'IV'], function(item){
+            prob['line_state'][item] =  _.pluck(probs, 'prob.line_state.' + item);
+            graph_data['line_state'][item] = _.zip(check_year, prob['line_state'][item]);
+            _.forEach(_.range(1, 9), function(i){
+                prob['unit_' + i][item] = _.pluck(probs, 'prob.unit_' + i + '.' + item);
+                graph_data['unit_' + i][item] = _.zip(check_year, prob['unit_' + i][item]);
+            });
+        });
+        console.log(graph_data);
+        if(!_.isUndefined($.webgis.control.flot_graph))
+        {
+            $.webgis.control.flot_graph.destroy();
+            $.webgis.control.flot_graph = undefined;
+        }
+        $.webgis.control.flot_graph =  $.plot("#div_state_examination_bbn_predict_summary_graph", [{
+            data: graph_data.line_state.IV,
+            color: "rgb(255, 0, 0)",
+            lines: {
+                steps: false
+            },
+            xaxis: {
+                mode: "time",
+                timeformat: "%Y"
+            },
+            yaxis: {
+                transform:function(v){
+                    return Math.floor(v*100);
+                }
+            }
+        }]);
+
+    };
     var test = function(){
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
         if (sels.length === 0) {
@@ -13692,8 +13736,7 @@ function PredictSummaryDialog(viewer)
         .done(function (data2) {
             data2 = JSON.parse(data2);
             $.webgis.data.state_examination.list_data_current_line = data2;
-            var rec = get_latest_record();
-            var nextyear = calc_next_year_probability(rec);
+            draw_chart();
         });
     };
     test();
