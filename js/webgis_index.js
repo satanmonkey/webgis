@@ -3295,7 +3295,7 @@ function ShowStateExaminationBBNDialog(viewer)
         }
     });
     var options = '';
-    _.forEach(_.range(1, 6), function(item){
+    _.forEach(_.range(1, 11), function(item){
         options += '<option value="' + item + '">' + item + '年</option>';
     });
     $('#form_state_examination_bbn_assume_years').append(options);
@@ -13679,7 +13679,9 @@ function PredictSummaryDialog(viewer)
         var ys = parseInt(sels[0]);
         //console.log(ys);
         var probs = calc_future_probability_series($.webgis.data.state_examination.list_data_current_line, ys);
-        var check_year = _.pluck(probs, 'check_year');
+        var check_year = _.map(_.pluck(probs, 'check_year'), function(item){
+            return moment(item, 'YYYY').toDate().getTime();
+        });
         var prob = {line_state:{}};
         var graph_data = {line_state:{}};
         _.forEach(_.range(1, 9), function(i){
@@ -13687,36 +13689,85 @@ function PredictSummaryDialog(viewer)
             graph_data['unit_' + i] = {};
         });
         _.forEach(['I', 'II', 'III', 'IV'], function(item){
-            prob['line_state'][item] =  _.pluck(probs, 'prob.line_state.' + item);
+            prob['line_state'][item] = _.map(_.pluck(probs, 'prob.line_state.' + item), function(n){
+                return Math.floor(n*100);
+            });
             graph_data['line_state'][item] = _.zip(check_year, prob['line_state'][item]);
             _.forEach(_.range(1, 9), function(i){
-                prob['unit_' + i][item] = _.pluck(probs, 'prob.unit_' + i + '.' + item);
+                prob['unit_' + i][item] = _.map(_.pluck(probs, 'prob.unit_' + i + '.' + item), function(n){
+                    return Math.floor(n*100);
+                });
                 graph_data['unit_' + i][item] = _.zip(check_year, prob['unit_' + i][item]);
             });
         });
-        console.log(graph_data);
         if(!_.isUndefined($.webgis.control.flot_graph))
         {
             $.webgis.control.flot_graph.destroy();
             $.webgis.control.flot_graph = undefined;
         }
-        $.webgis.control.flot_graph =  $.plot("#div_state_examination_bbn_predict_summary_graph", [{
-            data: graph_data.line_state.IV,
-            color: "rgb(255, 0, 0)",
-            lines: {
-                steps: false
+        var threashold_markings = [
+            { color: "rgba(255, 0, 0, 0.2)", yaxis: { from: 50, to:100 } },
+            { color: "rgba(255, 128, 0, 0.2)", yaxis: { from: 20, to:50 } },
+            { color: "rgba(0, 255, 0, 0.2)", yaxis: { from: 0, to:20 } },
+        ];
+        var plot_data = [
+            {
+                id:'line_state_IV',
+                data: graph_data.line_state.IV,
+                color: "rgb(255, 0, 0)",
+                label: '线路严重',
             },
-            xaxis: {
-                mode: "time",
-                timeformat: "%Y"
+            {
+                id:'line_state_III',
+                data: graph_data.line_state.III,
+                color: "rgb(255, 255, 0)",
+                label: '线路异常',
             },
-            yaxis: {
-                transform:function(v){
-                    return Math.floor(v*100);
+            //{
+            //    id:'line_state_II',
+            //    data: graph_data.line_state.II,
+            //    color: "rgb(255, 255, 0)",
+            //    lines: {
+            //        show: true,
+            //        steps: false
+            //    },
+            //    label: '线路注意',
+            //    points: { show: true },
+            //    hoverable: true
+            //},
+        ];
+        $.webgis.control.flot_graph =  $.plot(
+            "#div_state_examination_bbn_predict_summary_graph",
+            plot_data,
+            {
+                series: {
+                    stack: true,
+                    hoverable: true,
+                    lines: {
+                        show: true,
+                        steps: false
+                    },
+                    points: { show: true }
+                },
+                xaxis: {
+                    mode: "time",
+                    timeformat: "%Y",
+                    ticks:check_year
+                },
+                yaxis: {
+                    max:100,
+                    min:0
+                },
+                grid: { markings: threashold_markings },
+                legend: {
+                    show: true,
+                    labelFormatter: function(label, series) {
+                        console.log(series.id);
+                        return '<input type="checkbox" id="' + series.id + '" checked="checked">' + label ;
+                    }
                 }
             }
-        }]);
-
+        );
     };
     var test = function(){
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');

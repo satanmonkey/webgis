@@ -181,8 +181,8 @@ function calc_future_probability_series(alist, year_num)
             return latest_year + i;
         });
     }
-    ys.unshift(latest_year);
-    _.forEach(_.range(0, year_num+1), function(i){
+    //ys.unshift(latest_year);
+    _.forEach(_.range(1, year_num+1), function(i){
         var o = {};
         o.check_year = latest_year + i;
         o.prob = calc_future_probability(alist, i);
