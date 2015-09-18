@@ -3296,13 +3296,13 @@ function ShowStateExaminationBBNDialog(viewer)
     });
     var options = '';
     _.forEach(_.range(1, 11), function(item){
-        options += '<option value="' + item + '">' + item + '年</option>';
+        options += '<option value="' + (item+1) + '">' + item + '年</option>';
     });
     $('#form_state_examination_bbn_assume_years').append(options);
     $('#form_state_examination_bbn_assume_years').multipleSelect({
         single:true
     });
-    $('#form_state_examination_bbn_assume_years').multipleSelect('setSelects', ["1"]);
+    $('#form_state_examination_bbn_assume_years').multipleSelect('setSelects', ["6"]);
 }
 function FilterNonZero()
 {
@@ -4812,9 +4812,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
             <div id="dlg_state_examination_bbn_predict_summary" >\
                 <fieldset>\
-                    <legend>预测趋势图</legend>\
+                    <legend>概率预测走势图</legend>\
+                    <div id="div_summary_graph_sel_container">\
+                    <select id="sel_summary_graph_type"></select>\
+                    </div>\
                     <div id="div_state_examination_bbn_predict_summary_graph_container"  >\
                         <div id="div_state_examination_bbn_predict_summary_graph"  >\
+                        </div>\
+                        <div id="flotlegend"  >\
                         </div>\
                     </div>\
                 </fieldset>\
@@ -13622,7 +13627,7 @@ function PredictSummaryDialog(viewer)
 {
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_predict_summary');
     $('#dlg_state_examination_bbn_predict_summary').dialog({
-        width: 580,
+        width: 780,
         height: 650,
         minWidth:200,
         minHeight: 200,
@@ -13700,13 +13705,13 @@ function PredictSummaryDialog(viewer)
                 graph_data['unit_' + i][item] = _.zip(check_year, prob['unit_' + i][item]);
             });
         });
-        if(!_.isUndefined($.webgis.control.flot_graph))
-        {
-            $.webgis.control.flot_graph.destroy();
-            $.webgis.control.flot_graph = undefined;
-        }
+        //if(!_.isUndefined($.webgis.control.flot_graph))
+        //{
+        //    $.webgis.control.flot_graph.destroy();
+        //    $.webgis.control.flot_graph = undefined;
+        //}
         var threashold_markings = [
-            { color: "rgba(255, 0, 0, 0.2)", yaxis: { from: 50, to:100 } },
+            { color: "rgba(255, 0, 0, 0.2)", yaxis: { from: 50, to:100 }, label:'高风险' },
             { color: "rgba(255, 128, 0, 0.2)", yaxis: { from: 20, to:50 } },
             { color: "rgba(0, 255, 0, 0.2)", yaxis: { from: 0, to:20 } },
         ];
@@ -13716,58 +13721,171 @@ function PredictSummaryDialog(viewer)
                 data: graph_data.line_state.IV,
                 color: "rgb(255, 0, 0)",
                 label: '线路严重',
+                stack: true,
+                lines: {
+                    show: true,
+                    steps: false
+                },
+                points: { show: true }
             },
             {
                 id:'line_state_III',
                 data: graph_data.line_state.III,
                 color: "rgb(255, 255, 0)",
                 label: '线路异常',
+                stack: true,
+                lines: {
+                    show: true,
+                    steps: false
+                },
+                points: { show: true }
             },
             //{
             //    id:'line_state_II',
             //    data: graph_data.line_state.II,
-            //    color: "rgb(255, 255, 0)",
+            //    color: "rgb(0, 0, 255)",
             //    lines: {
             //        show: true,
             //        steps: false
             //    },
             //    label: '线路注意',
-            //    points: { show: true },
-            //    hoverable: true
+            //    stack: false
             //},
         ];
-        $.webgis.control.flot_graph =  $.plot(
-            "#div_state_examination_bbn_predict_summary_graph",
-            plot_data,
-            {
-                series: {
-                    stack: true,
-                    hoverable: true,
-                    lines: {
-                        show: true,
-                        steps: false
+        var get_unit_name = function(idx){
+            return _.result(_.find($.webgis.data.state_examination.standard2014, {unit_index:idx}), 'parent');
+        };
+        var names1 = _.uniq(_.pluck($.webgis.data.state_examination.standard2014, 'parent'));
+        var names = [];
+        var i = 1;
+        var options = '';
+        _.forEach(names1, function(item){
+            names.push({label:item, value:'unit_' + i});
+            i += 1;
+        });
+
+
+        $('#sel_summary_graph_type').append(options);
+        _.forEach(_.range(1, 9), function(i){
+            _.forEach([ 'IV','III'], function(lvl){
+                var o = {};
+                o.id = 'unit_' + i + lvl;
+                o.label = get_unit_name(i);
+                if(lvl === 'II'){
+                    o.label += '注意';
+                    o.color = "rgb(0, 255, 0)";
+                }
+                if(lvl === 'III'){
+                    o.label += '异常';
+                    o.color = "rgb(255, 255, 0)";
+                }
+                if(lvl === 'IV'){
+                    o.label += '严重';
+                    o.color = "rgb(255, 0, 0)";
+                }
+                o.data = graph_data['unit_' + i][lvl];
+                o.stack = false;
+                o.lines =  {
+                    show: false,
+                    steps: false
+                };
+                o.points ={ show: false };
+                //plot_data.push(o);
+            });
+        });
+        if(_.isUndefined($('#flottooltip')[0]))
+        {
+            $('<div id="flottooltip"></div>').css({
+                position: "absolute",
+                display: "none",
+                border: "1px solid blue",
+                padding: "2px",
+                "background-color": "#fee",
+                opacity: 0.80,
+                'z-index':9999
+            }).appendTo("body");
+        }
+
+        var draw_plot = function(data){
+            $.webgis.control.flot_graph =  $.plot(
+                "#div_state_examination_bbn_predict_summary_graph",
+                data,
+                {
+                    series: {
+                        //stack: true,
+                        hoverable: true
                     },
-                    points: { show: true }
-                },
-                xaxis: {
-                    mode: "time",
-                    timeformat: "%Y",
-                    ticks:check_year
-                },
-                yaxis: {
-                    max:100,
-                    min:0
-                },
-                grid: { markings: threashold_markings },
-                legend: {
-                    show: true,
-                    labelFormatter: function(label, series) {
-                        console.log(series.id);
-                        return '<input type="checkbox" id="' + series.id + '" checked="checked">' + label ;
+                    xaxis: {
+                        mode: "time",
+                        timeformat: "%Y",
+                        ticks:check_year
+                    },
+                    yaxis: {
+                        max:100,
+                        min:0,
+                        tickFormatter:function(v){
+                            return v + '%';
+                        }
+                    },
+                    grid: {
+                        markings: threashold_markings,
+                        hoverable: true,
+                        clickable: true
+                    },
+                    legend: {
+                        show: true,
+                        //container:'#flotlegend',
+                        labelFormatter: function(label, series) {
+                            return '<input type="checkbox" id="flotlinechart_' + series.id + '" >' + label ;
+                        }
                     }
                 }
-            }
-        );
+            );
+            $('#div_state_examination_bbn_predict_summary_graph').off();
+            $('#div_state_examination_bbn_predict_summary_graph').bind('plothover', function (event, pos, item) {
+                if(item){
+                    var x = item.datapoint[0];
+                    var y = item.datapoint[1];
+                    var text = '';
+                    if(y < 20){
+                        text = y + '%,(低风险)';
+                    }
+                    if(y >= 20 && y<=50){
+                        text = y + '%,(中风险)';
+                    }
+                    if(y > 50){
+                        text = y + '%,(高风险)';
+                    }
+                    $("#flottooltip").html(text)
+                    .css({top: item.pageY+5, left: item.pageX+5})
+                    .fadeIn(200);
+                }else{
+                    $("#flottooltip").hide();
+                }
+            });
+
+            $('input[id^=flotlinechart_line_state_]').each(function(idx, item){
+                $(item).attr('checked', 'checked');
+            });
+            $('input[id^=flotlinechart_]').off();
+            $('input[id^=flotlinechart_]').on('click', function(){
+                var id1 = $(this).attr('id');
+                var id = id1.replace('flotlinechart_', '');
+                var o = _.find(plot_data, {id:id});
+                var checked = $(this).is(':checked');
+                o.lines.show = checked;
+                o.points.show = checked;
+                //o.stack = checked;
+                $.webgis.control.flot_graph.setData(plot_data);
+                $.webgis.control.flot_graph.draw();
+                //if(checked){
+                //    $(this).attr('checked', 'checked');
+                //}else{
+                //    $(this).removeAttr('checked');
+                //}
+            });
+        };
+        draw_plot(plot_data);
     };
     var test = function(){
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
@@ -13790,7 +13908,13 @@ function PredictSummaryDialog(viewer)
             draw_chart();
         });
     };
-    test();
+    if(DEBUG_BAYES)
+    {
+        test();
+    }else{
+        draw_chart();
+    }
+
 }
 function PredictSummaryExport(viewer)
 {

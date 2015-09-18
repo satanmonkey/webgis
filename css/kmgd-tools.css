@@ -1213,6 +1213,12 @@ input[type="button"].btn-block {
 #div_state_examination_bbn_predict_summary_graph
 {
 	min-height:380px;
-	border:1px solid #2e6e9e;
+	width:600px;
+	/*border:1px solid #2e6e9e;*/
+	float:left;
+}
+#flotlegend
+{
+	float:right;
 }
 
