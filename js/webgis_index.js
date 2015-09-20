@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = true;
+var DEBUG_BAYES = false;
 var TREE_COLLAPSE = true;
 
 
@@ -3179,8 +3179,8 @@ function ShowStateExaminationBBNDialog(viewer)
                             {
                                 ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
                             }
-                            if(_.isUndefined($.webgis.data.state_examination.list_data_current_line))
-                            {
+                            //if(_.isUndefined($.webgis.data.state_examination.list_data_current_line))
+                            //{
                                 ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
                                 $.ajax({
                                     url:'/state_examination/query',
@@ -3194,7 +3194,7 @@ function ShowStateExaminationBBNDialog(viewer)
                                     data2 = JSON.parse(data2);
                                     $.webgis.data.state_examination.list_data_current_line = data2;
                                 });
-                            }
+                            //}
                         });
                     }
                 });
@@ -3202,6 +3202,8 @@ function ShowStateExaminationBBNDialog(viewer)
         }
         $('#form_state_examination_bbn_bbn_view_grid_line_name').html(line_name);
         $('#form_state_examination_bbn_assume .form_state_examination_bbn_assume_line_name').html(line_name);
+        delete $.webgis.data.bbn.predict_grid_data;
+        $.webgis.data.bbn.predict_grid_data = undefined;
     };
     var flds = [
         { display: "输电线路", id: "line_name", newline: true, type: "select", editor: { data: [] , filter:true}, defaultvalue: '', group: '查询条件', width: 400, labelwidth: 120,
@@ -3265,9 +3267,16 @@ function ShowStateExaminationBBNDialog(viewer)
         //DoPredict(function(data1){
         //    DrawPredictTable(data1);
         //});
-        DoPredict1(function(data1){
-            DrawPredictTable1(data1);
-        });
+        if(_.isUndefined($.webgis.data.bbn.predict_grid_data))
+        {
+            DoPredict1(function(data1){
+                DrawPredictTable1(data1);
+                PredictSummaryDialog(viewer);
+            });
+        }else
+        {
+            PredictSummaryDialog(viewer);
+        }
     });
     $('#btn_state_examination_bbn_assume_predict_export').button({label:'导出'});
     $('#btn_state_examination_bbn_assume_predict_export').on('click', function(){
@@ -3277,10 +3286,10 @@ function ShowStateExaminationBBNDialog(viewer)
     $('#btn_state_examination_bbn_assume_predict_collapse').on('click', function(){
         PredictCollapseExpand();
     });
-    $('#btn_state_examination_bbn_assume_predict_summary').button({label:'查看结论'});
-    $('#btn_state_examination_bbn_assume_predict_summary').on('click', function(){
-        PredictSummaryDialog(viewer);
-    });
+    //$('#btn_state_examination_bbn_assume_predict_summary').button({label:'查看结论'});
+    //$('#btn_state_examination_bbn_assume_predict_summary').on('click', function(){
+    //    PredictSummaryDialog(viewer);
+    //});
 
     $('#cb_state_examination_bbn_assume_predict_display_0').on('click', function(){
         if(!_.isUndefined($.webgis.data.bbn.predict_grid_data)) {
@@ -4812,10 +4821,18 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
             <div id="dlg_state_examination_bbn_predict_summary" >\
                 <fieldset>\
-                    <legend>概率预测走势图</legend>\
-                    <div id="div_summary_graph_sel_container">\
-                    <select id="sel_summary_graph_type"></select>\
+                    <legend>概率预测走势图\
+                    <div id="div_summary_graph_legend_container_container">\
+                        <div id="div_summary_graph_area_container">\
+                        <span class="area_high">&nbsp;&nbsp;&nbsp;&nbsp;</span>高风险&nbsp;&nbsp;\
+                        <span class="area_medium">&nbsp;&nbsp;&nbsp;&nbsp;</span>中风险&nbsp;&nbsp;\
+                        <span class="area_low">&nbsp;&nbsp;&nbsp;&nbsp;</span>低风险\
+                        </div>\
+                        <div id="div_summary_graph_sel_container">\
+                        <label for="sel_summary_graph_type">请选择线路单元</label><select id="sel_summary_graph_type"></select>\
+                        </div>\
                     </div>\
+                    </legend>\
                     <div id="div_state_examination_bbn_predict_summary_graph_container"  >\
                         <div id="div_state_examination_bbn_predict_summary_graph"  >\
                         </div>\
@@ -12373,7 +12390,7 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
                                 var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
                                 var namesarr = get_names_arr(o);
                                 namesarr.push(formdata.name);
-                                namesarr = _.uniq(namesarr)
+                                namesarr = _.uniq(namesarr);
                                 var condlist = [];
                                 _.forEach(namesarr, function (name) {
                                     var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
@@ -12396,7 +12413,7 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
                                 var o = _.find($.webgis.data.bbn.grid_data, {_id: id});
                                 var namesarr = get_names_arr(o);
                                 namesarr.push(formdata.exist_nodes);
-                                namesarr = _.uniq(namesarr)
+                                namesarr = _.uniq(namesarr);
                                 var condlist = [];
                                 _.forEach(namesarr, function(name){
                                     var cond = _.find($.webgis.data.bbn.grid_data, {name: name});
@@ -13625,9 +13642,10 @@ function ResetBBNUnit(viewer, line_name, callback)
 
 function PredictSummaryDialog(viewer)
 {
+    $('#dlg_state_examination_bbn_predict_summary').remove();
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_predict_summary');
     $('#dlg_state_examination_bbn_predict_summary').dialog({
-        width: 780,
+        width: 630,
         height: 650,
         minWidth:200,
         minHeight: 200,
@@ -13652,21 +13670,24 @@ function PredictSummaryDialog(viewer)
             {
                 text: "导出",
                 click: function(e){
+                    $('#flottooltip').hide();
                     PredictSummaryExport(viewer);
                 }
             },
             {
                 text: "确定",
                 click: function(e){
+                    $('#flottooltip').hide();
                     $( this ).dialog( "close" );
+                    $('#dlg_state_examination_bbn_predict_summary').remove();
                 }
             }
         ]
     });
     var flds = [
-        { display: "重点关注", id: "description", newline: true, type: "text",  defaultvalue: '', group: '检修意见', width: 400, labelwidth: 120},
+        { display: "重点关注", id: "attention", newline: true, type: "text",  defaultvalue: '', group: '检修意见', width: 400, labelwidth: 120},
         { display: "历史劣化记录", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '检修意见', width: 400, height:100, labelwidth: 120},
-        { display: "检修建议", id: "description", newline: true, type: "textarea",  defaultvalue: '', group: '检修意见', width: 400, height:100, labelwidth: 120},
+        { display: "检修建议", id: "suggestion", newline: true, type: "textarea",  defaultvalue: '', group: '检修意见', width: 400, height:100, labelwidth: 120},
     ];
     $('#form_state_examination_bbn_predict_summary').webgisform(flds, {
         prefix: "form_state_examination_bbn_predict_summary_",
@@ -13674,6 +13695,79 @@ function PredictSummaryDialog(viewer)
         //margin:10,
         //groupmargin:10
     });
+
+    var get_description = function()
+    {
+        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'description');
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'description');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'description');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'description');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = '';
+        }
+        if(ret.length)
+        {
+            ret = ret.join('\n');
+        }
+        return ret;
+    };
+    var get_suggestion = function()
+    {
+        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'suggestion');
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'suggestion');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'suggestion');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'suggestion');
+        }
+        if(_.isUndefined(ret) || ret.length === 0){
+            ret = '';
+        }
+        if(ret.length)
+        {
+            ret = ret.join('\n');
+            ret = ret.replace(/\s+/g, '');
+            var re = /\d\.[ABCDE]/g;
+            var matchlist = ret.match(re);
+            _.forEach(matchlist, function(item){
+                var rr = new RegExp(item, 'g');
+                ret = ret.replace(rr, '\n'+ item);
+            });
+        }
+        return ret;
+    };
+    var get_unit_name = function(idx){
+        return _.result(_.find($.webgis.data.state_examination.standard2014, {unit_index:idx}), 'parent');
+    };
+    var get_attention = function()
+    {
+        var list = [];
+        _.forEach($.webgis.data.state_examination.list_data_current_line, function(item){
+            _.forIn(item, function(v, k){
+                if(k.indexOf('unit_')>-1 && (v === 'II' || v === 'III' || v === 'IV'))
+                {
+                    list.push(get_unit_name(parseInt(k.replace('unit_', ''))));
+                }
+            });
+        });
+        list = _.uniq(list);
+        return list.join(',');
+    };
+    $('#form_state_examination_bbn_predict_summary').webgisform('setdata', {
+        attention: get_attention(),
+        description: get_description(),
+        suggestion: get_suggestion()
+    });
+
     var get_latest_record = function(){
         var years = _.pluck($.webgis.data.state_examination.list_data_current_line, 'check_year');
         var latest_year = _.max(years);
@@ -13682,7 +13776,7 @@ function PredictSummaryDialog(viewer)
     var draw_chart = function(){
         var sels = $('#form_state_examination_bbn_assume_years').multipleSelect('getSelects');
         var ys = parseInt(sels[0]);
-        //console.log(ys);
+        //console.log($.webgis.data.state_examination.list_data_current_line);
         var probs = calc_future_probability_series($.webgis.data.state_examination.list_data_current_line, ys);
         var check_year = _.map(_.pluck(probs, 'check_year'), function(item){
             return moment(item, 'YYYY').toDate().getTime();
@@ -13720,7 +13814,7 @@ function PredictSummaryDialog(viewer)
                 id:'line_state_IV',
                 data: graph_data.line_state.IV,
                 color: "rgb(255, 0, 0)",
-                label: '线路严重',
+                label: '严重',
                 stack: true,
                 lines: {
                     show: true,
@@ -13732,7 +13826,7 @@ function PredictSummaryDialog(viewer)
                 id:'line_state_III',
                 data: graph_data.line_state.III,
                 color: "rgb(255, 255, 0)",
-                label: '线路异常',
+                label: '异常',
                 stack: true,
                 lines: {
                     show: true,
@@ -13740,59 +13834,49 @@ function PredictSummaryDialog(viewer)
                 },
                 points: { show: true }
             },
-            //{
-            //    id:'line_state_II',
-            //    data: graph_data.line_state.II,
-            //    color: "rgb(0, 0, 255)",
-            //    lines: {
-            //        show: true,
-            //        steps: false
-            //    },
-            //    label: '线路注意',
-            //    stack: false
-            //},
+            {
+                id:'line_state_II',
+                data: graph_data.line_state.II,
+                color: "rgb(0, 0, 255)",
+                stack: false,
+                lines: {
+                    show: true,
+                    steps: false
+                },
+                points: { show: true },
+                label: '注意'
+            },
         ];
-        var get_unit_name = function(idx){
-            return _.result(_.find($.webgis.data.state_examination.standard2014, {unit_index:idx}), 'parent');
-        };
-        var names1 = _.uniq(_.pluck($.webgis.data.state_examination.standard2014, 'parent'));
-        var names = [];
-        var i = 1;
-        var options = '';
-        _.forEach(names1, function(item){
-            names.push({label:item, value:'unit_' + i});
-            i += 1;
-        });
-
-
-        $('#sel_summary_graph_type').append(options);
         _.forEach(_.range(1, 9), function(i){
-            _.forEach([ 'IV','III'], function(lvl){
+            _.forEach([ 'IV','III', 'II'], function(lvl){
                 var o = {};
                 o.id = 'unit_' + i + lvl;
-                o.label = get_unit_name(i);
+                o.label = '';get_unit_name(i);
                 if(lvl === 'II'){
-                    o.label += '注意';
-                    o.color = "rgb(0, 255, 0)";
+                    o.label = '注意';
+                    o.color = "rgb(0, 0, 255)";
+                    o.stack = false;
                 }
                 if(lvl === 'III'){
-                    o.label += '异常';
+                    o.label = '异常';
                     o.color = "rgb(255, 255, 0)";
+                    o.stack = true;
                 }
                 if(lvl === 'IV'){
-                    o.label += '严重';
+                    o.label = '严重';
                     o.color = "rgb(255, 0, 0)";
+                    o.stack = true;
                 }
                 o.data = graph_data['unit_' + i][lvl];
-                o.stack = false;
                 o.lines =  {
-                    show: false,
+                    show: true,
                     steps: false
                 };
-                o.points ={ show: false };
-                //plot_data.push(o);
+                o.points ={ show: true };
+                plot_data.push(o);
             });
         });
+
         if(_.isUndefined($('#flottooltip')[0]))
         {
             $('<div id="flottooltip"></div>').css({
@@ -13864,28 +13948,50 @@ function PredictSummaryDialog(viewer)
                 }
             });
 
-            $('input[id^=flotlinechart_line_state_]').each(function(idx, item){
+            $('input[id^=flotlinechart_]').each(function(idx, item){
                 $(item).attr('checked', 'checked');
             });
             $('input[id^=flotlinechart_]').off();
             $('input[id^=flotlinechart_]').on('click', function(){
                 var id1 = $(this).attr('id');
                 var id = id1.replace('flotlinechart_', '');
-                var o = _.find(plot_data, {id:id});
+                var o = _.find(data, {id:id});
                 var checked = $(this).is(':checked');
                 o.lines.show = checked;
                 o.points.show = checked;
                 //o.stack = checked;
-                $.webgis.control.flot_graph.setData(plot_data);
+                $.webgis.control.flot_graph.setData(data);
                 $.webgis.control.flot_graph.draw();
-                //if(checked){
-                //    $(this).attr('checked', 'checked');
-                //}else{
-                //    $(this).removeAttr('checked');
-                //}
             });
         };
-        draw_plot(plot_data);
+
+        var filter_data = function(filtername){
+            var plot_data1 = _.filter(plot_data, function(item){
+                return item.id.indexOf(filtername) > -1;
+            });
+            draw_plot(plot_data1);
+        };
+        var names1 = _.uniq(_.pluck($.webgis.data.state_examination.standard2014, 'parent'));
+        var names = [{label:'线路整体', value:'line_state'}];
+        var i = 1;
+        var options = '<option value="line_state">线路整体</option>';
+        _.forEach(names1, function(item){
+            names.push({label:item, value:'unit_' + i});
+            options += '<option value="' + 'unit_' + i + '">' + item +'</option>';
+            i += 1;
+        });
+        $('#sel_summary_graph_type').empty();
+        $('#sel_summary_graph_type').append(options);
+        $('#sel_summary_graph_type').multipleSelect({
+            single: true,
+            multipleWidth: 300,
+            onClick: function(view) {
+                //console.log(view.value);
+                filter_data( view.value);
+            }
+        });
+        $('#sel_summary_graph_type').multipleSelect('setSelects', ['line_state']);
+        filter_data( 'line_state');
     };
     var test = function(){
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
@@ -13908,12 +14014,12 @@ function PredictSummaryDialog(viewer)
             draw_chart();
         });
     };
-    if(DEBUG_BAYES)
-    {
-        test();
-    }else{
-        draw_chart();
-    }
+    //if(DEBUG_BAYES)
+    //{
+    //    test();
+    //}else{
+    draw_chart();
+    //}
 
 }
 function PredictSummaryExport(viewer)

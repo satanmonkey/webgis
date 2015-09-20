@@ -1221,4 +1221,54 @@ input[type="button"].btn-block {
 {
 	float:right;
 }
+#div_summary_graph_sel_container
+{
+	float:right;
+	margin: 10px;
+}
+#div_summary_graph_area_container
+{
+	float:left;
+	margin: 10px;
+}
+#div_summary_graph_area_container .area_high
+{
+	margin: 2px;
+	width:30px;
+	height:10px;
+	text-align: center;
+	background-color: rgba(255, 0, 0, 0.2);
+	border:1px solid rgb(255, 0, 0);
+	color:rgb(255, 0, 0);
+	font-size: small;
+}
+#div_summary_graph_area_container .area_medium
+{
+	margin: 2px;
+	width:30px;
+	height:10px;
+	text-align: center;
+	background-color: rgba(255, 128, 0, 0.2);
+	border:1px solid rgb(255, 128, 0);
+	color:rgb(255, 128, 0);
+	font-size: small;
+}
+#div_summary_graph_area_container .area_low
+{
+	margin: 2px;
+	width:30px;
+	height:10px;
+	text-align: center;
+	background-color: rgba(0, 255, 0, 0.2);
+	border:1px solid rgb(0, 255, 0);
+	color:rgb(0, 255, 0);
+	font-size: small;
+}
+
+#div_summary_graph_legend_container_container
+{
+	width:600px;
+	height:60px;
+	/*border:1px solid red;*/
+}
 
