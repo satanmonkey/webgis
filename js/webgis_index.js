@@ -57,7 +57,6 @@ $(function() {
     //$.validator.addMethod("select_required", function(value, element) {
     //    return $(element).multipleSelect("getSelects").length > 0;
     //}, '请选择');
-
     $.validator.addMethod("alpha", function(value, element) {
           return this.optional(element) || /^[A-Za-z]|\d|[!#\$%&'\*\+\-\/=\?\^_`{\|}~]+$/.test(value); // just ascii letters
     },"请输入英文、数字或常见符号，禁止输入中文");
@@ -124,6 +123,39 @@ $(function() {
         InitScreenSize(viewer);
         LoadSysRole($.webgis.db.db_name, function(){
             $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
+        });
+            //"year_num":obj.year_num + '',
+            //"attention":obj.attention,
+            //"description":obj.description,
+            //"suggestion":obj.suggestion
+
+        PredictSummaryExport(null, {
+            line_name:'厂口七甸I回线',
+            year_num:5,
+            attention:'绝缘子,特殊区段',
+            description:'\
+厂口-七甸I回线#140绝缘子自爆\
+1、 #75-#82绝缘子外观检查有轻微积污（土尘），附近有污染源（长水机场外围施工），#82-#83跨越沾昆电气化铁路（复线），绝缘子为单挂单串。#73（中相V串左边横担侧第七片）自爆绝缘子未更换。绝缘子单元为注意状态。\
+2、#86  C-D侧距离乡村便道近1.0m，需建设永久性防撞墙，#72A-D侧外6m处度假区架设取土作业，形成3.5m高土坎。基础单元为注意状态   \
+3、#116-#120途径老鹰山，沿途荆棘灌木丛生，无巡线小道。#20-#23、#47-#50、#58-#60、#96-#102、#104-#106、#107-#109、#123-#125保护区内有约35000株林木待处理（垂直距离6.5-10m）。#91-#92保护区内新发社区5户居民违章建房（二层砖混）。#83 C-D腿侧外6m处修建新320国道。在建昆沪高速铁路穿越#92-#93，取土及大型施工机械作业。通道环境单元为注意状态；\
+1、 #75-#82绝缘子外观检查有轻微积污（土尘），附近有污染源（长水机场外围施工），#82-#83跨越沾昆电气化铁路（复线），绝缘子为单挂单串。#73（中相V串左边横担侧第七片）自爆绝缘子未更换。绝缘子单元为注意状态。 \
+2、#86  C-D侧距离乡村便道近1.0m，需建设永久性防撞墙，#72A-D侧外6m处度假区架设取土作业，形成3.5m高土坎。基础单元为注意状态   \
+3、#116-#120途径老鹰山，沿途荆棘灌木丛生，无巡线小道。#20-#23、#47-#50、#58-#60、#96-#102、#104-#106、#107-#109、#123-#125保护区内有约35000株林木待处理（垂直距离6.5-10m）。#91-#92保护区内新发社区5户居民违章建房（二层砖混）。#83 C-D腿侧外6m处修建新320国道。在建昆沪高速铁路穿越#92-#93，取土及大型施工机械作业。通道环境单元为注意状态；\
+                    ',
+            suggestion:'按运规要求巡视，建议及时更换\
+\
+1.C类检修：对有轻微积污的绝缘子进行清洗\
+\
+2.D类检修：加强对#83、#91-#92、#92-#93段巡视，视情况对#83加装挡土墙\
+\
+3.D类检修：及时清除通道内危急林木；D类检修：按照《昆明供电局电力线路外力破坏防治指导手册（第二版）》加强对外力破坏区的治理。\
+\
+1.C类检修：对有轻微积污的绝缘子进行清洗\
+\
+2.D类检修：加强对#83、#91-#92、#92-#93段巡视，视情况对#83加装挡土墙\
+\
+3.D类检修：及时清除通道内危急林木；D类检修：按照《昆明供电局电力线路外力破坏防治指导手册（第二版）》加强对外力破坏区的治理。\
+                    '
         });
         return;
     }
@@ -3267,6 +3299,11 @@ function ShowStateExaminationBBNDialog(viewer)
         //DoPredict(function(data1){
         //    DrawPredictTable(data1);
         //});
+        var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+        if (sels.length === 0 || sels[0].length === 0) {
+            ShowMessage(null, 400, 250, '错误', '请先选择线路');
+            return;
+        }
         if(_.isUndefined($.webgis.data.bbn.predict_grid_data))
         {
             DoPredict1(function(data1){
@@ -13226,7 +13263,7 @@ function DeleteBBNGridData1(viewer, idlist, namelist, callback)
     //console.log(namelist);
 
     var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-    if (sels.length === 0) {
+    if (sels.length === 0  || sels[0].length === 0) {
         ShowMessage(null, 400, 250, '错误', '请先选择线路');
         return;
     }
@@ -13301,7 +13338,7 @@ function DoPredict(callback)
     }
     //console.log(ass);
     var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-    if(sels.length === 0){
+    if(sels.length === 0  || sels[0].length === 0){
         ShowMessage(null, 400, 250, '错误',  '请先选择线路');
         return;
     }
@@ -13344,7 +13381,7 @@ function DoPredict1(callback)
     var list = [];
     //console.log(ass);
     var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-    if(sels.length === 0){
+    if(sels.length === 0 || sels[0].length === 0){
         ShowMessage(null, 400, 250, '错误',  '请先选择线路');
         return;
     }
@@ -13388,7 +13425,7 @@ function PredictExport()
             return;
         }
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-        if (sels.length === 0) {
+        if (sels.length === 0 || sels[0].length === 0) {
             ShowMessage(null, 400, 250, '错误', '请先选择线路');
             return;
         }
@@ -13542,7 +13579,7 @@ function DrawPredictTable1(data)
     var assume = [{name:'line_state'}];
 
     //var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-    //if (sels.length === 0) {
+    //if (sels.length === 0 || sels[0].length === 0) {
     //    ShowMessage(null, 400, 250, '错误', '请先选择线路');
     //    return;
     //}
@@ -13642,6 +13679,12 @@ function ResetBBNUnit(viewer, line_name, callback)
 
 function PredictSummaryDialog(viewer)
 {
+    var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+    if (sels.length === 0 || sels[0].length === 0) {
+        ShowMessage(null, 400, 250, '错误', '请先选择线路');
+        return;
+    }
+    var line_name = sels[0];
     $('#dlg_state_examination_bbn_predict_summary').remove();
     CreateDialogSkeleton(viewer, 'dlg_state_examination_bbn_predict_summary');
     $('#dlg_state_examination_bbn_predict_summary').dialog({
@@ -13671,7 +13714,16 @@ function PredictSummaryDialog(viewer)
                 text: "导出",
                 click: function(e){
                     $('#flottooltip').hide();
-                    PredictSummaryExport(viewer);
+                    var obj = {};
+                    var sels = $('#form_state_examination_bbn_assume_years').multipleSelect('getSelects');
+                    var ys = parseInt(sels[0]);
+                    obj.line_name = line_name;
+                    obj.year_num = ys;
+                    var formdata = $('#form_state_examination_bbn_predict_summary').webgisform('getdata');
+                    obj.attention = formdata.attention;
+                    obj.description = formdata.description;
+                    obj.suggestion = formdata.suggestion;
+                    PredictSummaryExport(viewer, obj);
                 }
             },
             {
@@ -13995,7 +14047,7 @@ function PredictSummaryDialog(viewer)
     };
     var test = function(){
         var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-        if (sels.length === 0) {
+        if (sels.length === 0 || sels[0].length === 0) {
             ShowMessage(null, 400, 250, '错误', '请先选择线路');
             return;
         }
@@ -14022,7 +14074,117 @@ function PredictSummaryDialog(viewer)
     //}
 
 }
-function PredictSummaryExport(viewer)
+function PredictSummaryExport_t(viewer, obj)
 {
+    var loadFile=function(url,callback){
+        JSZipUtils.getBinaryContent(url,callback);
+    }
+    loadFile("/predict_plot_template.docx",function(err,content){
+        if (err) { throw e};
+        //var imageModule = new ImageModule({centered:false});
+        var doc = new Docxgen(content);//.attachModule(imageModule);
+        doc.setData({
+            "line_name":obj.line_name,
+            "year_num":obj.year_num + '',
+            "attention":obj.attention,
+            "description":obj.description,
+            "suggestion":obj.suggestion
+            //"image":$.webgis.control.flot_graph.getCanvas().toDataURL()
+            }
+        ); //set the templateVariables
+        doc.render(); //apply them (replace all occurences of {first_name} by Hipp, ...)
 
+        //imageModule.on('finished',function(){
+        //    var out= doc
+        //        .getZip()
+        //        .generate({type:"blob"});
+        //    saveAs(out, obj.line_name + ".docx");
+        //});
+        var out = doc.getZip().generate({type:"blob"}); //Output the document using Data-URI
+        saveAs(out, obj.line_name + ".docx");
+    });
+}
+function PredictSummaryExport(viewer, obj)
+{
+    var can = $.webgis.control.flot_graph.getCanvas();
+    //console.log(can);
+    var imgdata = can.toDataURL();
+    //console.log(imgdata);
+    var w = can.width;
+    var h = can.height;
+    //console.log(w + 'x' + h);
+    var title =  obj.line_name + '未来' + (obj.year_num-1) + '年劣化趋势预测' ;
+    var line_char_max_count = 40;
+    //var s = '';
+    //_.forEach(_.range(0, line_char_max_count*5 + 1), function(item){
+    //    s += '啊';
+    //});
+
+    var create_text_image = function(str, textAlign){
+        var ret;
+        var lines = [];
+        var lines1 = str.split('\n');
+        _.forEach(lines1, function(line){
+            if(line.length <= line_char_max_count){
+                lines.push(line);
+            }else{
+                var i = 0;
+                var line_num1 = Math.floor(line.length/line_char_max_count) + 1;
+                _.forEach(_.range(0, line_num1 + 1), function(part){
+                    var arr = _.slice(line, i*line_char_max_count, (i+1)*line_char_max_count);
+                    var ss = arr.join('');
+                    if(ss.length === 0){
+                        ss = '\n';
+                    }
+                    lines.push(ss);
+                    i += 1;
+                });
+            }
+        });
+        //console.log(lines);
+        var startx = 20, starty = 15;
+        var linewidth = 600, lineheight = 20;
+        var c = document.createElement("canvas");
+        c.width = linewidth;
+        c.height = (lines.length+1) * lineheight + starty;
+        //console.log(c.height);
+        var ctx = c.getContext("2d");
+        if(_.isUndefined(textAlign)){
+            textAlign = 'left';
+        }
+        ctx.textAlign = textAlign;
+        var idx = 0;
+        _.forEach(lines, function(line){
+            var y = (idx+1) * lineheight + starty;
+            //console.log(y);
+            ctx.fillText(line, startx,  y);
+            idx += 1;
+        });
+        ret = c.toDataURL();
+        $(c).remove();
+        return ret;
+    };
+    //console.log(obj.description);
+    var docDefinition = {
+        content:[
+            {
+                image:create_text_image(title)
+            },
+            {
+                image:imgdata,
+                width:Math.floor(w/1.2),
+                height:Math.floor(h/1.2)
+            },
+            {
+                image:create_text_image('重点关注:\n' + obj.attention)
+            },
+            {
+                image:create_text_image('历史劣化记录:\n' + obj.description)
+            },
+            {
+                image:create_text_image('检修策略建议:\n' + obj.suggestion)
+            },
+        ]
+    };
+    pdfMake.createPdf(docDefinition).download(title + '.pdf');
 }
