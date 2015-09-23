@@ -2265,7 +2265,7 @@ function DrawHeatMapLegend(viewer, list)
     {
         $('#heatmaplegend').remove();
         $( '<div id="heatmaplegend">\
-                <div class="heatmaplegendlabel">图例</div>\
+                <div class="heatmaplegendlabel">鸟类活动频次</div>\
                 <div class="heatmaplegendbar"></div>\
                 <div class="heatmaplegend_scale_high">\
                 </div>\
