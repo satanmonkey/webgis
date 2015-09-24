@@ -181,12 +181,55 @@ function calc_future_probability_series(alist, year_num)
             return latest_year + i;
         });
     }
-    //ys.unshift(latest_year);
     _.forEach(_.range(1, year_num+1), function(i){
         var o = {};
         o.check_year = latest_year + i;
         o.prob = calc_future_probability(alist, i);
         ret.push(o);
+    });
+    return ret;
+}
+function calc_past_probability(alist, filtername, year)
+{
+    var list = $.extend(true, [], alist);
+    list = _.filter(list, function(n){
+        return n.check_year <= year;
+    });
+    var ret = {};
+    ret[filtername] = {'I':0.0, 'II':0.0, 'III':0.0, 'IV':0.0};
+    if(list.length > 0)
+    {
+        var happen = {};
+        happen[filtername] = {'I':0,'II':0,'III':0,'IV':0};
+        var total_cnt = list.length;
+        _.forEach(list, function(item){
+            _.forEach(['I', 'II', 'III', 'IV'], function(item1){
+                if(item[filtername] === item1){
+                    happen[filtername][item1] += 1;
+                }
+            });
+        });
+        _.forEach(['I', 'II', 'III', 'IV'], function(item1){
+            ret[filtername][item1] = happen[filtername][item1]/total_cnt;
+        });
+    }
+    return ret;
+}
+function calc_past_probability_series(alist, filtername, year)
+{
+    var ret = [];
+    var years = _.pluck(alist, 'check_year');
+    //_.remove(years, function (n) {
+    //    return n === year;
+    //});
+    _.forEach(years, function(y){
+        var o = {};
+        o.check_year = y;
+        o.prob = calc_past_probability(alist, filtername, y);
+        ret.push(o);
+    });
+    ret = _.sortBy(ret, function(n){
+        return n.check_year;
     });
     return ret;
 }

@@ -1271,4 +1271,10 @@ input[type="button"].btn-block {
 	height:60px;
 	/*border:1px solid red;*/
 }
+.div_chb_summary_graph_history
+{
+	display:none;
+	float: right;
+	margin: 10px;
+}
 

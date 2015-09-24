@@ -4858,7 +4858,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
             <div id="dlg_state_examination_bbn_predict_summary" >\
                 <fieldset>\
-                    <legend>概率预测走势图\
+                    <legend>概率预测走势图</legend>\
                     <div id="div_summary_graph_legend_container_container">\
                         <div id="div_summary_graph_area_container">\
                         <span class="area_high">&nbsp;&nbsp;&nbsp;&nbsp;</span>高风险&nbsp;&nbsp;\
@@ -4866,10 +4866,12 @@ function CreateDialogSkeleton(viewer, dlg_id)
                         <span class="area_low">&nbsp;&nbsp;&nbsp;&nbsp;</span>低风险\
                         </div>\
                         <div id="div_summary_graph_sel_container">\
-                        <label for="sel_summary_graph_type">请选择线路单元</label><select id="sel_summary_graph_type"></select>\
+                            <label for="sel_summary_graph_type">请选择线路单元</label><select id="sel_summary_graph_type"></select>\
                         </div>\
                     </div>\
-                    </legend>\
+                    <p>\
+                        <div class="div_chb_summary_graph_history" ><input type="checkbox" id="chb_summary_graph_history">显示历史统计概率</div>\
+                    </p>\
                     <div id="div_state_examination_bbn_predict_summary_graph_container"  >\
                         <div id="div_state_examination_bbn_predict_summary_graph"  >\
                         </div>\
@@ -13696,7 +13698,7 @@ function PredictSummaryDialog(viewer)
         resizable: true,
         modal: false,
         position:{at: "center"},
-        title:'预测汇总',
+        title:'预测走势',
         close: function(event, ui){
         },
         show: {
@@ -13825,6 +13827,58 @@ function PredictSummaryDialog(viewer)
         var latest_year = _.max(years);
         return _.find($.webgis.data.state_examination.list_data_current_line, {check_year:latest_year});
     };
+    var get_p_by_year = function(filtername, year){
+        var probs = calc_past_probability_series($.webgis.data.state_examination.list_data_current_line, filtername, year);
+        var check_year1 = _.map(_.pluck(probs, 'check_year'), function(item){
+            return moment(item, 'YYYY').toDate().getTime();
+        });
+        var prob = {};
+        prob[filtername] = {};
+        var graph_data = {};
+        graph_data[filtername] = {};
+        //_.forEach(_.range(1, 9), function(i){
+        //    prob['unit_' + i] = {};
+        //    graph_data['unit_' + i] = {};
+        //});
+        _.forEach(['I', 'II', 'III', 'IV'], function(item){
+            prob[filtername][item] = _.map(_.pluck(probs, 'prob.' + filtername + '.' + item), function(n){
+                return Math.floor(n*100);
+            });
+            graph_data[filtername][item] = _.zip(check_year1, prob[filtername][item]);
+        });
+        //console.log(check_year1);
+        //console.log(graph_data[filtername]);
+        var ret = [];
+        _.forEach([ 'IV','III', 'II'], function(lvl){
+            var o = {};
+            o.id = filtername + '_' + lvl;
+            o.label = '';//get_unit_name(i);
+            if(lvl === 'II'){
+                o.label = '注意';
+                o.color = "rgb(0, 0, 255)";
+                o.stack = false;
+            }
+            if(lvl === 'III'){
+                o.label = '异常';
+                o.color = "rgb(255, 255, 0)";
+                o.stack = true;
+            }
+            if(lvl === 'IV'){
+                o.label = '严重';
+                o.color = "rgb(255, 0, 0)";
+                o.stack = true;
+            }
+            o.data = graph_data[filtername][lvl];
+            o.lines =  {
+                show: true,
+                steps: false
+            };
+            o.points ={ show: true };
+            ret.push(o);
+        });
+        return ret;
+    };
+
     var draw_chart = function(){
         var sels = $('#form_state_examination_bbn_assume_years').multipleSelect('getSelects');
         var ys = parseInt(sels[0]);
@@ -13902,8 +13956,8 @@ function PredictSummaryDialog(viewer)
         _.forEach(_.range(1, 9), function(i){
             _.forEach([ 'IV','III', 'II'], function(lvl){
                 var o = {};
-                o.id = 'unit_' + i + lvl;
-                o.label = '';get_unit_name(i);
+                o.id = 'unit_' + i + '_' + lvl;
+                o.label = '';//get_unit_name(i);
                 if(lvl === 'II'){
                     o.label = '注意';
                     o.color = "rgb(0, 0, 255)";
@@ -13941,8 +13995,7 @@ function PredictSummaryDialog(viewer)
                 'z-index':9999
             }).appendTo("body");
         }
-
-        var draw_plot = function(data){
+        var draw_plot = function(data, ticks){
             $.webgis.control.flot_graph =  $.plot(
                 "#div_state_examination_bbn_predict_summary_graph",
                 data,
@@ -13954,7 +14007,7 @@ function PredictSummaryDialog(viewer)
                     xaxis: {
                         mode: "time",
                         timeformat: "%Y",
-                        ticks:check_year
+                        ticks:ticks
                     },
                     yaxis: {
                         max:100,
@@ -14017,11 +14070,48 @@ function PredictSummaryDialog(viewer)
             });
         };
 
-        var filter_data = function(filtername){
+        var filter_data = function(filtername, isshowhistory){
+            if(_.isUndefined(isshowhistory)){
+                isshowhistory = false;
+            }
             var plot_data1 = _.filter(plot_data, function(item){
                 return item.id.indexOf(filtername) > -1;
             });
-            draw_plot(plot_data1);
+
+            if(isshowhistory === true)
+            {
+                var ys = _.pluck($.webgis.data.state_examination.list_data_current_line, 'check_year');
+                ys.sort();
+                var y = _.last(ys);
+                //console.log(ys);
+                var ys1 = _.map(ys, function(item){
+                    return moment(item, 'YYYY').toDate().getTime();
+                });
+
+                var ys2 = _.uniq(_.union(ys1, check_year)).sort();
+                var l = get_p_by_year(filtername, y);
+                var plot_data2 = $.extend(true, [], plot_data1);
+                _.forEach(plot_data2, function(n){
+                    var ll = _.filter(l, function(nn){
+                        return n.id === nn.id;
+                    });
+                    _.forEach(ll, function(nn){
+                        n.data = _.union(n.data, nn.data);
+                    });
+                    n.data = _.uniq(n.data, function(nn){
+                        return nn[0];
+                    });
+                    n.data = _.sortBy(n.data,  function(nn){
+                        return nn[0];
+                    });
+                });
+                //console.log(plot_data2);
+                draw_plot(plot_data2, ys2);
+            }else{
+                draw_plot(plot_data1, check_year);
+            }
+            //$.webgis.control.flot_graph.setData(plot_data1);
+            //$.webgis.control.flot_graph.draw();
         };
         var names1 = _.uniq(_.pluck($.webgis.data.state_examination.standard2014, 'parent'));
         var names = [{label:'线路整体', value:'line_state'}];
@@ -14039,8 +14129,14 @@ function PredictSummaryDialog(viewer)
             multipleWidth: 300,
             onClick: function(view) {
                 //console.log(view.value);
+                $('#chb_summary_graph_history').removeAttr('checked');
                 filter_data( view.value);
             }
+        });
+        $('#chb_summary_graph_history').on('click', function(){
+            var v = $('#sel_summary_graph_type').multipleSelect('getSelects')[0];
+            var checked = $(this).is(':checked');
+            filter_data( v, checked);
         });
         $('#sel_summary_graph_type').multipleSelect('setSelects', ['line_state']);
         filter_data( 'line_state');
@@ -14160,11 +14256,17 @@ function PredictSummaryExport(viewer, obj)
             ctx.fillText(line, startx,  y);
             idx += 1;
         });
+        //ret.data = c.toDataURL();
+        //ret.width = c.width;
+        //ret.height = c.height;
         ret = c.toDataURL();
         $(c).remove();
         return ret;
     };
     //console.log(obj.description);
+    var att = create_text_image('重点关注:\n' + obj.attention);
+    var des = create_text_image('历史劣化记录:\n' + obj.description);
+    var sug = create_text_image('检修策略建议:\n' + obj.suggestion);
     var docDefinition = {
         content:[
             {
@@ -14176,13 +14278,15 @@ function PredictSummaryExport(viewer, obj)
                 height:Math.floor(h/1.2)
             },
             {
-                image:create_text_image('重点关注:\n' + obj.attention)
+                image:att
             },
             {
-                image:create_text_image('历史劣化记录:\n' + obj.description)
+                image:des,
+                fit: [700, 700],
+                pageBreak: 'after'
             },
             {
-                image:create_text_image('检修策略建议:\n' + obj.suggestion)
+                image:sug
             },
         ]
     };
