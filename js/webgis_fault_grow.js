@@ -17,6 +17,10 @@ $.webgis.data.bbn.grown_model.score_range = [
     {'level':'III', range: _.range(24, 30)},
     {'level':'IV', range: _.range(30, 41)},
 ];
+$.webgis.data.bbn.unitsub_template_2009 = [];
+//    {unit:'unit_1', children:[]}
+//];
+
 //$.webgis.data.bbn.grown_model.unit_fault_factor = [
 //    {
 //        unit:'unit_1',

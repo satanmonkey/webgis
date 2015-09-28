@@ -49,7 +49,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = false;
+var DEBUG_BAYES = true;
 var TREE_COLLAPSE = true;
 
 
@@ -4216,12 +4216,22 @@ function ShowStateExaminationImportDialog(viewer)
         { display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: voltagelist }, defaultvalue: '13', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
         { display: "评价年份", id: "check_year", newline: true, type: "select", editor: { data: yearlist }, defaultvalue: '2015', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
     ];
+    flds.push({ display: '线路整体', id: "line_status" , newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-整体', width: 250, labelwidth: 120, validate:{ required: true}});
+    //flds.push({ display: '存在问题描述', id: "description" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250, height:120, labelwidth: 120 });
+    //flds.push({ display: '检修策略', id: "suggestion" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250,  height:90, labelwidth: 120 });
     _.forEach(unitlist, function(item){
         flds.push({ display: item, id: "unit_" + (_.indexOf(unitlist, item) + 1), newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-单元', width: 250, labelwidth: 120, validate:{ required: true}});
     });
-    flds.push({ display: '线路整体', id: "line_status" , newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-整体', width: 250, labelwidth: 120, validate:{ required: true}});
-    flds.push({ display: '存在问题描述', id: "description" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250, height:120, labelwidth: 120 });
-    flds.push({ display: '检修策略', id: "suggestion" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250,  height:90, labelwidth: 120 });
+    flds.push({ display: '劣化情况描述', id: "unitsub_desc" , newline: true, type: "textarea", editor: { readonly: true }, defaultvalue: '', group: '状态评价-详细', width: 250, height:60, labelwidth: 120});
+    flds.push({ display: '劣化情况输入', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '状态评价-详细', width: 250, labelwidth: 120,
+        click:function(){
+            //console.log('');
+            ShowUnitSubForm(viewer);
+            //ShowUnitSubForm2014(viewer);
+        }
+    });
+
+
     $('#form_state_examination_import_single').webgisform(flds, {
         prefix: "form_state_examination_import_single_",
         maxwidth: 430
@@ -4314,6 +4324,123 @@ function ShowStateExaminationImportDialog(viewer)
     });
 }
 
+function ShowUnitSubForm(viewer)
+{
+    var load_html = function(html){
+        $('#dlg_unitsub_standard2009').empty();
+        $('#dlg_unitsub_standard2009').append(html);
+        bind_event();
+    };
+    var load_form_data = function(data){
+        if(_.isUndefined(data))
+        {
+            $.webgis.data.bbn.unitsub_template_2009 = [];
+            $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+                var id = $(item).attr('id').replace('textarea_', '');
+                var unit = $(item).attr('data-unit');
+                var weight = $(item).attr('data-weight');
+                var level = $(item).attr('data-level');
+                var base_score = $(item).attr('data-base_score');
+                var name = $(item).attr('data-name');
+                var desc = $(item).attr('data-desc');
+                var tmp  = _.find($.webgis.data.bbn.unitsub_template_2009, {unit:unit});
+                if(_.isUndefined(tmp))
+                {
+                    var o = {unit:unit, children:[]};
+                    o.children.push({
+                        weight:weight,
+                        level:level,
+                        base_score:base_score,
+                        name:name,
+                        desc:desc
+                    });
+                }else{
+                    var iidx = _.findIndex($.webgis.data.bbn.unitsub_template_2009, 'unit', unit);
+                    tmp.children.push({
+                        weight:weight,
+                        level:level,
+                        base_score:base_score,
+                        name:name,
+                        desc:desc
+                    });
+
+                }
+            });
+
+        }else{
+
+        }
+    };
+
+    var bind_event = function(){
+        $('#form_unitsub_stand_2009').find('textarea').off();
+        $('#form_unitsub_stand_2009').find('textarea').on('keyup change', function(e){
+            var unit = $(e.target).attr('data-unit');
+            var weight = $(e.target).attr('data-weight');
+            var level = $(e.target).attr('data-level');
+            var base_score = $(e.target).attr('data-base_score');
+            var name = $(e.target).attr('data-name');
+            var desc = $(e.target).attr('data-desc');
+            console.log(id);
+
+        });
+    };
+    CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
+    var formdata = $('#form_state_examination_import_single').webgisform('getdata');
+
+    $('#dlg_unitsub_standard2009').dialog({
+        width: 890,
+        height: 500,
+        minWidth:200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position:{at: "center"},
+        title:'劣化情况详细描述',
+        close: function(event, ui){
+        },
+        show: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        hide: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        buttons:[
+            {
+                text: "关闭",
+                click: function(e){
+                    $( this ).dialog( "close" );
+                }
+            }
+        ]
+    });
+
+
+    $.ajax({
+        url: '/webgis_standard2009_form.html',
+        method: 'get',
+        dataType: 'html'
+    })
+    .done(function(page){
+        load_html(page);
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("载入模板[/webgis_standard2009_form.html]失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
+    });
+}
+function ShowUnitSubForm2014(viewer)
+{
+}
 function SaveStateExaminationMultiple(viewer)
 {
     ShowConfirm(null, 500, 200,
@@ -4882,6 +5009,12 @@ function CreateDialogSkeleton(viewer, dlg_id)
                 <form id="form_state_examination_bbn_predict_summary"></form>\
             </div>\
             ');
+        }
+        if (dlg_id === 'dlg_unitsub_standard2009')
+        {
+            $(document.body).append('\
+            <div id="dlg_unitsub_standard2009" >\
+            </div>');
         }
     }
 }
@@ -12399,6 +12532,7 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
                 click: function(e){
                     var formdata = $('#form_state_examination_bbn_node_grid_node_add1').webgisform('getdata');
                     //formdata.domains = ['true', 'false'];
+                    //console.log(formdata);
                     if(formdata.is_use_exist === false)
                     {
                         if($('#form_state_examination_bbn_node_grid_node_add1').valid())
@@ -12444,7 +12578,7 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
                             $(this).dialog("close");
                         }
                     }else{
-                        if(formdata.exist_nodes.length>0)
+                        if(formdata.exist_nodes && formdata.exist_nodes.length>0)
                         {
                             var idx = _.findIndex($.webgis.data.bbn.grid_data, '_id', id);
                             if(idx > -1)
@@ -12477,7 +12611,10 @@ function ShowBBNNodeGridAddDialog1(viewer, id)
         ]
     });
 
-    var domainlist = _.map($.webgis.data.bbn.domains_range, function(item){
+    var domainlist = _.filter($.webgis.data.bbn.domains_range, function(item){
+        return item.value === 'I' || item.value === 'II' || item.value === 'III' || item.value === 'IV' ;
+    });
+    var domainlist = _.map(domainlist, function(item){
         return {label:item.name, value:item.value};
     });
     var existnodelist = _.map($.webgis.data.bbn.grid_data, function(item){
@@ -14202,6 +14339,9 @@ function PredictSummaryExport_t(viewer, obj)
 }
 function PredictSummaryExport(viewer, obj)
 {
+    if(_.isUndefined($.webgis.control.flot_graph)){
+        return;
+    }
     var can = $.webgis.control.flot_graph.getCanvas();
     //console.log(can);
     var imgdata = can.toDataURL();

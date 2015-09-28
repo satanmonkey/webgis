@@ -925,6 +925,10 @@ function InitWebGISFormDefinition()
 				{
 					ret[id] = this.find('#' + prefix + id).slider( "option", "values" );
 				}
+				else if(typ === 'checkbox')
+				{
+					ret[id] = this.find('#' + prefix + id).is(':checked');
+				}
 				else
 				{
 					ret[id] = this.find('#' + prefix + id).val();

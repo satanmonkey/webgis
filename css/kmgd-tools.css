@@ -1278,3 +1278,43 @@ input[type="button"].btn-block {
 	margin: 10px;
 }
 
+/***********standard2009 start*********************/
+.standard2009_table {
+	border-collapse: collapse;
+	border-spacing: 0;
+	empty-cells: show
+}
+
+.standard2009_table td, th {
+	vertical-align: top;
+	font-size: 12pt;
+	border: 1px solid black;
+}
+
+.standard2009_table_tab2 {
+	/*font-size: 6pt;*/
+	/*font-family: ËÎÌו;*/
+	width: 15.06cm;
+	/*margin-left: -0.199cm;*/
+	/*margin-right: auto;*/
+}
+
+.standard2009_table_tab5 {
+	width: 22.687cm;
+	/*margin-left: auto;*/
+	/*margin-right: auto;*/
+}
+
+.standard2009_table_tab2 p {
+	text-align: center ! important;
+}
+.standard2009_table_tab5 p {
+	text-align: center ! important;
+}
+.standard2009_table_tab5 textarea {
+	min-width:97%;
+	min-height:99%;
+}
+/***********standard2009 end*********************/
+
+
