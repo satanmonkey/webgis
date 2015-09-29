@@ -4330,45 +4330,68 @@ function ShowUnitSubForm(viewer)
         $('#dlg_unitsub_standard2009').empty();
         $('#dlg_unitsub_standard2009').append(html);
         bind_event();
+        $.ajax({
+            url: '/standard_template2009.json',
+            method: 'get',
+            dataType: 'json'
+        })
+        .done(function(data){
+            $.webgis.data.bbn.unitsub_template_2009 = data;
+            console.log($.webgis.data.bbn.unitsub_template_2009);
+        })
+        .fail(function (jqxhr, textStatus, e) {
+            $.webgis.data.bbn.unitsub_template_2009 = [];
+        });
+        //load_form_data();
+        //CalcUnitProbability();
+        //console.log(JSON.stringify($.webgis.data.bbn.unitsub_template_2009));
+
     };
     var load_form_data = function(data){
-        if(_.isUndefined(data))
-        {
-            $.webgis.data.bbn.unitsub_template_2009 = [];
-            $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
-                var id = $(item).attr('id').replace('textarea_', '');
-                var unit = $(item).attr('data-unit');
-                var weight = $(item).attr('data-weight');
-                var level = $(item).attr('data-level');
-                var base_score = $(item).attr('data-base_score');
-                var name = $(item).attr('data-name');
-                var desc = $(item).attr('data-desc');
-                var tmp  = _.find($.webgis.data.bbn.unitsub_template_2009, {unit:unit});
-                if(_.isUndefined(tmp))
-                {
-                    var o = {unit:unit, children:[]};
-                    o.children.push({
-                        weight:weight,
-                        level:level,
-                        base_score:base_score,
-                        name:name,
-                        desc:desc
-                    });
-                }else{
-                    var iidx = _.findIndex($.webgis.data.bbn.unitsub_template_2009, 'unit', unit);
-                    tmp.children.push({
-                        weight:weight,
-                        level:level,
-                        base_score:base_score,
-                        name:name,
-                        desc:desc
-                    });
-
-                }
-            });
-
-        }else{
-
+        //if(_.isUndefined(data))
+        //{
+        //    $.webgis.data.bbn.unitsub_template_2009 = [];
+        //    $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+        //        var id = $(item).attr('id').replace('textarea_', '');
+        //        var unit = $(item).attr('data-unit');
+        //        var weight = $(item).attr('data-weight');
+        //        var level = $(item).attr('data-level');
+        //        var base_score = $(item).attr('data-base_score');
+        //        var name = $(item).attr('data-name');
+        //        var according = $(item).attr('data-according');
+        //        var desc = '';
+        //        var tmp  = _.find($.webgis.data.bbn.unitsub_template_2009, {unit:unit});
+        //        if(_.isUndefined(tmp))
+        //        {
+        //            var o = {unit:unit, children:[]};
+        //            o.children.push({
+        //                weight:weight,
+        //                level:level,
+        //                base_score:base_score,
+        //                name:name,
+        //                according:according,
+        //                desc:desc,
+        //                total_score:parseInt(weight) * parseInt(base_score),
+        //                p0:{I:0, II:0, III:0, IV:0}
+        //            });
+        //            $.webgis.data.bbn.unitsub_template_2009.push(o);
+        //        }else{
+        //            var iidx = _.findIndex($.webgis.data.bbn.unitsub_template_2009, 'unit', unit);
+        //            tmp.children.push({
+        //                weight:weight,
+        //                level:level,
+        //                base_score:base_score,
+        //                name:name,
+        //                according:according,
+        //                desc:desc,
+        //                total_score:parseInt(weight) * parseInt(base_score),
+        //                p0:{I:0, II:0, III:0, IV:0}
+        //            });
+        //            $.webgis.data.bbn.unitsub_template_2009[iidx] = tmp;
+        //        }
+        //    });
+        //}else{
+        if(!_.isUndefined(data)){
         }
     };
 
@@ -4380,9 +4403,24 @@ function ShowUnitSubForm(viewer)
             var level = $(e.target).attr('data-level');
             var base_score = $(e.target).attr('data-base_score');
             var name = $(e.target).attr('data-name');
-            var desc = $(e.target).attr('data-desc');
-            console.log(id);
-
+            var according = $(e.target).attr('data-according');
+            var desc = $(e.target).val();
+            var total_score = parseInt(weight) * parseInt(base_score);
+            var total_score_accmulate = 0;
+            $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+                var un = $(item).attr('data-unit');
+                var desc1 = $(item).val();
+                var weight1 = $(item).attr('data-weight');
+                var base_score1 = $(item).attr('data-base_score');
+                var total_score1 = parseInt(weight1) * parseInt(base_score1);
+                if(un === unit){
+                    if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                        total_score_accmulate += total_score1;
+                    }
+                }
+            });
+            var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
+            $('#form_unitsub_stand_2009').find('#finaltext' + unit).html(t);
         });
     };
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
@@ -4411,6 +4449,12 @@ function ShowUnitSubForm(viewer)
             duration: 200
         },
         buttons:[
+            {
+                text: "确定",
+                click: function(e){
+                    $( this ).dialog( "close" );
+                }
+            },
             {
                 text: "关闭",
                 click: function(e){

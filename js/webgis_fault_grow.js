@@ -18,83 +18,293 @@ $.webgis.data.bbn.grown_model.score_range = [
     {'level':'IV', range: _.range(30, 41)},
 ];
 $.webgis.data.bbn.unitsub_template_2009 = [];
-//    {unit:'unit_1', children:[]}
-//];
 
-//$.webgis.data.bbn.grown_model.unit_fault_factor = [
-//    {
-//        unit:'unit_1',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_2',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_3',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_4',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_5',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_6',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_7',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//    {
-//        unit:'unit_8',
-//        factors:[
-//            {'level':'I', factor:1.0},
-//            {'level':'II', factor:2.0},
-//            {'level':'III', factor:3.0},
-//            {'level':'IV', factor:4.0},
-//        ]
-//    },
-//];
+function CalcUnitLevelByScore(unit, score, score_accmu)
+{
+    var ret = '';
+    if(unit === 'unit_1' || unit === 'unit_4')
+    {
+        if(score_accmu < 14)
+        {
+            ret = '正常';
+        }
+        if(score <= 10)
+        {
+            ret = '正常';
+        }
+        if(score_accmu >= 14 )
+        {
+            ret = '注意';
+        }
+        if(score >= 12 && score <= 24)
+        {
+            ret = '注意';
+        }
+        if(score >= 30 && score <= 32)
+        {
+            ret = '异常';
+        }
+        if(score === 40)
+        {
+            ret = '严重';
+        }
+    }
+    if(unit === 'unit_2' || unit === 'unit_6' || unit === 'unit_8')
+    {
+        if(score <= 10)
+        {
+            ret = '正常';
+        }
+        if(score >= 12 && score <= 24)
+        {
+            ret = '注意';
+        }
+        if(score >= 30 && score <= 32)
+        {
+            ret = '异常';
+        }
+        if(score === 40)
+        {
+            ret = '严重';
+        }
+
+    }
+    if(unit === 'unit_3')
+    {
+        if(score_accmu < 16)
+        {
+            ret = '正常';
+        }
+        if(score <= 10)
+        {
+            ret = '正常';
+        }
+        if(score_accmu >= 16 )
+        {
+            ret = '注意';
+        }
+        if(score >= 12 && score <= 24)
+        {
+            ret = '注意';
+        }
+        if(score >= 30 && score <= 32)
+        {
+            ret = '异常';
+        }
+        if(score === 40)
+        {
+            ret = '严重';
+        }
+
+    }
+    if(unit === 'unit_5' || unit === 'unit_7')
+    {
+        if(score_accmu < 24)
+        {
+            ret = '正常';
+        }
+        if(score <= 10)
+        {
+            ret = '正常';
+        }
+        if(score_accmu >= 24 )
+        {
+            ret = '注意';
+        }
+        if(score >= 12 && score <= 24)
+        {
+            ret = '注意';
+        }
+        if(score >= 30 && score <= 32)
+        {
+            ret = '异常';
+        }
+        if(score === 40)
+        {
+            ret = '严重';
+        }
+    }
+    return ret;
+}
+function CalcUnitProbability()
+{
+    var get_percom = function(number){
+        var cp = Combinatorics.permutationCombination(_.range(0, number));
+        cp = cp.toArray();
+        var exists = [];
+        var check_is_in = function(item){
+            var ret = true;
+            var item1 = $.extend(true, [], item);
+            item1.sort();
+            var key = item1.join('');
+            //console.log(key);
+            if(_.indexOf(exists, key) === -1){
+                exists.push(key);
+                ret = false;
+            }
+            return ret;
+        };
+        cp = _.filter(cp, function(item){
+            if(item.length === 1){
+                return true;
+            }else if(item.length > 1 && item.length < number){
+                return !check_is_in(item);
+            }else{
+                return false;
+            }
+        });
+        return cp;
+    };
+    var calc_p = function(unit){
+        var alist = _.map(unit.children, function(n){
+            return {idx: _.indexOf(unit.children, n), score: n.total_score, category: n.name};
+        });
+        var alist1 = _.map(alist, function(n){
+            return n.idx;
+        });
+        var grouped = _.groupBy(alist, function(n){
+            return n.category;
+        });
+        //console.log(grouped);
+        alist1 = _.map(_.values(grouped), function(n){
+            return _.map(n, function(nn){
+                return nn.idx;
+            });
+        });
+        //console.log(alist1.length);
+        var allcon = get_percom(alist1.length);
+        var cond = [];
+        _.forEach(allcon, function(n){
+            var l = _.map(n, function(nn){
+                return alist1[nn];
+            });
+            //console.log(l);
+            var cp = Combinatorics.cartesianProduct.apply(this, l);
+            cp = cp.toArray();
+            cond = _.uniq(_.union(cond, cp));
+        });
+        var cp = Combinatorics.cartesianProduct.apply(this, alist1);
+        cp = cp.toArray();
+        cond = _.uniq(_.union(cond, cp));
+        var total_cnt = {};
+        var total_score = {};
+        var happen_cnt = {};
+        _.forEach(unit.children, function(child){
+            var idx = _.indexOf(unit.children, child);
+            total_cnt[idx + ''] = 0;
+            happen_cnt[idx + ''] = {I:0, II:0, III:0, IV:0};
+
+            _.forEach(cond, function(cpitem){
+                if(_.indexOf(cpitem, idx) > -1)
+                {
+                    total_cnt[idx + ''] += 1;
+                    total_score[idx + ''] = 0;
+                    _.forEach(cpitem, function(item){
+                        total_score[idx + ''] += _.result(_.find(alist, {idx:item}), 'score');
+                    });
+                    if(unit.unit === 'unit_1' || unit.unit === 'unit_4')
+                    {
+                        if(cpitem.length > 1 && total_score[idx + '']<14){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] <= 10){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        //if(cpitem.length > 1 && total_score[idx + ''] >= 14){
+                        //    happen_cnt[idx + ''].II += 1;
+                        //}
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 12 && total_score[idx + ''] <= 24){
+                            happen_cnt[idx + ''].II += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 30 && total_score[idx + ''] <= 32){
+                            happen_cnt[idx + ''].III += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] === 40){
+                            happen_cnt[idx + ''].IV += 1;
+                        }
+                    }
+                    else if(unit.unit === 'unit_2' || unit.unit === 'unit_6' || unit.unit === 'unit_8')
+                    {
+                        if(cpitem.length === 1 && total_score[idx + ''] <= 10){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 12 && total_score[idx + ''] <= 24){
+                            happen_cnt[idx + ''].II += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 30 && total_score[idx + ''] <= 32){
+                            happen_cnt[idx + ''].III += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] === 40){
+                            happen_cnt[idx + ''].IV += 1;
+                        }
+                    }
+                    else if(unit.unit === 'unit_3')
+                    {
+                        if(cpitem.length > 1 && total_score[idx + '']<16){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] <= 10){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        //if(cpitem.length > 1 && total_score[idx + ''] >= 16){
+                        //    happen_cnt[idx + ''].II += 1;
+                        //}
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 12 && total_score[idx + ''] <= 24){
+                            happen_cnt[idx + ''].II += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 30 && total_score[idx + ''] <= 32){
+                            happen_cnt[idx + ''].III += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] === 40){
+                            happen_cnt[idx + ''].IV += 1;
+                        }
+                    }
+                    else if(unit.unit === 'unit_5' || unit.unit === 'unit_7')
+                    {
+                        if(cpitem.length > 1 && total_score[idx + '']<24){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] <= 10){
+                            happen_cnt[idx + ''].I += 1;
+                        }
+                        //if(cpitem.length > 1 && total_score[idx + ''] >= 24){
+                        //    happen_cnt[idx + ''].II += 1;
+                        //}
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 12 && total_score[idx + ''] <= 24){
+                            happen_cnt[idx + ''].II += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] >= 30 && total_score[idx + ''] <= 32){
+                            happen_cnt[idx + ''].III += 1;
+                        }
+                        if(cpitem.length === 1 && total_score[idx + ''] === 40){
+                            happen_cnt[idx + ''].IV += 1;
+                        }
+                    }
+
+                }
+            });
+            //console.log(unit.unit+ ' ' +idx + ':{'
+            //    + 'I:' + happen_cnt[idx + ''].I/total_cnt[idx + '']
+            //    + ',II:' + happen_cnt[idx + ''].II/total_cnt[idx + '']
+            //    + ',III:' + happen_cnt[idx + ''].III/total_cnt[idx + '']
+            //    + ',IV:' + happen_cnt[idx + ''].IV/total_cnt[idx + '']
+            //    + '}'
+            //);
+            unit.children[idx].p0.I = happen_cnt[idx + ''].I/total_cnt[idx + ''];
+            unit.children[idx].p0.II = happen_cnt[idx + ''].II/total_cnt[idx + ''];
+            unit.children[idx].p0.III = happen_cnt[idx + ''].III/total_cnt[idx + ''];
+            unit.children[idx].p0.IV = happen_cnt[idx + ''].IV/total_cnt[idx + ''];
+
+        });
+        return unit;
+    };
+    _.forEach($.webgis.data.bbn.unitsub_template_2009, function(unit){
+        var idx = _.indexOf($.webgis.data.bbn.unitsub_template_2009, unit);
+        $.webgis.data.bbn.unitsub_template_2009[idx] = calc_p(unit);
+    });
+    console.log(JSON.stringify($.webgis.data.bbn.unitsub_template_2009));
+}
+
 function calc_next_year_probability(record)
 {
     var ret;
@@ -237,5 +447,4 @@ function calc_past_probability_series(alist, filtername, year)
     });
     return ret;
 }
-
 
