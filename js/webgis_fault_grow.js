@@ -21,51 +21,51 @@ $.webgis.data.bbn.unitsub_template_2009 = [];
 
 function CalcUnitLevelByScore(unit, score, score_accmu)
 {
-    var ret = '';
+    var ret = '姝ｅ父';
     if(unit === 'unit_1' || unit === 'unit_4')
     {
         if(score_accmu < 14)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score <= 10)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score_accmu >= 14 )
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 12 && score <= 24)
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 30 && score <= 32)
         {
-            ret = '异常';
+            ret = '寮傚父';
         }
         if(score === 40)
         {
-            ret = '严重';
+            ret = '涓ラ噸';
         }
     }
     if(unit === 'unit_2' || unit === 'unit_6' || unit === 'unit_8')
     {
         if(score <= 10)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score >= 12 && score <= 24)
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 30 && score <= 32)
         {
-            ret = '异常';
+            ret = '寮傚父';
         }
         if(score === 40)
         {
-            ret = '严重';
+            ret = '涓ラ噸';
         }
 
     }
@@ -73,27 +73,27 @@ function CalcUnitLevelByScore(unit, score, score_accmu)
     {
         if(score_accmu < 16)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score <= 10)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score_accmu >= 16 )
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 12 && score <= 24)
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 30 && score <= 32)
         {
-            ret = '异常';
+            ret = '寮傚父';
         }
         if(score === 40)
         {
-            ret = '严重';
+            ret = '涓ラ噸';
         }
 
     }
@@ -101,27 +101,27 @@ function CalcUnitLevelByScore(unit, score, score_accmu)
     {
         if(score_accmu < 24)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score <= 10)
         {
-            ret = '正常';
+            ret = '姝ｅ父';
         }
         if(score_accmu >= 24 )
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 12 && score <= 24)
         {
-            ret = '注意';
+            ret = '娉ㄦ剰';
         }
         if(score >= 30 && score <= 32)
         {
-            ret = '异常';
+            ret = '寮傚父';
         }
         if(score === 40)
         {
-            ret = '严重';
+            ret = '涓ラ噸';
         }
     }
     return ret;

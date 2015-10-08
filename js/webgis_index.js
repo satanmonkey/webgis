@@ -4337,7 +4337,7 @@ function ShowUnitSubForm(viewer)
         })
         .done(function(data){
             $.webgis.data.bbn.unitsub_template_2009 = data;
-            console.log($.webgis.data.bbn.unitsub_template_2009);
+            //console.log($.webgis.data.bbn.unitsub_template_2009);
         })
         .fail(function (jqxhr, textStatus, e) {
             $.webgis.data.bbn.unitsub_template_2009 = [];
@@ -4397,6 +4397,7 @@ function ShowUnitSubForm(viewer)
 
     var bind_event = function(){
         $('#form_unitsub_stand_2009').find('textarea').off();
+
         $('#form_unitsub_stand_2009').find('textarea').on('keyup change', function(e){
             var unit = $(e.target).attr('data-unit');
             var weight = $(e.target).attr('data-weight');
@@ -4405,8 +4406,15 @@ function ShowUnitSubForm(viewer)
             var name = $(e.target).attr('data-name');
             var according = $(e.target).attr('data-according');
             var desc = $(e.target).val();
-            var total_score = parseInt(weight) * parseInt(base_score);
+            var total_score = 0;
+            if(_.trim(desc).length>0 && _.trim(desc) != '无' && _.trim(desc) != '(无)' && _.trim(desc) != '（无）'){
+                total_score = parseInt(weight) * parseInt(base_score);
+            }else{
+                total_score = 0;
+            }
+            //console.log(total_score);
             var total_score_accmulate = 0;
+            var total_desc = [];
             $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
                 var un = $(item).attr('data-unit');
                 var desc1 = $(item).val();
@@ -4418,13 +4426,43 @@ function ShowUnitSubForm(viewer)
                         total_score_accmulate += total_score1;
                     }
                 }
+                if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                    total_desc.push(desc1);
+                }
             });
+            //console.log('unit:' + unit + ', total_score:' + total_score + ', total_score_accmulate:' + total_score_accmulate);
             var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
-            $('#form_unitsub_stand_2009').find('#finaltext' + unit).html(t);
+
+            if(_.trim(desc).length === 0){
+                $(e.target).parent().prev().find('p').html('');
+            }else{
+                $(e.target).parent().prev().find('p').html(total_score);
+            }
+            if(total_score_accmulate>0){
+                $('#form_unitsub_stand_2009').find('#finaltext_' + unit).html(t);
+            }else{
+                $('#form_unitsub_stand_2009').find('#finaltext_' + unit).html('');
+            }
+            //console.log(unit);
+            //console.log(total_score_accmulate);
+            //console.log(t);
+            if(t === '正常'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['I']);
+            }
+            if(t === '注意'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['II']);
+            }
+            if(t === '异常'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['III']);
+            }
+            if(t === '严重'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['IV']);
+            }
+            $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
         });
     };
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
-    var formdata = $('#form_state_examination_import_single').webgisform('getdata');
+
 
     $('#dlg_unitsub_standard2009').dialog({
         width: 890,
@@ -4452,6 +4490,29 @@ function ShowUnitSubForm(viewer)
             {
                 text: "确定",
                 click: function(e){
+                    var formdata = $('#form_state_examination_import_single').webgisform('getdata');
+                    formdata.description = formdata.unitsub_desc;
+                    delete formdata.unitsub_desc;
+                    var list = [];
+                    $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+                        var id = $(item).attr('id').replace('textarea_', '');
+                        var un = $(item).attr('data-unit');
+                        var desc1 = $(item).val();
+                        var weight1 = $(item).attr('data-weight');
+                        var base_score1 = $(item).attr('data-base_score');
+                        //var total_score1 = parseInt(weight1) * parseInt(base_score1);
+
+                        if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                            list.push({id:id, unit:un, desc:desc1 });
+                        }
+                    });
+                    formdata.unitsub = list;
+                    console.log(formdata);
+
+
+
+
+
                     $( this ).dialog( "close" );
                 }
             },
