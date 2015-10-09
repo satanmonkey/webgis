@@ -99,6 +99,17 @@
         "desc": "",
         "total_score": 16,
         "p0": {"I": 0, "II": 0.03125, "III": 0, "IV": 0}
+    },{
+        "id":"unit_1_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_2",
@@ -267,6 +278,17 @@
         "desc": "",
         "total_score": 16,
         "p0": {"I": 0, "II": 0.00390625, "III": 0, "IV": 0}
+    },{
+        "id":"unit_2_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_3",
@@ -413,6 +435,17 @@
         "desc": "",
         "total_score": 30,
         "p0": {"I": 0, "II": 0, "III": 0.002777777777777778, "IV": 0}
+    },{
+        "id":"unit_3_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_4",
@@ -537,6 +570,17 @@
         "desc": "",
         "total_score": 20,
         "p0": {"I": 0, "II": 0.0125, "III": 0, "IV": 0}
+    },{
+        "id":"unit_4_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_5",
@@ -628,6 +672,17 @@
         "desc": "",
         "total_score": 8,
         "p0": {"I": 0.07407407407407407, "II": 0, "III": 0, "IV": 0}
+    },{
+        "id":"unit_5_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_6",
@@ -708,6 +763,17 @@
         "desc": "",
         "total_score": 12,
         "p0": {"I": 0, "II": 0.2, "III": 0, "IV": 0}
+    },{
+        "id":"unit_6_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_7",
@@ -777,6 +843,17 @@
         "desc": "",
         "total_score": 16,
         "p0": {"I": 0.0625, "II": 0.0625, "III": 0, "IV": 0}
+    },{
+        "id":"unit_7_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }, {
     "unit": "unit_8",
@@ -846,5 +923,16 @@
         "desc": "",
         "total_score": 24,
         "p0": {"I": 0, "II": 0.125, "III": 0, "IV": 0}
+    },{
+        "id":"unit_8_other",
+        "weight": "",
+        "level": "",
+        "base_score": "",
+        "name": "其它",
+        "according": "",
+        "strategy": "",
+        "desc": "",
+        "total_score": 0,
+        "p0": {"I": 0.25, "II": 0.25, "III": 0.25, "IV": 0.25}
     }]
 }]

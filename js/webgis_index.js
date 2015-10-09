@@ -20,6 +20,7 @@ $.webgis.data.state_examination.control = {};
 $.webgis.data.state_examination.standard = [];
 $.webgis.data.state_examination.import_excel_data = [];
 $.webgis.data.state_examination.list_data = [];
+$.webgis.data.state_examination.record_single_form = {};
 $.webgis.config.is_tower_focus = false;
 
 
@@ -49,7 +50,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = true;
+var DEBUG_BAYES = false;
 var TREE_COLLAPSE = true;
 
 
@@ -4394,8 +4395,36 @@ function ShowUnitSubForm(viewer)
         if(!_.isUndefined(data)){
         }
     };
+    var event_other_sel_bind = function(){
+        $('#form_unitsub_stand_2009').find('select').off();
+        $('#form_unitsub_stand_2009').find('select').on('change', function(e){
+            var id = $(e.target).attr('id');
+            var total_score = 0;
+            var desc = $(e.target).closest('tr').find('textarea[id$=_other]').val();
+            //console.log(id);
+            if(desc.length > 0)
+            {
+                if (_.startsWith(id, 'other_weight_sel_')) {
+                    var weight = $(e.target).val();
+                    var base_score = $(e.target).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                    total_score = parseInt(weight) * parseInt(base_score);
+                }
+                if (_.startsWith(id, 'other_basescore_sel_')) {
+                    var weight = $(e.target).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    var base_score = $(e.target).val();
+                    //console.log(weight + 'x' + base_score);
+                    total_score = parseInt(weight) * parseInt(base_score);
+                }
+                //console.log(total_score);
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html(total_score);
+            }else{
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
 
+            }
+        });
+    };
     var bind_event = function(){
+        event_other_sel_bind();
         $('#form_unitsub_stand_2009').find('textarea').off();
 
         $('#form_unitsub_stand_2009').find('textarea').on('keyup change', function(e){
@@ -4408,6 +4437,10 @@ function ShowUnitSubForm(viewer)
             var desc = $(e.target).val();
             var total_score = 0;
             if(_.trim(desc).length>0 && _.trim(desc) != '无' && _.trim(desc) != '(无)' && _.trim(desc) != '（无）'){
+                if(weight.length === 0 || base_score.length === 0){
+                    weight = $(e.target).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    base_score = $(e.target).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                }
                 total_score = parseInt(weight) * parseInt(base_score);
             }else{
                 total_score = 0;
@@ -4420,6 +4453,10 @@ function ShowUnitSubForm(viewer)
                 var desc1 = $(item).val();
                 var weight1 = $(item).attr('data-weight');
                 var base_score1 = $(item).attr('data-base_score');
+                if(weight1.length === 0 || base_score1.length === 0){
+                    weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                }
                 var total_score1 = parseInt(weight1) * parseInt(base_score1);
                 if(un === unit){
                     if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
@@ -4434,9 +4471,9 @@ function ShowUnitSubForm(viewer)
             var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
 
             if(_.trim(desc).length === 0){
-                $(e.target).parent().prev().find('p').html('');
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
             }else{
-                $(e.target).parent().prev().find('p').html(total_score);
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html(total_score);
             }
             if(total_score_accmulate>0){
                 $('#form_unitsub_stand_2009').find('#finaltext_' + unit).html(t);
@@ -4462,8 +4499,6 @@ function ShowUnitSubForm(viewer)
         });
     };
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
-
-
     $('#dlg_unitsub_standard2009').dialog({
         width: 890,
         height: 500,
@@ -4490,9 +4525,9 @@ function ShowUnitSubForm(viewer)
             {
                 text: "确定",
                 click: function(e){
-                    var formdata = $('#form_state_examination_import_single').webgisform('getdata');
-                    formdata.description = formdata.unitsub_desc;
-                    delete formdata.unitsub_desc;
+                    $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
+                    $.webgis.data.state_examination.record_single_form.description = $.webgis.data.state_examination.record_single_form.unitsub_desc;
+                    delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
                     var list = [];
                     $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
                         var id = $(item).attr('id').replace('textarea_', '');
@@ -4501,24 +4536,25 @@ function ShowUnitSubForm(viewer)
                         var weight1 = $(item).attr('data-weight');
                         var base_score1 = $(item).attr('data-base_score');
                         //var total_score1 = parseInt(weight1) * parseInt(base_score1);
-
+                        if(weight1.length === 0){
+                            weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                        }
+                        if(base_score1.length === 0){
+                            base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                        }
                         if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
-                            list.push({id:id, unit:un, desc:desc1 });
+                            list.push({id:id, unit:un, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
                         }
                     });
-                    formdata.unitsub = list;
-                    console.log(formdata);
-
-
-
-
-
+                    $.webgis.data.state_examination.record_single_form.unitsub = list;
+                    //console.log($.webgis.data.state_examination.record_single_form);
                     $( this ).dialog( "close" );
                 }
             },
             {
                 text: "关闭",
                 click: function(e){
+                    //$.webgis.data.state_examination.record_single_form.list = [];
                     $( this ).dialog( "close" );
                 }
             }
@@ -4669,8 +4705,11 @@ function SaveStateExaminationSingle(viewer)
             '导入确认',
             '确认导入吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
             function () {
-                var data = $('#form_state_examination_import_single').webgisform('getdata');
-                SaveStateExamination(viewer, data);
+                if(_.isEmpty($.webgis.data.state_examination.record_single_form)){
+                    $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
+                }
+                console.log($.webgis.data.state_examination.record_single_form);
+                SaveStateExamination(viewer, $.webgis.data.state_examination.record_single_form);
             },
             function () {
                 $('#').dialog("close");
