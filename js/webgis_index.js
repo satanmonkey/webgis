@@ -3007,8 +3007,8 @@ function InitToolPanel(viewer)
     });
     $('#but_state_examination_standard').button({label:'查看标准'});
     $('#but_state_examination_standard').on('click', function(){
-        //ShowStateExaminationStandardDialog(viewer);
-        ShowStateExaminationStandardDialog2014(viewer);
+        ShowStateExaminationStandardDialog(viewer);
+        //ShowStateExaminationStandardDialog2014(viewer);
     });
     $('#but_state_examination_bbn').button({label:'查看编辑'});
     $('#but_state_examination_bbn').on('click', function(){
@@ -3105,8 +3105,8 @@ function ShowStateExaminationBBNDialog(viewer)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    //ShowStateExaminationStandardDialog(viewer);
-                    ShowStateExaminationStandardDialog2014(viewer);
+                    ShowStateExaminationStandardDialog(viewer);
+                    //ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
             {
@@ -3774,7 +3774,7 @@ function ShowStateExaminationListDialog(viewer)
             {display:'电压等级', name:'voltage', width: 70, editor: { type: 'text'}},
             {display:'线路名称', name:'line_name', width: 100, editor: { type: 'text' }},
             {display:'情况描述', name:'description', width: 200, editor: { type: 'text' }},
-            {display:'检修策略', name:'suggestion', width: 200, editor: { type: 'text' }},
+            {display:'检修策略', name:'suggestion', width: 200, editor: { type: 'text' }, hide:true},
             {display:'线路整体评价', name:'line_state', width: 100,
                 editor: { type: 'select', data: get_sel('line_state'), valueField: 'line_state' },
                 render: RenderLevelName
@@ -3946,7 +3946,10 @@ function ShowStateExaminationListDialog(viewer)
 
 function StateExaminationListBeginEdit(rowindex)
 {
-    $.webgis.data.state_examination.control.list_grid.beginEdit(rowindex);
+    //$.webgis.data.state_examination.control.list_grid.beginEdit(rowindex);
+    var rowobj = $.webgis.data.state_examination.control.list_grid.getRow(rowindex);
+    //console.log(rowobj);
+    ShowStateExaminationImportDialog(null, rowobj);
 }
 function StateExaminationListDeleteRow(rowindex)
 {
@@ -4129,7 +4132,42 @@ function PreviewStateExaminationMultiple(viewer)
         pageSize:10
     });
 }
-function ShowStateExaminationImportDialog(viewer)
+function GetMaxlvl(obj)
+{
+    var l = [];
+    _.forIn(obj, function(v, k){
+        if(_.startsWith(k, 'unit_')){
+            if(v === 'I'){
+                l.push(1);
+            }
+            if(v === 'II'){
+                l.push(2);
+            }
+            if(v === 'III'){
+                l.push(3);
+            }
+            if(v === 'IV'){
+                l.push(4);
+            }
+        }
+    });
+    var ret = _.max(l);
+    if(ret === 1){
+        ret = 'I';
+    }
+    if(ret === 2){
+        ret = 'II';
+    }
+    if(ret === 3){
+        ret = 'III';
+    }
+    if(ret === 4){
+        ret = 'IV';
+    }
+    return ret;
+}
+
+function ShowStateExaminationImportDialog(viewer, data)
 {
     CreateDialogSkeleton(viewer, 'dlg_state_examination_import');
     $('#dlg_state_examination_import').dialog({
@@ -4158,8 +4196,8 @@ function ShowStateExaminationImportDialog(viewer)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    //ShowStateExaminationStandardDialog(viewer);
-                    ShowStateExaminationStandardDialog2014(viewer);
+                    ShowStateExaminationStandardDialog(viewer);
+                    //ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
             {
@@ -4185,13 +4223,30 @@ function ShowStateExaminationImportDialog(viewer)
         collapsible: false,
         active: 0
     });
-    var list = ['08', '09', '10', '11', '12', '13', '15'];
-    var voltagelist = [];
-    _.forIn($.webgis.data.codes['voltage_level'], function(v, k){
-        if(_.indexOf(list, k) > -1){
-            voltagelist.push({ value: k, label: $.webgis.data.codes['voltage_level'][k] });
+    var formdata;
+    if(_.isUndefined(data)){
+        $('#dlg_state_examination_import').dialog('option', 'title', '数据导入');
+        $('#tabs_state_examination_import').tabs( "enable", 1 );
+    }else{
+        formdata = $.extend(true, {}, data);
+        if(formdata.check_year){
+            formdata.check_year = formdata.check_year + '';
         }
-    });
+        if(formdata.description && formdata.description.length>0 && _.trim(formdata.description)!='无' && _.trim(formdata.description)!='（无）' && _.trim(formdata.description)!='(无)'){
+            formdata.unitsub_desc = formdata.description;
+        }
+        formdata.line_status = GetMaxlvl(formdata);
+        $('#dlg_state_examination_import').dialog('option', 'title', '编辑记录');
+        $('#tabs_state_examination_import').tabs( "disable", 1 );
+    }
+    var list = ['08', '09', '10', '11', '12', '13', '15'];
+    //var voltagelist = [];
+    //_.forIn($.webgis.data.codes['voltage_level'], function(v, k){
+    //    if(_.indexOf(list, k) > -1){
+    //        voltagelist.push({ value: k, label: $.webgis.data.codes['voltage_level'][k] });
+    //    }
+    //});
+    var voltagelist = [{value:'500kV',label:'500kV'},{value:'220kV',label:'220kV'},{value:'110kV',label:'110kV'},{value:'35kV',label:'35kV'}];
     list = _.range(2000, 2030);
     var yearlist = [
         //{value:'', label:'(请选择年份)'}
@@ -4227,7 +4282,7 @@ function ShowStateExaminationImportDialog(viewer)
     flds.push({ display: '劣化情况输入', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '状态评价-详细', width: 250, labelwidth: 120,
         click:function(){
             //console.log('');
-            ShowUnitSubForm(viewer);
+            ShowUnitSubForm(viewer, formdata.line_name);
             //ShowUnitSubForm2014(viewer);
         }
     });
@@ -4239,6 +4294,10 @@ function ShowStateExaminationImportDialog(viewer)
         //margin:10,
         //groupmargin:10
     });
+
+    if(!_.isUndefined(formdata)){
+        $('#form_state_examination_import_single').webgisform('setdata', formdata);
+    }
 
     var rebuild_column_select = function(unitlist, arr){
         var colids = ['line_name', 'voltage', 'check_year', 'line_status', 'description', 'suggestion'];
@@ -4325,7 +4384,7 @@ function ShowStateExaminationImportDialog(viewer)
     });
 }
 
-function ShowUnitSubForm(viewer)
+function ShowUnitSubForm(viewer, line_name)
 {
     var load_html = function(html){
         $('#dlg_unitsub_standard2009').empty();
@@ -4339,6 +4398,12 @@ function ShowUnitSubForm(viewer)
         .done(function(data){
             $.webgis.data.bbn.unitsub_template_2009 = data;
             //console.log($.webgis.data.bbn.unitsub_template_2009);
+            if(!_.isUndefined(line_name)){
+                var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name}), 'unitsub');
+                if(!_.isUndefined(unitsub)){
+                    load_form_data(unitsub);
+                }
+            }
         })
         .fail(function (jqxhr, textStatus, e) {
             $.webgis.data.bbn.unitsub_template_2009 = [];
@@ -4393,6 +4458,7 @@ function ShowUnitSubForm(viewer)
         //    });
         //}else{
         if(!_.isUndefined(data)){
+            console.log(data);
         }
     };
     var event_other_sel_bind = function(){
@@ -4498,6 +4564,7 @@ function ShowUnitSubForm(viewer)
             $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
         });
     };
+    var unitsub_desc_org = $('#form_state_examination_import_single_unitsub_desc').val();
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
     $('#dlg_unitsub_standard2009').dialog({
         width: 890,
@@ -4526,7 +4593,12 @@ function ShowUnitSubForm(viewer)
                 text: "确定",
                 click: function(e){
                     $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
-                    $.webgis.data.state_examination.record_single_form.description = $.webgis.data.state_examination.record_single_form.unitsub_desc;
+                    if(unitsub_desc_org.length>0 && _.trim(unitsub_desc_org)!='无' && _.trim(unitsub_desc_org)!='(无)' && _.trim(unitsub_desc_org)!='（无）')
+                    {
+                        $.webgis.data.state_examination.record_single_form.description = unitsub_desc_org;
+                    }else{
+                        $.webgis.data.state_examination.record_single_form.description =  $.webgis.data.state_examination.record_single_form.unitsub_desc;
+                    }
                     delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
                     var list = [];
                     $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
@@ -4535,6 +4607,7 @@ function ShowUnitSubForm(viewer)
                         var desc1 = $(item).val();
                         var weight1 = $(item).attr('data-weight');
                         var base_score1 = $(item).attr('data-base_score');
+                        var name1 = $(item).attr('data-name');
                         //var total_score1 = parseInt(weight1) * parseInt(base_score1);
                         if(weight1.length === 0){
                             weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
@@ -4543,11 +4616,12 @@ function ShowUnitSubForm(viewer)
                             base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
                         }
                         if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
-                            list.push({id:id, unit:un, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
+                            list.push({id:id, unit:un, name:name1, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
                         }
                     });
                     $.webgis.data.state_examination.record_single_form.unitsub = list;
-                    //console.log($.webgis.data.state_examination.record_single_form);
+                    $.webgis.data.state_examination.record_single_form.line_status = GetMaxlvl($.webgis.data.state_examination.record_single_form);
+                    $('#form_state_examination_import_single_line_status').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_status]);
                     $( this ).dialog( "close" );
                 }
             },
@@ -4585,8 +4659,8 @@ function ShowUnitSubForm2014(viewer)
 function SaveStateExaminationMultiple(viewer)
 {
     ShowConfirm(null, 500, 200,
-        '导入确认',
-        '确认导入吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+        '保存确认',
+        '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
         function () {
             $.webgis.data.state_examination.import_data = BindExistLineId($.webgis.data.state_examination.import_data);
             //console.log($.webgis.data.state_examination.import_data);
@@ -4649,17 +4723,20 @@ function SaveStateExamination(viewer, data, success, fail)
         data = BindExistLineId(data);
         if(_.isObject(data)){
             data.check_year = checkyear_int(data.check_year);
+            data.line_status = GetMaxlvl(data);
         }
         if(_.isArray(data)) {
             data = _.map(data, function(item){
                 item.check_year = checkyear_int(item.check_year);
+                item.line_status = GetMaxlvl(item);
                 return item;
             });
         }
         return data;
     };
     data = data_modifier(data);
-    //console.log(data);
+    console.log(data);
+    return;
     ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
     $.ajax({
         url:'/state_examination/save',
@@ -4702,13 +4779,17 @@ function SaveStateExaminationSingle(viewer)
 {
     if($('#form_state_examination_import_single').valid()) {
         ShowConfirm(null, 500, 200,
-            '导入确认',
-            '确认导入吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+            '保存确认',
+            '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
             function () {
                 if(_.isEmpty($.webgis.data.state_examination.record_single_form)){
                     $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
                 }
-                console.log($.webgis.data.state_examination.record_single_form);
+                //console.log($.webgis.data.state_examination.record_single_form);
+                //if(_.isString($.webgis.data.state_examination.record_single_form.check_year)){
+                //    $.webgis.data.state_examination.record_single_form.check_year = parseInt($.webgis.data.state_examination.record_single_form.check_year);
+                //}
+                //return;
                 SaveStateExamination(viewer, $.webgis.data.state_examination.record_single_form);
             },
             function () {
