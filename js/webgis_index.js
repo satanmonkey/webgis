@@ -3986,7 +3986,7 @@ function StateExaminationListEndEdit(rowindex)
                     delete row[k];
                 }
             });
-            console.log(row);
+            //console.log(row);
             if(row) {
                 SaveStateExamination(null, row, function () {
                     $.webgis.data.state_examination.control.list_grid.endEdit(rowindex);
@@ -4282,7 +4282,7 @@ function ShowStateExaminationImportDialog(viewer, data)
     flds.push({ display: '劣化情况输入', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '状态评价-详细', width: 250, labelwidth: 120,
         click:function(){
             //console.log('');
-            ShowUnitSubForm(viewer, formdata.line_name);
+            ShowUnitSubForm(viewer, formdata.line_name, parseInt(formdata.check_year));
             //ShowUnitSubForm2014(viewer);
         }
     });
@@ -4384,7 +4384,7 @@ function ShowStateExaminationImportDialog(viewer, data)
     });
 }
 
-function ShowUnitSubForm(viewer, line_name)
+function ShowUnitSubForm(viewer, line_name, check_year)
 {
     var load_html = function(html){
         $('#dlg_unitsub_standard2009').empty();
@@ -4397,9 +4397,8 @@ function ShowUnitSubForm(viewer, line_name)
         })
         .done(function(data){
             $.webgis.data.bbn.unitsub_template_2009 = data;
-            //console.log($.webgis.data.bbn.unitsub_template_2009);
             if(!_.isUndefined(line_name)){
-                var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name}), 'unitsub');
+                var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
                 if(!_.isUndefined(unitsub)){
                     load_form_data(unitsub);
                 }
@@ -4458,7 +4457,10 @@ function ShowUnitSubForm(viewer, line_name)
         //    });
         //}else{
         if(!_.isUndefined(data)){
-            console.log(data);
+            _.forEach(data, function(item){
+                 $('#form_unitsub_stand_2009').find('#textarea_' + item.id).val(item.desc);
+                 $('#form_unitsub_stand_2009').find('#totalscore_' + item.id).html(item.weight * item.base_score);
+            });
         }
     };
     var event_other_sel_bind = function(){
@@ -4564,7 +4566,7 @@ function ShowUnitSubForm(viewer, line_name)
             $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
         });
     };
-    var unitsub_desc_org = $('#form_state_examination_import_single_unitsub_desc').val();
+
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2009');
     $('#dlg_unitsub_standard2009').dialog({
         width: 890,
@@ -4593,33 +4595,6 @@ function ShowUnitSubForm(viewer, line_name)
                 text: "确定",
                 click: function(e){
                     $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
-                    if(unitsub_desc_org.length>0 && _.trim(unitsub_desc_org)!='无' && _.trim(unitsub_desc_org)!='(无)' && _.trim(unitsub_desc_org)!='（无）')
-                    {
-                        $.webgis.data.state_examination.record_single_form.description = unitsub_desc_org;
-                    }else{
-                        $.webgis.data.state_examination.record_single_form.description =  $.webgis.data.state_examination.record_single_form.unitsub_desc;
-                    }
-                    delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
-                    var list = [];
-                    $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
-                        var id = $(item).attr('id').replace('textarea_', '');
-                        var un = $(item).attr('data-unit');
-                        var desc1 = $(item).val();
-                        var weight1 = $(item).attr('data-weight');
-                        var base_score1 = $(item).attr('data-base_score');
-                        var name1 = $(item).attr('data-name');
-                        //var total_score1 = parseInt(weight1) * parseInt(base_score1);
-                        if(weight1.length === 0){
-                            weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
-                        }
-                        if(base_score1.length === 0){
-                            base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
-                        }
-                        if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
-                            list.push({id:id, unit:un, name:name1, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
-                        }
-                    });
-                    $.webgis.data.state_examination.record_single_form.unitsub = list;
                     $.webgis.data.state_examination.record_single_form.line_status = GetMaxlvl($.webgis.data.state_examination.record_single_form);
                     $('#form_state_examination_import_single_line_status').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_status]);
                     $( this ).dialog( "close" );
@@ -4664,7 +4639,20 @@ function SaveStateExaminationMultiple(viewer)
         function () {
             $.webgis.data.state_examination.import_data = BindExistLineId($.webgis.data.state_examination.import_data);
             //console.log($.webgis.data.state_examination.import_data);
-            SaveStateExamination(viewer, $.webgis.data.state_examination.import_data);
+            SaveStateExamination(viewer, $.webgis.data.state_examination.import_data, function(){
+                $.ajax({
+                    url:'/state_examination/query',
+                    method:'post',
+                    data: JSON.stringify({})
+                })
+                .always(function () {
+                    ShowProgressBar(false);
+                })
+                .done(function (data1) {
+                    data1 = JSON.parse(data1);
+                    $.webgis.data.state_examination.list_data = data1;
+                });
+            });
         },
         function () {
             $('#').dialog("close");
@@ -4735,8 +4723,8 @@ function SaveStateExamination(viewer, data, success, fail)
         return data;
     };
     data = data_modifier(data);
-    console.log(data);
-    return;
+    //console.log(data);
+    //return;
     ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
     $.ajax({
         url:'/state_examination/save',
@@ -4782,15 +4770,55 @@ function SaveStateExaminationSingle(viewer)
             '保存确认',
             '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
             function () {
-                if(_.isEmpty($.webgis.data.state_examination.record_single_form)){
-                    $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
+                $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
+                var unitsub_desc_org = $('#form_state_examination_import_single_unitsub_desc').val();
+                if(unitsub_desc_org.length>0 && _.trim(unitsub_desc_org)!='无' && _.trim(unitsub_desc_org)!='(无)' && _.trim(unitsub_desc_org)!='（无）')
+                {
+                    $.webgis.data.state_examination.record_single_form.description = unitsub_desc_org;
+                }else{
+                    $.webgis.data.state_examination.record_single_form.description =  $.webgis.data.state_examination.record_single_form.unitsub_desc;
                 }
+                delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
+                var list = [];
+                $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+                    var id = $(item).attr('id').replace('textarea_', '');
+                    var un = $(item).attr('data-unit');
+                    var desc1 = $(item).val();
+                    var weight1 = $(item).attr('data-weight');
+                    var base_score1 = $(item).attr('data-base_score');
+                    var name1 = $(item).attr('data-name');
+                    //var total_score1 = parseInt(weight1) * parseInt(base_score1);
+                    if(weight1.length === 0){
+                        weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    }
+                    if(base_score1.length === 0){
+                        base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                    }
+                    if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                        list.push({id:id, unit:un, name:name1, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
+                    }
+                });
+                $.webgis.data.state_examination.record_single_form.unitsub = list;
+
                 //console.log($.webgis.data.state_examination.record_single_form);
                 //if(_.isString($.webgis.data.state_examination.record_single_form.check_year)){
                 //    $.webgis.data.state_examination.record_single_form.check_year = parseInt($.webgis.data.state_examination.record_single_form.check_year);
                 //}
                 //return;
-                SaveStateExamination(viewer, $.webgis.data.state_examination.record_single_form);
+                SaveStateExamination(viewer, $.webgis.data.state_examination.record_single_form, function(){
+                    $.ajax({
+                        url:'/state_examination/query',
+                        method:'post',
+                        data: JSON.stringify({})
+                    })
+                    .always(function () {
+                        ShowProgressBar(false);
+                    })
+                    .done(function (data1) {
+                        data1 = JSON.parse(data1);
+                        $.webgis.data.state_examination.list_data = data1;
+                    });
+                });
             },
             function () {
                 $('#').dialog("close");
