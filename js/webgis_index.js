@@ -244,6 +244,10 @@ function InitStateExamination()
     $.getJSON( 'js/jiakongztpj2014.json')
     .done(function( data0 ){
         $.webgis.data.state_examination.standard2014 = data0;
+
+        //$.getJSON( 'js/jiakongztpj.json')
+        //.done(function( data0_1 ){
+        //    $.webgis.data.state_examination.standard2009 = data0_1;
         $.getJSON( 'js/jiakongztpj.json')
         .done(function( data ){
             //if(success) success(data);
@@ -259,11 +263,12 @@ function InitStateExamination()
             });
         })
         .fail(function( jqxhr ){
-
         });
+        //})
+        //.fail(function( jqxhr ){
+        //});
     })
     .fail(function( jqxhr ){
-
     });
 }
 function InitScreenSize(viewer)
@@ -3288,13 +3293,11 @@ function ShowStateExaminationBBNDialog(viewer)
             build_select();
         });
     }
-    //QueryBBNDomainsRange(function(){
-        //console.log($.webgis.data.bbn.domains_range);
     BBNNodeGridLoadData(viewer, $.webgis.data.bbn.grid_data);
-    //});
     change_line_name('');
     //PredictGridLoad([]);
-    PredictGridLoad1([]);
+    //PredictGridLoad1([]);
+    PredictGridLoad2([]);
     $('#btn_state_examination_bbn_assume_predict').button({label:'进行预测'});
     $('#btn_state_examination_bbn_assume_predict').on('click', function(){
         //DoPredict(function(data1){
@@ -3308,7 +3311,8 @@ function ShowStateExaminationBBNDialog(viewer)
         if(_.isUndefined($.webgis.data.bbn.predict_grid_data))
         {
             DoPredict1(function(data1){
-                DrawPredictTable1(data1);
+                //DrawPredictTable1(data1);
+                DrawPredictTable2(data1);
                 PredictSummaryDialog(viewer);
             });
         }else
@@ -4235,7 +4239,7 @@ function ShowStateExaminationImportDialog(viewer, data)
         if(formdata.description && formdata.description.length>0 && _.trim(formdata.description)!='无' && _.trim(formdata.description)!='（无）' && _.trim(formdata.description)!='(无)'){
             formdata.unitsub_desc = formdata.description;
         }
-        formdata.line_status = GetMaxlvl(formdata);
+        formdata.line_state = GetMaxlvl(formdata);
         $('#dlg_state_examination_import').dialog('option', 'title', '编辑记录');
         $('#tabs_state_examination_import').tabs( "disable", 1 );
     }
@@ -4272,7 +4276,7 @@ function ShowStateExaminationImportDialog(viewer, data)
         { display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: voltagelist }, defaultvalue: '13', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
         { display: "评价年份", id: "check_year", newline: true, type: "select", editor: { data: yearlist }, defaultvalue: '2015', group: '线路信息', width: 250, labelwidth: 120, validate:{ required: true}},
     ];
-    flds.push({ display: '线路整体', id: "line_status" , newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-整体', width: 250, labelwidth: 120, validate:{ required: true}});
+    flds.push({ display: '线路整体', id: "line_state" , newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-整体', width: 250, labelwidth: 120, validate:{ required: true}});
     //flds.push({ display: '存在问题描述', id: "description" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250, height:120, labelwidth: 120 });
     //flds.push({ display: '检修策略', id: "suggestion" , newline: true, type: "textarea",  defaultvalue: '', group: '状态评价-整体', width: 250,  height:90, labelwidth: 120 });
     _.forEach(unitlist, function(item){
@@ -4300,7 +4304,7 @@ function ShowStateExaminationImportDialog(viewer, data)
     }
 
     var rebuild_column_select = function(unitlist, arr){
-        var colids = ['line_name', 'voltage', 'check_year', 'line_status', 'description', 'suggestion'];
+        var colids = ['line_name', 'voltage', 'check_year', 'line_state', 'description', 'suggestion'];
         _.forEach(_.range(1, unitlist.length + 1), function(i){
             colids.push('unit_' + i);
         });
@@ -4368,7 +4372,7 @@ function ShowStateExaminationImportDialog(viewer, data)
         { display: "线路名列名称", id: "line_name", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
         { display: "电压等级列名称", id: "voltage", newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
         { display: "评价年份列名称", id: "check_year", newline: true, type: "select", editor: { data: [] }, defaultvalue:'',  group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true}},
-        { display: '线路整体评价列名称', id: "line_status" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200,validate:{ required: true}},
+        { display: '线路整体评价列名称', id: "line_state" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200,validate:{ required: true}},
         { display: '存在问题描述列名称', id: "description" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200,validate:{ required: true}},
         { display: '检修策略列名称', id: "suggestion" , newline: true, type: "select", editor: { data: [] }, defaultvalue:'', group: 'Excel索引列', width: 150, labelwidth: 200, validate:{ required: true} }
     ];
@@ -4396,10 +4400,12 @@ function ShowUnitSubForm(viewer, line_name, check_year)
             dataType: 'json'
         })
         .done(function(data){
+            $('#form_unitsub_stand_2009').find('textarea').val('');
             $.webgis.data.bbn.unitsub_template_2009 = data;
-            if(!_.isUndefined(line_name)){
+            if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
                 var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
-                if(!_.isUndefined(unitsub)){
+                console.log(unitsub);
+                if(!_.isUndefined(unitsub) && unitsub.length>0){
                     load_form_data(unitsub);
                 }
             }
@@ -4595,8 +4601,9 @@ function ShowUnitSubForm(viewer, line_name, check_year)
                 text: "确定",
                 click: function(e){
                     $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
-                    $.webgis.data.state_examination.record_single_form.line_status = GetMaxlvl($.webgis.data.state_examination.record_single_form);
-                    $('#form_state_examination_import_single_line_status').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_status]);
+                    $.webgis.data.state_examination.record_single_form.line_state = GetMaxlvl($.webgis.data.state_examination.record_single_form);
+                    $('#form_state_examination_import_single_line_state').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_state]);
+
                     $( this ).dialog( "close" );
                 }
             },
@@ -4711,12 +4718,12 @@ function SaveStateExamination(viewer, data, success, fail)
         data = BindExistLineId(data);
         if(_.isObject(data)){
             data.check_year = checkyear_int(data.check_year);
-            data.line_status = GetMaxlvl(data);
+            data.line_state = GetMaxlvl(data);
         }
         if(_.isArray(data)) {
             data = _.map(data, function(item){
                 item.check_year = checkyear_int(item.check_year);
-                item.line_status = GetMaxlvl(item);
+                item.line_state = GetMaxlvl(item);
                 return item;
             });
         }
@@ -5139,18 +5146,18 @@ function CreateDialogSkeleton(viewer, dlg_id)
                     <div id="tabs_state_examination_bbn">\
                         <ul>\
                             <li><a href="#div_state_examination_bbn_bbn">贝叶斯信度网(BBN)</a></li>\
-                            <li><a href="#div_state_examination_bbn_bbn_view">概率节点编辑</a></li>\
+                            <!--li><a href="#div_state_examination_bbn_bbn_view">概率节点编辑</a></li-->\
                             <li><a href="#div_state_examination_bbn_predict">分析预测</a></li>\
                         </ul>\
                         <div id="div_state_examination_bbn_bbn">\
                             <form id="form_state_examination_bbn_bbn"></form>\
                             <div id="div_state_examination_bbn_bbn_graphiz"></div>\
                         </div>\
-                        <div id="div_state_examination_bbn_bbn_view">\
+                        <!--div id="div_state_examination_bbn_bbn_view">\
                             <form id="form_state_examination_bbn_bbn_view_grid"></form>\
                             <div id="div_state_examination_bbn_bbn_view_grid_container">\
                                 <div id="div_state_examination_bbn_bbn_view_grid"></div>\
-                            </div>\
+                            </div-->\
                         </div>\
                         <div id="div_state_examination_bbn_predict">\
                             <form id="form_state_examination_bbn_assume">\
@@ -5180,7 +5187,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
                             </fieldset>\
                             </form>\
                             <p>&nbsp;<p>&nbsp;<p>\
-                            <input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项\
+                            <!--input id="cb_state_examination_bbn_assume_predict_display_0" type="checkbox"/>不显示0概率项-->\
                             <div id="div_state_examination_bbn_predict_grid_container">\
                                 <div id="div_state_examination_bbn_predict_grid">\
                                 </div>\
@@ -12344,6 +12351,7 @@ function QueryBBNDomainsRange(callback)
 }
 function BBNNodeGridLoadData(viewer, data)
 {
+    return;
     var tabledata = {Rows: BuildTableList(data)};
     if(_.isUndefined($.webgis.data.bbn.control.node_grid))
     {
@@ -13221,7 +13229,8 @@ function LoadBBNGridData(viewer, line_name, callback)
     }else{
         BBNNodeGridLoadData(viewer, []);
         //PredictGridLoad([]);
-        PredictGridLoad1([]);
+        //PredictGridLoad1([]);
+        PredictGridLoad2([]);
     }
 }
 function PredictGridLoad(alist)
@@ -13260,6 +13269,98 @@ function PredictGridLoad(alist)
     $.webgis.data.bbn.control.predict_grid.collapseAll();
 }
 
+function PredictGridLoad2(alist)
+{
+    var bar_grid_width = 160;
+    var get_width = function(domain, value){
+        if(domain === '正常' && value === 1){
+            return 0;
+        }
+        return Math.floor((bar_grid_width-50) * value);
+    };
+    var get_p_format = function(value)
+    {
+        var ret;
+        if(!_.isUndefined(value)) {
+            ret = (value*100).toFixed(0) + '%';
+        }
+        return ret;
+    };
+    var color_gradient = function(domain, value){
+        var ret = '#ffffff';
+        var diff = 1;
+        var k0;
+        _.forIn($.webgis.mapping.probability_gradient, function(v, k){
+            if(diff > Math.abs(parseFloat(k) - value)){
+                diff = Math.abs(parseFloat(k) - value);
+                k0 = k;
+            }
+        });
+        //console.log(value);
+        if(domain === '正常' && value === 1){
+            return ret;
+        }
+        if(!_.isUndefined(k0)){
+            ret = $.webgis.mapping.probability_gradient[k0];
+        }
+        //console.log(ret);
+        return ret;
+    };
+    var add_bar = function(domain, p, p_format){
+        var ret;
+        if(!_.isUndefined(p)){
+            ret = '<span class="span_probability_bar" style="opacity:' + p + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
+        }
+        return ret;
+    };
+
+    var tabledata = {Rows:alist};
+    if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
+    {
+        var columns = [
+            //{display:'', name:'_id', width: 1, hide: true},
+            {display:'预测项名称', name:'name', width: 100},
+            {display:'所属单元', name:'unit', width: 80},
+            {display:'劣化等级', name:'level', width: 60},
+            {display:'劣化描述', name:'description', width: 150},
+            {display:'发生概率', name:'probability', width: bar_grid_width, render:function (rowdata, rowindex, value){
+                if(_.isNumber(value)) {
+                    //console.log(rowdata);
+                    var domain = rowdata.value;
+                    var p_format = get_p_format(value);
+                    return add_bar(domain, value, p_format);
+                }else {
+                    return '';
+                }
+            }},
+            //{display:'详细描述', name:'description', width: 230},
+            {display:'检修建议', name:'suggestion', width: 230},
+        ];
+        $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
+            columns: columns,
+            data: tabledata,
+            enabledEdit: false,
+            clickToEdit: false,
+            //checkbox: true,
+            //tree: { columnName: 'display_name' },
+            pageSize: 50,
+            onSelectRow:function(rowdata, rowid, rowobj){
+                //console.log(rowobj);
+                $(rowobj).find('td').each(function (i, item) {
+                    var id = $(item).attr('id');
+                    if(_.endsWith(id, 'c101') || _.endsWith(id, 'c104') || _.endsWith(id, 'c106'))
+                    {
+                        var div = $(item).find('div');
+                        $(div).attr('title', $(div).html());
+                    }
+                });
+            }
+        });
+    }else{
+        $.webgis.data.bbn.control.predict_grid.loadData(tabledata);
+    }
+    //$.webgis.data.bbn.control.predict_grid.expandAll();
+}
 function PredictGridLoad1(alist)
 {
     //console.log(alist);
@@ -13911,6 +14012,46 @@ function DrawPredictTable(data)
     PredictGridLoad(list);
 }
 
+function DrawPredictTable2(data)
+{
+    var get_v = function(alist, id, key)
+    {
+        var ret;
+        _.forEach(alist, function(item){
+            _.forEach(item.children, function(item1){
+                if(item1.id === id){
+                    ret = item1[key];
+                    return;
+                }
+            });
+        });
+        return ret;
+    };
+    var get_unit_name = function(unit){
+        var l = ['基础', '杆塔', '导地线', '绝缘子串', '金具', '接地装置', '附属设施', '通道环境'];
+        var arr = unit.split('_');
+        return l[parseInt(arr[1])-1];
+    };
+
+    var list = [];
+    _.forEach(data, function(item){
+        _.forEach(item.result, function(item1){
+            if(_.startsWith(item1.name, 'unitsub_') && item1.p>0){
+                var o = {};
+                var unit = item1.name.substr(8, 8+5);
+                console.log(unit);
+                o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
+                o.unit = get_unit_name(unit);
+                o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
+                o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
+                o.probability = item1.p;
+                o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
+                list.push(o);
+            }
+        });
+    });
+    PredictGridLoad2(list);
+}
 function DrawPredictTable1(data)
 {
     var get_p = function(alist, name, value)
