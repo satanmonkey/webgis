@@ -245,28 +245,28 @@ function InitStateExamination()
     .done(function( data0 ){
         $.webgis.data.state_examination.standard2014 = data0;
 
-        //$.getJSON( 'js/jiakongztpj.json')
-        //.done(function( data0_1 ){
-        //    $.webgis.data.state_examination.standard2009 = data0_1;
-        $.getJSON( 'js/jiakongztpj.json')
-        .done(function( data ){
-            //if(success) success(data);
-            $.webgis.data.state_examination.standard = data;
-            $.getJSON( 'js/jianxiucelv.json')
-            .done(function( data1 ){
+        $.getJSON( '/standard_template2009.json')
+        .done(function( data0_1 ){
+            $.webgis.data.bbn.unitsub_template_2009 = data0_1;
+            $.getJSON( 'js/jiakongztpj.json')
+            .done(function( data ){
                 //if(success) success(data);
-                $.webgis.data.bbn.maintain_strategy_standard = data1;
-                QueryBBNDomainsRange();
+                $.webgis.data.state_examination.standard = data;
+                $.getJSON( 'js/jianxiucelv.json')
+                .done(function( data1 ){
+                    //if(success) success(data);
+                    $.webgis.data.bbn.maintain_strategy_standard = data1;
+                    QueryBBNDomainsRange();
+                })
+                .fail(function( jqxhr ){
+
+                });
             })
             .fail(function( jqxhr ){
-
             });
         })
         .fail(function( jqxhr ){
         });
-        //})
-        //.fail(function( jqxhr ){
-        //});
     })
     .fail(function( jqxhr ){
     });
@@ -4394,25 +4394,25 @@ function ShowUnitSubForm(viewer, line_name, check_year)
         $('#dlg_unitsub_standard2009').empty();
         $('#dlg_unitsub_standard2009').append(html);
         bind_event();
-        $.ajax({
-            url: '/standard_template2009.json',
-            method: 'get',
-            dataType: 'json'
-        })
-        .done(function(data){
-            $('#form_unitsub_stand_2009').find('textarea').val('');
-            $.webgis.data.bbn.unitsub_template_2009 = data;
-            if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
-                var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
-                console.log(unitsub);
-                if(!_.isUndefined(unitsub) && unitsub.length>0){
-                    load_form_data(unitsub);
-                }
+        //$.ajax({
+        //    url: '/standard_template2009.json',
+        //    method: 'get',
+        //    dataType: 'json'
+        //})
+        //.done(function(data){
+        //    $.webgis.data.bbn.unitsub_template_2009 = data;
+        $('#form_unitsub_stand_2009').find('textarea').val('');
+        if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
+            var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
+            console.log(unitsub);
+            if(!_.isUndefined(unitsub) && unitsub.length>0){
+                load_form_data(unitsub);
             }
-        })
-        .fail(function (jqxhr, textStatus, e) {
-            $.webgis.data.bbn.unitsub_template_2009 = [];
-        });
+        }
+        //})
+        //.fail(function (jqxhr, textStatus, e) {
+        //    $.webgis.data.bbn.unitsub_template_2009 = [];
+        //});
         //load_form_data();
         //CalcUnitProbability();
         //console.log(JSON.stringify($.webgis.data.bbn.unitsub_template_2009));
@@ -14019,7 +14019,7 @@ function DrawPredictTable2(data)
         var ret;
         _.forEach(alist, function(item){
             _.forEach(item.children, function(item1){
-                if(item1.id === id){
+                if( item1.id === id.replace('unitsub_', '')){
                     ret = item1[key];
                     return;
                 }
@@ -14039,7 +14039,6 @@ function DrawPredictTable2(data)
             if(_.startsWith(item1.name, 'unitsub_') && item1.p>0){
                 var o = {};
                 var unit = item1.name.substr(8, 8+5);
-                console.log(unit);
                 o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
                 o.unit = get_unit_name(unit);
                 o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
@@ -14050,6 +14049,9 @@ function DrawPredictTable2(data)
             }
         });
     });
+    //console.log(data);
+    //console.log($.webgis.data.bbn.unitsub_template_2009);
+    //console.log(list);
     PredictGridLoad2(list);
 }
 function DrawPredictTable1(data)
