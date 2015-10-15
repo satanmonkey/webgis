@@ -4520,7 +4520,7 @@ function ShowUnitSubForm(viewer, line_name, check_year)
         $('#form_unitsub_stand_2009').find('textarea').val('');
         if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
             var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
-            console.log(unitsub);
+            //console.log(unitsub);
             if(!_.isUndefined(unitsub) && unitsub.length>0){
                 load_form_data(unitsub);
             }
