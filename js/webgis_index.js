@@ -3015,13 +3015,17 @@ function InitToolPanel(viewer)
         ShowStateExaminationStandardDialog(viewer);
         //ShowStateExaminationStandardDialog2014(viewer);
     });
-    $('#but_state_examination_bbn').button({label:'查看编辑'});
+    $('#but_state_examination_bbn').button({label:'分析预测'});
     $('#but_state_examination_bbn').on('click', function(){
         ShowStateExaminationBBNDialog(viewer);
     });
     $('#but_state_examination_analyze').button({label:'分析'});
     $('#but_state_examination_analyze').on('click', function(){
         ShowStateExaminationAnalyzeDialog(viewer);
+    });
+    $('#but_state_examination_strategy').button({label:'检修策略编辑'});
+    $('#but_state_examination_strategy').on('click', function(){
+        ShowStrategyEditDialog(viewer);
     });
 
     $('#but_dn_add').button({label:'新增配电网络'});
@@ -4388,6 +4392,118 @@ function ShowStateExaminationImportDialog(viewer, data)
     });
 }
 
+function ShowStrategyEditDialog(viewer)
+{
+    var load_html = function(html) {
+        $('#dlg_unitsub_strategy2009').empty();
+        $('#dlg_unitsub_strategy2009').append(html);
+    };
+    var load_data = function(){
+        _.forEach($.webgis.data.bbn.unitsub_template_2009, function(item) {
+            _.forEach(item.children, function(item1) {
+                $('#form_unitsub_strategy_2009').find('#textarea_' + item1.id).val(item1.strategy);
+            });
+        });
+    };
+    var save_data = function(){
+        ShowConfirm(null, 500, 200,
+            '保存确认',
+            '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+            function () {
+                $('#form_unitsub_strategy_2009').find('textarea').each(function(idx, item){
+                    var id = $(item).attr('id').replace('textarea_', '');
+                    var unit = $(item).attr('data-unit');
+                    var idx1 = _.findIndex($.webgis.data.bbn.unitsub_template_2009, 'unit', unit);
+                    var idx2 = _.findIndex($.webgis.data.bbn.unitsub_template_2009[idx1].children, 'id', id);
+                    $.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].strategy = _.trim($(item).val());
+                });
+                //console.log($.webgis.data.bbn.unitsub_template_2009);
+                //return;
+                ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
+                $.ajax({
+                    url:'/state_examination/save_strategy',
+                    method:'post',
+                    data: JSON.stringify($.webgis.data.bbn.unitsub_template_2009)
+                })
+                .always(function () {
+                    ShowProgressBar(false);
+                })
+                .done(function (data1) {
+                    data1 = JSON.parse(data1);
+                    $.webgis.data.bbn.unitsub_template_2009 = data1;
+                    $.jGrowl("保存成功", {
+                        life: 2000,
+                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                        theme: 'bubblestylesuccess',
+                        glue: 'before'
+                    });
+                });
+            },
+            function () {
+                $('#').dialog("close");
+            }
+        );
+    };
+    var build_dlg = function(){
+        CreateDialogSkeleton(viewer, 'dlg_unitsub_strategy2009');
+        $('#dlg_unitsub_strategy2009').dialog({
+            width: 890,
+            height: 500,
+            minWidth:200,
+            minHeight: 200,
+            draggable: true,
+            resizable: true,
+            modal: false,
+            position:{at: "center"},
+            title:'检修策略制定',
+            close: function(event, ui){
+            },
+            show: {
+                effect: "blind",
+                //direction: "right",
+                duration: 200
+            },
+            hide: {
+                effect: "blind",
+                //direction: "right",
+                duration: 200
+            },
+            buttons:[
+                {
+                    text: "确定",
+                    click: function(e){
+                        save_data();
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: "关闭",
+                    click: function(e){
+                        $( this ).dialog( "close" );
+                    }
+                }
+            ]
+        });
+    };
+    build_dlg();
+    $.ajax({
+        url: '/webgis_strategy2009_form.html',
+        method: 'get',
+        dataType: 'html'
+    })
+    .done(function(page){
+        load_html(page);
+        load_data();
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("载入模板[/webgis_strategy2009_form.html]失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
+    });
+}
 function ShowUnitSubForm(viewer, line_name, check_year)
 {
     var load_html = function(html){
@@ -5274,6 +5390,12 @@ function CreateDialogSkeleton(viewer, dlg_id)
         {
             $(document.body).append('\
             <div id="dlg_unitsub_standard2009" >\
+            </div>');
+        }
+        if (dlg_id === 'dlg_unitsub_strategy2009')
+        {
+            $(document.body).append('\
+            <div id="dlg_unitsub_strategy2009" >\
             </div>');
         }
     }
@@ -13334,7 +13456,7 @@ function PredictGridLoad2(alist)
                 }
             }},
             //{display:'详细描述', name:'description', width: 230},
-            {display:'检修建议', name:'suggestion', width: 230},
+            {display:'检修策略', name:'suggestion', width: 230},
         ];
         $.webgis.data.bbn.control.predict_grid = $('#div_state_examination_bbn_predict_grid').ligerGrid({
             columns: columns,
@@ -13348,7 +13470,7 @@ function PredictGridLoad2(alist)
                 //console.log(rowobj);
                 $(rowobj).find('td').each(function (i, item) {
                     var id = $(item).attr('id');
-                    if(_.endsWith(id, 'c101') || _.endsWith(id, 'c104') || _.endsWith(id, 'c106'))
+                    if(_.endsWith(id, 'c101') || _.endsWith(id, 'c102') || _.endsWith(id, 'c103') || _.endsWith(id, 'c105'))
                     {
                         var div = $(item).find('div');
                         $(div).attr('title', $(div).html());
@@ -13958,10 +14080,6 @@ function DrawPredictTable(data)
         }
         return ret;
     };
-    //var get_domain_name = function(value)
-    //{
-    //    return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
-    //};
     var is_in_assume = function(assume, name)
     {
         return !_.isUndefined(_.find(assume, {name:name}));
@@ -14032,9 +14150,29 @@ function DrawPredictTable2(data)
         var arr = unit.split('_');
         return l[parseInt(arr[1])-1];
     };
+    var get_lvl_index = function(lvl){
+        var l = ['I','II','III','IV'];
+        return _.indexOf(l, lvl) + 1;
+    };
     var check_lvl = function(alist, obj)
     {
-
+        var o = _.find(alist, {level:obj.level, id:obj.id});
+        if(o)
+        {
+            if(get_lvl_index(obj.level) > get_lvl_index(o.level)){
+                alist.remove(o);
+            }
+        }
+    };
+    var get_unit_suggestion = function(unit, lvl){
+        var ret = '';
+        var ms = maintain_strategy(unit, lvl);
+        ret = '检修策略:' + ms.strategy + '。\n建议时限:' + ms.timeline + '。\n措施:' + ms.suggestion + '。';
+        return ret;
+    };
+    var get_domain_name = function(value)
+    {
+        return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
     };
     var list = [];
     _.forEach(data, function(item){
@@ -14042,12 +14180,14 @@ function DrawPredictTable2(data)
             if(_.startsWith(item1.name, 'unitsub_') && item1.p>0){
                 var o = {};
                 var unit = item1.name.substr(8, 8+5);
+                o.id = item1.name;
                 o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
                 o.unit = get_unit_name(unit);
-                o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
+                //o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
                 o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
                 o.probability = item1.p;
                 o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
+
                 list.push(o);
             }
         });
@@ -14060,15 +14200,16 @@ function DrawPredictTable2(data)
         _.forEach(data, function(item){
             var line_state = item.line_state;
             _.forEach(item.result, function(item1){
-                if(_.startsWith(item1.name, 'unit_') && item1.p>0){
+                if(_.startsWith(item1.name, 'unit_') && item1.p>0 && item1.value != 'I'){
                     var o = {};
                     var unit = item1.name;
-                    o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
+                    o.id = item1.name;
+                    o.name = '(' + get_unit_name(unit) + ')';
                     o.unit = get_unit_name(unit);
                     o.level = item1.value;
-                    o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
+                    o.description = get_domain_name(item1.value);
                     o.probability = item1.p;
-                    o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
+                    o.suggestion = get_unit_suggestion(item1.name, item1.value);
                     check_lvl(list, o);
                     list.push(o);
                 }
