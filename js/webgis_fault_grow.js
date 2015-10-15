@@ -19,6 +19,7 @@ $.webgis.data.bbn.grown_model.score_range = [
 ];
 $.webgis.data.bbn.unitsub_template_2009 = [];
 
+
 function CalcUnitLevelByScore(unit, score, score_accmu)
 {
     var ret = '正常';

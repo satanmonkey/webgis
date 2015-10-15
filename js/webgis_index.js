@@ -4416,6 +4416,8 @@ function ShowStrategyEditDialog(viewer)
                     var idx1 = _.findIndex($.webgis.data.bbn.unitsub_template_2009, 'unit', unit);
                     var idx2 = _.findIndex($.webgis.data.bbn.unitsub_template_2009[idx1].children, 'id', id);
                     $.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].strategy = _.trim($(item).val());
+                    $.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].weight = parseInt($.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].weight);
+                    $.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].base_score = parseInt($.webgis.data.bbn.unitsub_template_2009[idx1].children[idx2].base_score);
                 });
                 //console.log($.webgis.data.bbn.unitsub_template_2009);
                 //return;
@@ -4686,6 +4688,71 @@ function ShowUnitSubForm(viewer, line_name, check_year)
                 $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['IV']);
             }
             $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
+        });
+        $('#btn_unitsub_import').off();
+        $('#btn_unitsub_import').on('click', function(e){
+            $('#btn_unitsub_import_file_path').html('');
+            $('#btn_unitsub_import_file').val('');
+            $('#btn_unitsub_import_file').trigger('click');
+        });
+        $('#btn_unitsub_import_file').off();
+        $('#btn_unitsub_import_file').on('change', function(e){
+            var  to_json = function(workbook) {
+                var result = [];
+                workbook.SheetNames.forEach(function(sheetName) {
+                    var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+                    if(roa.length > 0){
+                        result.push({sheet_name:sheetName, sheet_data:roa});
+                    }
+                });
+                return result;
+            };
+            var files = e.target.files;
+            var f = files[0];
+            var reader = new FileReader();
+            if(f && f.name)
+            {
+                if(!_.endsWith(f.name, '.xls'))
+                {
+                    $('#btn_unitsub_import_file_path').html('');
+                    ShowMessage(null, 400, 220, '出错了', '仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                    return;
+                }
+                $('#btn_unitsub_import_file_path').html(f.name);
+                var name = f.name;
+                //console.log(name);
+                reader.onload = function (e) {
+                    var data = e.target.result;
+                    var wb = XLS.read(data, {type: 'binary'});
+                    var sheets = to_json(wb);
+                    var sheet_data = sheets[0].sheet_data;
+                    $.webgis.data.bbn.xls_template_2009_id_mapping = [];
+                    var xlsidx = 0;
+                    _.forEach($.webgis.data.bbn.unitsub_template_2009, function(item) {
+                        if(xlsidx>0){
+                            xlsidx += 1;
+                        }
+                        _.forEach(item.children, function(item1) {
+                            $.webgis.data.bbn.xls_template_2009_id_mapping.push({id:item1.id, idx:xlsidx});
+                            xlsidx += 1;
+                        });
+                    });
+                    //console.log( $.webgis.data.bbn.xls_template_2009_id_mapping);
+                    _.forEach(sheet_data, function(item){
+                        var idx = _.indexOf(sheet_data, item);
+                        if(!_.isUndefined(item.劣化情况描述))
+                        {
+                            var id = _.result(_.find($.webgis.data.bbn.xls_template_2009_id_mapping, {idx: idx}), 'id');
+                            if (!_.isUndefined(id)) {
+                                id = 'textarea_' + id;
+                                $('#form_unitsub_stand_2009 #' + id).val(_.trim(item.劣化情况描述));
+                                $('#form_unitsub_stand_2009 #' + id).trigger('change');
+                            }
+                        }
+                    });
+                };
+                reader.readAsBinaryString(f);
+            }
         });
     };
 
@@ -13398,7 +13465,12 @@ function PredictGridLoad2(alist)
         if(domain === '正常' && value === 1){
             return 0;
         }
-        return Math.floor((bar_grid_width-50) * value);
+        var ret = Math.floor((bar_grid_width-50) * value);
+        //console.log(value + ', ' + ret);
+        if(ret<2){
+            ret = 2;
+        }
+        return ret;
     };
     var get_p_format = function(value)
     {
@@ -13409,7 +13481,7 @@ function PredictGridLoad2(alist)
         return ret;
     };
     var color_gradient = function(domain, value){
-        var ret = '#ffffff';
+        var ret = '#00ff00';
         var diff = 1;
         var k0;
         _.forIn($.webgis.mapping.probability_gradient, function(v, k){
@@ -13431,7 +13503,7 @@ function PredictGridLoad2(alist)
     var add_bar = function(domain, p, p_format){
         var ret;
         if(!_.isUndefined(p)){
-            ret = '<span class="span_probability_bar" style="opacity:' + p + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
+            ret = '<span class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
         }
         return ret;
     };
@@ -14156,12 +14228,13 @@ function DrawPredictTable2(data)
     };
     var check_lvl = function(alist, obj)
     {
-        var o = _.find(alist, {level:obj.level, id:obj.id});
+        //var o = _.find(alist, {level:obj.level, id:obj.id});
+        var o = _.find(alist, {id:obj.id});
         if(o)
         {
-            if(get_lvl_index(obj.level) > get_lvl_index(o.level)){
-                alist.remove(o);
-            }
+            //if(get_lvl_index(obj.level) > get_lvl_index(o.level)){
+                _.remove(alist, {id:obj.id});
+            //}
         }
     };
     var get_unit_suggestion = function(unit, lvl){
