@@ -13321,9 +13321,9 @@ function PredictGridLoad2(alist)
             //{display:'', name:'_id', width: 1, hide: true},
             {display:'预测项名称', name:'name', width: 100},
             {display:'所属单元', name:'unit', width: 80},
-            {display:'劣化等级', name:'level', width: 60},
+            //{display:'劣化等级', name:'level', width: 60},
             {display:'劣化描述', name:'description', width: 150},
-            {display:'发生概率', name:'probability', width: bar_grid_width, render:function (rowdata, rowindex, value){
+            {display:'预测发生概率', name:'probability', width: bar_grid_width, render:function (rowdata, rowindex, value){
                 if(_.isNumber(value)) {
                     //console.log(rowdata);
                     var domain = rowdata.value;
@@ -14032,7 +14032,10 @@ function DrawPredictTable2(data)
         var arr = unit.split('_');
         return l[parseInt(arr[1])-1];
     };
+    var check_lvl = function(alist, obj)
+    {
 
+    };
     var list = [];
     _.forEach(data, function(item){
         _.forEach(item.result, function(item1){
@@ -14052,6 +14055,26 @@ function DrawPredictTable2(data)
     //console.log(data);
     //console.log($.webgis.data.bbn.unitsub_template_2009);
     //console.log(list);
+    if(list.length === 0)
+    {
+        _.forEach(data, function(item){
+            var line_state = item.line_state;
+            _.forEach(item.result, function(item1){
+                if(_.startsWith(item1.name, 'unit_') && item1.p>0){
+                    var o = {};
+                    var unit = item1.name;
+                    o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
+                    o.unit = get_unit_name(unit);
+                    o.level = item1.value;
+                    o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
+                    o.probability = item1.p;
+                    o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
+                    check_lvl(list, o);
+                    list.push(o);
+                }
+            });
+        });
+    }
     PredictGridLoad2(list);
 }
 function DrawPredictTable1(data)
