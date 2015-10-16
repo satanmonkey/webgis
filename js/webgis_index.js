@@ -4289,8 +4289,11 @@ function ShowStateExaminationImportDialog(viewer, data)
     flds.push({ display: '劣化情况描述', id: "unitsub_desc" , newline: true, type: "textarea", editor: { readonly: true }, defaultvalue: '', group: '状态评价-详细', width: 250, height:60, labelwidth: 120});
     flds.push({ display: '劣化情况输入', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '状态评价-详细', width: 250, labelwidth: 120,
         click:function(){
-            //console.log('');
-            ShowUnitSubForm(viewer, formdata.line_name, parseInt(formdata.check_year));
+            if(_.isUndefined(formdata)){
+                ShowUnitSubForm(viewer);
+            }else{
+                ShowUnitSubForm(viewer, formdata.line_name, parseInt(formdata.check_year));
+            }
             //ShowUnitSubForm2014(viewer);
         }
     });
