@@ -4111,12 +4111,56 @@ function PreviewStateExaminationMultiple(viewer)
         }
     });
     delete formdata.sheet_name;
+
+    data = _.map(data,  function(item){
+        if(!_.isUndefined(item['总体评价'])){
+            item.line_state = item['总体评价'];
+        }
+        if(!_.isUndefined(item['基础'])){
+            item.unit_1 = item['基础'];
+        }
+        if(!_.isUndefined(item['杆塔'])){
+            item.unit_2 = item['杆塔'];
+        }
+        return item;
+    });
+
+
     var keys = _.values(formdata);
+    _.forEach(['line_state', 'unit_1', 'unit_2','unit_3','unit_4','unit_5','unit_6','unit_7','unit_8'], function(item){
+        if(!_.includes(keys, item)){
+            keys.push(item);
+        }
+    });
+    console.log(keys);
+
+    console.log(data);
+
     $.webgis.data.state_examination.import_data = _.map(data,  function(item){
         return _.pick(item, keys);
     });
     $.webgis.data.state_examination.import_data = _.filter($.webgis.data.state_examination.import_data, function(item){
         return !_.isEmpty(item.check_year);
+    });
+    $.webgis.data.state_examination.import_data = _.map($.webgis.data.state_examination.import_data, function(item){
+        _.forEach(['line_state', 'unit_1', 'unit_2','unit_3','unit_4','unit_5','unit_6','unit_7','unit_8'], function(item1){
+            if(_.isUndefined(item[item1]) || _.isEmpty(item[item1])){
+                item[item1] === 'I';
+            }
+            if(item[item1] === 'I'){
+                item[item1] = '正常';
+            }
+            if(item[item1] === 'II'){
+                item[item1] = '注意';
+            }
+            if(item[item1] === 'III'){
+                item[item1] = '异常';
+            }
+            if(item[item1] === 'IV'){
+                item[item1] = '严重';
+            }
+        });
+        return item;
     });
     var tabledata = {Rows:$.webgis.data.state_examination.import_data};
     var columns = [
