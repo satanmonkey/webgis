@@ -4113,6 +4113,18 @@ function PreviewStateExaminationMultiple(viewer)
     delete formdata.sheet_name;
 
     data = _.map(data,  function(item){
+        if(!_.isUndefined(item['检修设备'])){
+            item.line_name = item['检修设备'];
+        }
+        if(!_.isUndefined(item['评价线路'])){
+            item.line_name = item['评价线路'];
+        }
+        if(!_.isUndefined(item['电压等级'])){
+            item.voltage = item['电压等级'];
+        }
+        if(!_.isUndefined(item['评价年份'])){
+            item.check_year = item['评价年份'];
+        }
         if(!_.isUndefined(item['总体评价'])){
             item.line_state = item['总体评价'];
         }
@@ -4122,19 +4134,37 @@ function PreviewStateExaminationMultiple(viewer)
         if(!_.isUndefined(item['杆塔'])){
             item.unit_2 = item['杆塔'];
         }
+        if(!_.isUndefined(item['导地线'])){
+            item.unit_3 = item['导地线'];
+        }
+        if(!_.isUndefined(item['绝缘子'])){
+            item.unit_4 = item['绝缘子'];
+        }
+        if(!_.isUndefined(item['金具'])){
+            item.unit_5 = item['金具'];
+        }
+        if(!_.isUndefined(item['接地装置'])){
+            item.unit_6 = item['接地装置'];
+        }
+        if(!_.isUndefined(item['附属设施'])){
+            item.unit_7 = item['附属设施'];
+        }
+        if(!_.isUndefined(item['通道环境'])){
+            item.unit_8 = item['通道环境'];
+        }
         return item;
     });
 
 
     var keys = _.values(formdata);
-    _.forEach(['line_state', 'unit_1', 'unit_2','unit_3','unit_4','unit_5','unit_6','unit_7','unit_8'], function(item){
+    _.forEach(['line_name', 'voltage', 'check_year', 'line_state', 'unit_1', 'unit_2','unit_3','unit_4','unit_5','unit_6','unit_7','unit_8'], function(item){
         if(!_.includes(keys, item)){
             keys.push(item);
         }
     });
-    console.log(keys);
-
-    console.log(data);
+    _.remove(keys, function(item){
+        return _.includes(['检修设备', '评价线路', '电压等级', '评价年份', '总体评价', '基础', '杆塔','导地线','绝缘子','金具','接地装置','附属设施','通道环境', 'undefined'], item);
+    });
 
     $.webgis.data.state_examination.import_data = _.map(data,  function(item){
         return _.pick(item, keys);
@@ -4143,6 +4173,14 @@ function PreviewStateExaminationMultiple(viewer)
         return !_.isEmpty(item.check_year);
     });
     $.webgis.data.state_examination.import_data = _.map($.webgis.data.state_examination.import_data, function(item){
+        if(_.isString(item.voltage) && !_.endsWith(item.voltage, 'kV'))
+        {
+            item.voltage = item.voltage + 'kV';
+        }
+        if(_.isNumber(item.voltage))
+        {
+            item.voltage = item.voltage + 'kV';
+        }
         _.forEach(['line_state', 'unit_1', 'unit_2','unit_3','unit_4','unit_5','unit_6','unit_7','unit_8'], function(item1){
             if(_.isUndefined(item[item1]) || _.isEmpty(item[item1])){
                 item[item1] === 'I';
@@ -4162,6 +4200,8 @@ function PreviewStateExaminationMultiple(viewer)
         });
         return item;
     });
+    //console.log(keys);
+    //console.log($.webgis.data.state_examination.import_data);
     var tabledata = {Rows:$.webgis.data.state_examination.import_data};
     var columns = [
         {display:'评价年份', name:'check_year', width: 50},
