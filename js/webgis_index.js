@@ -48,9 +48,12 @@ $.webgis.config.max_file_size = 5000000;
 
 
 $(function() {
-	var session_data_string = Cookies.get('session_data').replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
-	$.webgis.current_userinfo  = JSON.parse(session_data_string);
-	console.log("current login user: " + $.webgis.current_userinfo.displayname);
+	var session_data = Cookies.get('session_data');
+	if(session_data){
+		var session_data_string = session_data.replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
+		$.webgis.current_userinfo  = JSON.parse(session_data_string);
+		console.log("current login user: " + $.webgis.current_userinfo.displayname);
+	}
 	//GetParamsFromUrl();
 	$.jGrowl.defaults.closerTemplate = '<div class="bubblestylesuccess">关闭所有提示信息</div>';
 	
@@ -109,7 +112,6 @@ $(function() {
 		InitModelList(viewer);
 		InitKeyboardEvent(viewer);
 		load_init_data();
-		InitAntiBird(viewer);
 		InitScreenSize(viewer);
 	}catch(ex)
 	{
@@ -140,7 +142,6 @@ $(function() {
 			InitModelList(viewer);
 			InitKeyboardEvent(viewer);
 			load_init_data();
-			InitAntiBird(viewer);
 			InitScreenSize(viewer);
 		});
 	}
@@ -1830,13 +1831,6 @@ cesiumSvgPath: { path: _svgPath, width: 28, height: 28 }');
 	});
 }
 
-function InitAntiBird(viewer)
-{
-	$('#div_anti_bird_inform_icon').hide();
-	InitAntiBirdEquipListData(viewer);
-	InitAntiBirdWebsocket(viewer);
-	InitAntiBirdTool(viewer);
-}
 
 function AntiBirdBadgeMessageListReload(data, filter)
 {
@@ -1961,46 +1955,6 @@ function AntiBirdBadgeIncrease(content)
 	$("#button_anti_bird").iosbadge({ theme: 'green', size: 28, position:'bottom-right',content:content });
 	//effect:shake, bounce
 	$( "#button_anti_bird" ).effect( 'bounce', {}, 500 );
-}
-function InitAntiBirdTool(viewer)
-{
-	$("#button_anti_bird").hide();
-	$("#anti_bird_msg_list_container").hide();
-	$("#button_anti_bird").on('click', function(){
-		if($("#anti_bird_msg_list_container").css('display') === 'none')
-		{
-			$("#anti_bird_msg_list_container").show('slide', {direction:'right'}, 500, function(){
-				try{
-					$('#button_anti_bird_msg_list_clear').button('destroy');
-				}catch(e)
-				{
-					//console.log(e);
-				}
-				$('#button_anti_bird_msg_list_clear').button({label:'全部清除'});
-				$('#button_anti_bird_msg_list_clear').on('click', function(){
-					$.webgis.data.antibird.unread_msg_queue = [];
-					$("#anti_bird_msg_list_container").hide('slide', {direction:'right'}, 500, function(){
-						$("#button_anti_bird").hide();
-					});
-				});
-			});
-		}else
-		{
-			$("#anti_bird_msg_list_container").hide('slide', {direction:'right'}, 500, function(){
-			});
-		}
-	});
-	$('#anti_bird_msg_list_filter').on('keyup', function(e){
-		var text = $(e.target).val();
-		AntiBirdBadgeMessageListReload($.webgis.data.antibird.unread_msg_queue, text);
-	});
-	//if(true)
-	//{
-		//$("#button_anti_bird").show();
-		//$("#anti_bird_msg_list_container").show();
-		//$('#button_anti_bird_msg_list_clear').button({label:'全部清除'});
-		//AntiBirdBadgeMessageListReload([{imei:1},{imei:2},{imei:3},{imei:4},{imei:5},{imei:6},{imei:7},{imei:8},{imei:9},{imei:10},{imei:11},{imei:12},{imei:13},{imei:14},{imei:15},{imei:16}], '');
-	//}
 }
 
 function testheatmap(viewer)
@@ -2416,109 +2370,6 @@ function DrawHeatMapCircle(viewer, hid, list, height_magnifier)
 	viewer.scene.primitives.add(labels);
 	$.webgis.data.heatmap_primitive[hid] = collection;
 	$.webgis.data.heatmap_primitive[hid + 'label'] = labels;
-}
-
-function InitAntiBirdEquipListData(viewer)
-{
-	var url = '/anti_bird_equip_list';
-	ShowProgressBar(true, 670, 200, '加载中', '正在加载驱鸟设备信息，请稍候...');
-	$.ajax({
-		type:'GET',
-		url:url,
-		data:JSON.stringify({is_filter_used:false}),
-		dataType: 'text',
-	})
-	.done(function( data1 ){
-		ShowProgressBar(false);
-		var ret = JSON.parse(decodeURIComponent(data1));
-		$.webgis.data.antibird.anti_bird_equip_list = ret;
-		url = '/anti_bird_equip_tower_mapping';
-		ShowProgressBar(true, 670, 200, '加载中', '正在加载驱鸟设备与杆塔绑定信息，请稍候...');
-		
-		
-		$.ajax({
-			type: 'GET',
-			url: url, 
-			data:'{}',
-			dataType: 'text',
-		})
-		.done(function( data1 ){
-			ShowProgressBar(false);
-			var ret = JSON.parse(decodeURIComponent(data1));
-			$.webgis.data.antibird.anti_bird_equip_tower_mapping = ret;
-			//testheatmap(viewer);
-			//console.log(ret);
-		})
-		.fail(function (xhr, status, e){
-			ShowProgressBar(false);
-			$.jGrowl("加载失败:" + e, { 
-				life: 2000,
-				position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-				theme: 'bubblestylefail',
-				glue:'before'
-			});
-		});
-	})
-	.fail(function (xhr, status, e){
-		ShowProgressBar(false);
-		$.jGrowl("加载失败:" + e, { 
-			life: 2000,
-			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-			theme: 'bubblestylefail',
-			glue:'before'
-		});
-	});
-}
-function InitAntiBirdWebsocket(viewer)
-{
-	var wsurl =  $.webgis.websocket.antibird.WS_PROTOCOL + "://" + $.webgis.websocket.antibird.HOST + ":" + $.webgis.websocket.antibird.PORT + "/websocket";
-	if($.webgis.websocket.antibird.websocket === undefined)
-	{
-		//$.webgis.websocket.antibird.websocket = new WebSocket(wsurl);
-		$.webgis.websocket.antibird.websocket = new ReconnectingWebSocket(wsurl, null, {reconnectInterval: 4000});
-	}
-	if($.webgis.websocket.antibird.websocket)
-	{
-		$.webgis.websocket.antibird.websocket.onopen = function() 
-		{
-			$.webgis.websocket.antibird.websocket.send('');
-		};
-		$.webgis.websocket.antibird.websocket.onclose = function(e) 
-		{
-			console.log("websocket close");
-		};
-		$.webgis.websocket.antibird.websocket.onerror = function(e) 
-		{
-			console.log("websocket error:" + e);
-		};
-		$.webgis.websocket.antibird.websocket.onmessage = function(e) 
-		{
-			if(e.data.length>0)
-			{
-				var data1 = JSON.parse(e.data);
-				
-				if(data1 instanceof Array)
-				{
-				}
-				if(data1 instanceof Object)
-				{
-					if(data1.result)
-					{
-						console.log(data1.result);
-					}
-					else
-					{
-						AntiBirdBadgeMessageArrival(viewer, data1);
-						$.webgis.websocket.antibird.websocket.send('');
-					}
-				}
-				
-			}else
-			{
-				$.webgis.websocket.antibird.websocket.send('');
-			}
-		};
-	}		
 }
 
 

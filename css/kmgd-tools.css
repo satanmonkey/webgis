@@ -6,7 +6,8 @@
     width: 10px;
 	height:200px;
 	color:#00FF00;
-	background: #000000 url(black-green-theme/images/ui-bg_dots-medium_75_000000_4x4.png) 50% 50% repeat;
+	/*background: #000000 url(themes/jqueryui-themes/redmond/images/ui-bg_inset-hard_100_fcfdfd_1x100.png) 50% 50% repeat;*/
+	background: #000000;
 	vertical-align:middle;
 	text-align: center;
 	line-height: 200px;
@@ -22,8 +23,9 @@
     height: 90%;
 	z-index:8;
 	color:#00FF00;
-	background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
-	
+	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #000000;
+
 }
 
 
@@ -862,7 +864,8 @@ input[type="button"].btn-block {
 .webgis-colorpicker
 {
 	color:#00FF00;
-	background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #000000;
     border:1px #00FF00 solid ;
 }
 
@@ -874,40 +877,47 @@ input[type="button"].btn-block {
 .bubblestylesuccess
 {
 	color:#00FF00;
-	background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #000000;
 }
 .bubblestylefail
 {
 	color:#FF0000;
-	background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #000000;
 }
 
 #btn_edge_save
 {
 	float:right;
 	color:#00FF00;
-	background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #000000;
 	border:1px #00FF00 solid;
 }
 
 #btn_edge_save:hover
 {
-	background: #004400 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #004400 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #004400;
 }
 #btn_edge_save:active
 {
-	background: #009900 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #009900 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #009900;
 	border:2px #00FF00 solid;
 }
 #btn_edge_save:disabled
 {
 	color:#777777;
-	background: #002200 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	/*background: #002200 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
+	background: #002200;
 	border:1px #777777 solid;
 }
 
 .loginbackground{
-	background:#000000 url(/img/logo_background_antibird.jpg)  no-repeat center center fixed;
+	/*background:#000000 url(/img/logo_background_antibird.jpg)  no-repeat center center fixed;*/
+	background:#000000;
 	background-size: cover;
 }
 
