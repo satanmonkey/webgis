@@ -23,7 +23,6 @@
     height: 90%;
 	z-index:8;
 	color:#00FF00;
-	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #000000;
 
 }
@@ -864,7 +863,6 @@ input[type="button"].btn-block {
 .webgis-colorpicker
 {
 	color:#00FF00;
-	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #000000;
     border:1px #00FF00 solid ;
 }
@@ -877,13 +875,11 @@ input[type="button"].btn-block {
 .bubblestylesuccess
 {
 	color:#00FF00;
-	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #000000;
 }
 .bubblestylefail
 {
 	color:#FF0000;
-	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #000000;
 }
 
@@ -891,32 +887,27 @@ input[type="button"].btn-block {
 {
 	float:right;
 	color:#00FF00;
-	/*background: #000000 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #000000;
 	border:1px #00FF00 solid;
 }
 
 #btn_edge_save:hover
 {
-	/*background: #004400 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #004400;
 }
 #btn_edge_save:active
 {
-	/*background: #009900 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #009900;
 	border:2px #00FF00 solid;
 }
 #btn_edge_save:disabled
 {
 	color:#777777;
-	/*background: #002200 url(black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;*/
 	background: #002200;
 	border:1px #777777 solid;
 }
 
 .loginbackground{
-	/*background:#000000 url(/img/logo_background_antibird.jpg)  no-repeat center center fixed;*/
 	background:#000000;
 	background-size: cover;
 }
@@ -1075,65 +1066,13 @@ input[type="button"].btn-block {
 	width:400px;
 	height:350px;
 }
-
-.anti_bird_pic_toolbutton_download
+#div_progress_msg
 {
-	opacity:0.7;
-	z-index:9;
-	position: absolute;
-	width:24px;
-	height:24px;
-	right:10px;
-	bottom:10px;
-	background: url(img/download24x24_white.png) no-repeat;
+	text-align: left;
+	width:95%;
 }
-.anti_bird_pic_toolbutton_bird_family
+.progressbartext
 {
-	opacity:0.7;
-	z-index:9;
-	position: absolute;
-	width:24px;
-	height:24px;
-	right:64px;
-	bottom:10px;
-	background: url(img/anti_bird_icon_white.png) no-repeat;
-	background-size:24px 24px;
-}
-
-.anti_bird_pic_toolbutton_download:hover {
-	background-color: #00FF00;
-}
-.anti_bird_pic_toolbutton_bird_family:hover {
-	background-color: #00FF00;
-}
-
-
-.anti_bird_pic_toolbutton_set_flag
-{
-	opacity:0.7;
-	z-index:9;
-	position: absolute;
-	width:24px;
-	height:24px;
-	right:36px;
-	bottom:10px;
-	background: url(img/edit24x24_white.png) no-repeat;
-}
-.anti_bird_pic_toolbutton_set_flag:hover {
-	background-color: #00FF00;
-}
-
-.anti_bird_pic_toolbutton_get_flag
-{
-	opacity:0.6;
-	z-index:9;
-	position: absolute;
-	width:26px;
-	height:26px;
-	border-radius: 5px;
-	left:10px;
-	top:10px;
-	background: transparent url(img/anti_bird_icon_checked.png) center;
-	background-size:26px 26px;
-	border:1px solid green;
+	text-align: center;
+	width:95%;
 }

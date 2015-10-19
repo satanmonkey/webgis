@@ -329,7 +329,7 @@ function InitWebGISFormDefinition()
 						}
 						auto.css('border', '1px ' + $.webgis.color.base_color + ' solid');
 						auto.css('color', $.webgis.color.base_color);
-						auto.css('background', '#000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat');
+						auto.css('background', '#000000');
 					}
 					if(fld.type == 'multiselect' && fld.group == group)
 					{
@@ -358,7 +358,7 @@ function InitWebGISFormDefinition()
 							single: false,
 							position: position,
 							styler: function(value) {
-								return 'color: ' + $.webgis.color.base_color + ';background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+								return 'color: ' + $.webgis.color.base_color + ';background: #000000;';
 							}
 						});
 						if(fld.defaultvalue && fld.defaultvalue instanceof Array && fld.defaultvalue.length>0)
@@ -1093,8 +1093,9 @@ function ShowProgressBar(show, width, height, title, msg, interval)
 	if(show)
 	{
 		$('body').append('<div id="dlg_progress_bar"></div>');
-		$('#dlg_progress_bar').append('<div id="div_progress_msg"></div>').html(msg);
-		$('#dlg_progress_bar').append('<div id="div_progress_bar"><span class="progressbartext" style="width:95%;"></span></div>');
+		$('#dlg_progress_bar').append('<div id="div_progress_msg"></div>');
+		$('#dlg_progress_bar #div_progress_msg').html(msg);
+		$('#dlg_progress_bar').append('<div id="div_progress_bar"><span class="progressbartext" ></span></div>');
 		
 		$('#dlg_progress_bar').dialog({
 			width: width,

@@ -24,7 +24,7 @@
     -moz-border-radius: 4px;
     border-radius: 4px;
 	color:#00FF00;
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
 }
 
 .ms-choice.disabled {
@@ -71,7 +71,7 @@
     padding: 0;
     position: absolute;
     z-index: 1000;
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
     color: #00FF00;
     border: 1px solid #00FF00;
     -webkit-border-radius: 4px;

@@ -260,7 +260,7 @@ color: #2A66BB;
 .l-listbox {
 	color:#00FF00;
 	border:1px solid #00FF00; 
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
     width:130px; 
 	height:120px;
 	font-size:16px;
@@ -272,7 +272,7 @@ color: #2A66BB;
 	/*border-bottom:1px solid #A3C0E8;*/
 	/*border-right:1px solid #A3C0E8;*/
 	color:#00FF00;
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
 	border:1px solid #00FF00;
 }
 .l-listbox-grid thead td,.l-listbox-grid tr.l-table-headerow td{ 

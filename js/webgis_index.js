@@ -9196,7 +9196,7 @@ function ShowTowerInfoDialog(viewer, tower)
 				var selectedEntity = viewer.selectedEntity;
 				if($.webgis.config.is_tower_focus)
 				{
-					$(e.target).css('background', '#00AA00 url(/css/black-green-theme/images/ui-bg_dots-medium_75_000000_4x4.png) 50% 50% repeat');
+					$(e.target).css('background', '#00AA00');
 					$(e.target).html('解除锁定');
 					
 					if (Cesium.defined(selectedEntity)) 
@@ -9208,7 +9208,7 @@ function ShowTowerInfoDialog(viewer, tower)
 				}
 				else
 				{
-					$(e.target).css('background', '#000000 url(/css/black-green-theme/images/ui-bg_dots-medium_75_000000_4x4.png) 50% 50% repeat');
+					$(e.target).css('background', '#000000');
 					$(e.target).html('锁定视角');
 					
 					if(selectedEntity)
@@ -11467,7 +11467,7 @@ function ShowLineDialog(viewer, mode)
 				}
 			},
 			styler: function(value) {
-				return 'color: #00FF00;background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;';
+				return 'color: #00FF00;background: #000000;';
 			}
 		});
 	}

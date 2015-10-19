@@ -59,7 +59,7 @@
     /*border-bottom:1px solid #99BBE8;*/
     border:1px solid #00FF00;
     /*background: url('../images/panel/header-bg.gif') repeat-x left -1px; position:relative;*/
-    background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+    background: #000000;
     position:relative;
 }
 .l-panel-header-hasicon{ padding-left:13px;}
@@ -102,7 +102,7 @@
 .l-grid
 {
 	border:1px solid #00FF00;
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
 	color: #00FF00; 
 	position:relative;
 	text-align:left;
@@ -125,7 +125,7 @@
 	height: 24px;
 	line-height: 22px;
 	/*background: #E2F0FF url('../images/grid/header-bg.gif') repeat-x left bottom;*/
-	background: #000000 url(/css/black-green-theme/images/ui-bg_diagonals-small_50_000000_40x40.png) 100% 100% repeat;
+	background: #000000;
 	color: #00FF00;
 	overflow: hidden;
 	width: 100%;
