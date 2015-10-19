@@ -16,7 +16,8 @@
 	<link rel="stylesheet" href="css/leaflet.label.css" />
 	<link rel="stylesheet" href="css/ligerui-skins/Aqua/css/ligerui-all.css" />
 	<link rel="stylesheet" href="css/ligerui-skins/ligerui-icons.css" />
-	<link rel="stylesheet" href="css/black-green-theme/jquery-ui-1.10.4.custom.css" />
+	<link rel="stylesheet" href="css/themes/jqueryui-themes/redmond/jquery-ui.min.css" />
+	<link rel="stylesheet" href="css/themes/jqueryui-themes/redmond/theme.css" />
 	<link rel="stylesheet" href="css/DrawHelper.css" />
 	<link rel="stylesheet" href="css/tooltipster.css" />
 	<link rel="stylesheet" href="css/icheck-skins/flat/green.css" />
@@ -44,7 +45,7 @@
     <script type="text/javascript" src="js/DrawHelper.js"></script>
     <script type="text/javascript" src="js/DrawHelper2D.js"></script>
     <script type="text/javascript" src="js/jquery/jquery-uuid.js"></script>
-    <script type="text/javascript" src="js/jquery/jquery-ui-1.10.4.custom.js"></script>
+    <script type="text/javascript" src="js/jquery/jquery-ui.min.js"></script>
     <script type="text/javascript" src="js/icheck.js"></script>
     <script type="text/javascript" src="js/json3.js"></script>
     <script type="text/javascript" src="js/js.cookie.js"></script>
@@ -67,6 +68,11 @@
 	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-addon.min.js"></script>
 	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-addon-i18n.min.js"></script>
 	<script type="text/javascript" src="js/jquery/jquery-ui-timepicker-zh-CN.js"></script>
+	<!--<script type="text/javascript" src="js/jquery/jquery.elementresize.min.js"></script>-->
+	<!--<script type="text/javascript" src="js/jquery/jquery.flot.js"></script>-->
+	<!--<script type="text/javascript" src="js/jquery/jquery.flot.threshold.js"></script>-->
+	<!--<script type="text/javascript" src="js/jquery/jquery.flot.time.js"></script>-->
+	<!--<script type="text/javascript" src="js/jquery/jquery.flot.stack.js"></script>-->
 	<script type="text/javascript" src="js/iosbadge.min.js"></script>
 	<script type="text/javascript" src="js/spectrum.js"></script>
     <script type="text/javascript" src="js/catenary.js"></script>
@@ -85,10 +91,10 @@
 	
     <script type="text/javascript" src="js/webgis_common.js"></script>
     <script type="text/javascript" src="js/highcharts.js"></script>
-    <script type="text/javascript" src="js/anti_bird_chart.js"></script>
     <script type="text/javascript" src="js/FileSaver.min.js"></script>
     <script type="text/javascript" src="js/canvas-toBlob.js"></script>
     <script type="text/javascript" src="js/excellentexport.js"></script>
+    <!--<script type="text/javascript" src="js/xlsx.min.js"></script>-->
     <script type="text/javascript" src="js/webgis_form_data.js"></script>
 	<style>
 
@@ -99,15 +105,6 @@
 
 <div id="cesiumContainer" class="fullSize" ></div>
 <div id="lnglat_indicator" class="kmgd-lnglat-indicator"></div>
-<div id="div_anti_bird_inform_icon"></div>
-<div id="control_anti_bird" >
-	<div id="button_anti_bird" ></div>
-	<div id="anti_bird_msg_list_container" >
-		<input type="text" class="ui-widget"   id="anti_bird_msg_list_filter" placeholder="请输入关键字过滤">
-		<div id="button_anti_bird_msg_list_clear"></div>
-		<div id="anti_bird_msg_list_list"></div>
-	</div>
-</div>
 
 <div id="control_search" >
 	<div id="button_search" ></div>
