@@ -14609,19 +14609,22 @@ function PredictSummaryDialog(viewer)
 
     var get_description = function()
     {
-        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'description');
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'description');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'description');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'description');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = '';
-        }
+        //var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'description');
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'description');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'description');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'description');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = '';
+        //}
+        var ret = _.pluck($.webgis.data.state_examination.list_data_current_line, 'description');
+        //console.log($.webgis.data.state_examination.list_data_current_line);
+
         if(ret.length)
         {
             ret = ret.join('\n');
@@ -14630,19 +14633,51 @@ function PredictSummaryDialog(viewer)
     };
     var get_suggestion = function()
     {
-        var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'suggestion');
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'suggestion');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'suggestion');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'suggestion');
-        }
-        if(_.isUndefined(ret) || ret.length === 0){
-            ret = '';
-        }
+        //var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'suggestion');
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'suggestion');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'suggestion');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'suggestion');
+        //}
+        //if(_.isUndefined(ret) || ret.length === 0){
+        //    ret = '';
+        //}
+        var check234 = function(obj){
+            var ret;
+            var l = ['II', 'III', 'IV'];
+            _.forEach(_.range(1, 9), function(i){
+                if(_.includes(l,  obj['unit_' + i])){
+                    ret = {};
+                    ret.unit = 'unit_' + i;
+                    ret.level = obj['unit_' + i];
+                    return;
+                }
+            });
+            return ret;
+        };
+        var check_lvl_lt= function(a1, a2){
+            var m = {'I':1, 'II':2, 'III':3, 'IV':4};
+            return m[a1] < m[a2];
+        };
+        var get_v = function(alist, id, key)
+        {
+            var ret;
+            _.forEach(alist, function(item){
+                _.forEach(item.children, function(item1){
+                    if( item1.id === id.replace('unitsub_', '')){
+                        ret = item1[key];
+                        return;
+                    }
+                });
+            });
+            return ret;
+        };
+        var ret = _.pluck($.webgis.data.state_examination.list_data_current_line, 'suggestion');
+        ret = '';
         if(ret.length)
         {
             ret = ret.join('\n');
@@ -14653,7 +14688,46 @@ function PredictSummaryDialog(viewer)
                 var rr = new RegExp(item, 'g');
                 ret = ret.replace(rr, '\n'+ item);
             });
+        }else{
+            var units = {};
+            var unitsubids = [];
+            _.forEach($.webgis.data.state_examination.list_data_current_line, function(item){
+                if(!_.isUndefined(item.unitsub)){
+                    _.forEach(item.unitsub, function(item1){
+                        if(!_.includes(unitsubids, item1.id)){
+                            unitsubids.push(item1.id);
+                        }
+                    });
+                }
+                var ulevel = check234(item);
+                if(!_.isUndefined(ulevel))
+                {
+                    if(!_.has(units, ulevel.unit)){
+                        units[ulevel.unit] = ulevel.level;
+                    }else{
+                        if(check_lvl_lt(units[ulevel.unit], ulevel.level)){
+                            units[ulevel.unit] = ulevel.level;
+                        }
+                    }
+                }
+            });
+            //console.log(unitsubids);
+            var sarr = [];
+            _.forIn(units, function(v, k){
+                var o = maintain_strategy(k, v);
+                if(o){
+                    sarr.push(o.suggestion);
+                }
+            });
+            ret = sarr.join('\n');
+            sarr = [];
+            _.forEach(unitsubids, function(item){
+                sarr.push(get_v($.webgis.data.bbn.unitsub_template_2009, item, 'strategy'));
+            });
+            ret += '\n';
+            ret += sarr.join('\n');
         }
+        //console.log(ret);
         return ret;
     };
     var get_unit_name = function(idx){
