@@ -1250,6 +1250,13 @@ body .ui-tooltip {
 }
 input
 {
+	color:#00FF00;
+	background: #000000;
+	border: 1px solid #00FF00;
+}
+select
+{
+	color:#00FF00;
 	background: #000000;
 	border: 1px solid #00FF00;
 }

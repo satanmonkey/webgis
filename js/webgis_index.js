@@ -10190,15 +10190,14 @@ function SaveEdge(viewer, id, callback)
 
 function SaveDN(viewer, callback)
 {
-	var data = $("#form_dn_create" ).webgisform('getdata');
+	var formdata = $("#form_dn_create" ).webgisform('getdata');
 	var geojson = {};
 	geojson._id = null;
 	geojson.properties = {};
 	geojson.properties.webgis_type = 'polyline_dn';
-	for (var k in data)
-	{
-		geojson['properties'][k] = data[k];
-	}
+	_.forEach(formdata, function(v, k){
+		geojson['properties'][k] = v;
+	});
 	var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'action':'save', 'data':geojson};
 	ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
 	MongoFind(cond, function(data1){
@@ -10449,7 +10448,7 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
 	if(type == 'polygon')
 	{
 		poitypelist = [{value:'polygon_marker',label:'区域'},{value:'polygon_hazard',label:'区域隐患源'}];
-		if(id === undefined)
+		if(_.isUndefined(id))
 		{
 			if($.webgis.config.map_backend === 'cesium')
 			{
@@ -10461,6 +10460,10 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
 	for(var i in poitypelist)
 	{
 		$('#select_poi_type').append('<option value="' + poitypelist[i]['value'] + '">' + poitypelist[i]['label'] + '</option>');
+	}
+	var g = _.find($.webgis.data.geojsons, {_id:id});
+	if(g && g.properties && g.properties.webgis_type){
+		$('#select_poi_type').val(g.properties.webgis_type);
 	}
 	var auto = $('#select_poi_type').autocomplete({
 		//position: { my: "left top", at: "left bottom", collision: "none" },
@@ -10689,6 +10692,7 @@ function BuildPoiForms()
 		if(v.indexOf("point_dn_")>-1)
 		{
 			var function_list = [];
+			var dn_list = [];
 			//console.log($.webgis.data.codes['functional_type']);
 			for(var k in $.webgis.data.codes['functional_type'])
 			{
@@ -10708,7 +10712,8 @@ function BuildPoiForms()
 				{ display: "轮廓颜色", id: "outline_color", defaultvalue:GetDefaultStyleValue(v, 'outlineColor'), newline: false,  type: "color", group:'样式', width:50, labelwidth:120 },
 				{ display: "标签颜色", id: "label_fill_color",  defaultvalue:GetDefaultStyleValue(v, 'labelFillColor'), newline: true,  type: "color", group:'样式', width:50, labelwidth:120 },
 				{ display: "尺寸", id: "pixel_size", defaultvalue:GetDefaultStyleValue(v, 'pixelSize'), newline: false,  type: "spinner", step:1, min:1,max:50, group:'样式', width:30, labelwidth:120, validate:{number: true, required:true, range:[1, 50]} },
-				{ display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} }
+				{ display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} },
+				{ display: "所属网络", id: "network", newline: true,  type: "select",editor: {data:dn_list}, group:'信息', width:250, validate:{required:true,minlength: 1}},
 			];
 		}
 		if(v === "polyline_marker")
@@ -11098,15 +11103,18 @@ function OnSelect(viewer, e, selectedEntity)
 					}catch(e)
 					{
 					}
-					ShowPoiInfoDialog(viewer, '编辑', 'point', [], id);
-				}
-				if(cz && cz.webgis_type.indexOf('point_')>-1)
-				{
 					var webgis_type_title = '';
 					if(cz.webgis_type === 'point_tower') webgis_type_title = '杆塔';
 					if(cz.webgis_type === 'point_dn') webgis_type_title = '配电网';
+					ShowPoiInfoDialog(viewer, webgis_type_title + '编辑', 'point', [], id);
 				}
-				if(CheckIsTower(id) && ($.webgis.select.prev_selected_obj===undefined || $.webgis.select.prev_selected_obj.id != id))
+				//if(cz && cz.webgis_type.indexOf('point_')>-1)
+				//{
+				//	var webgis_type_title = '';
+				//	if(cz.webgis_type === 'point_tower') webgis_type_title = '杆塔';
+				//	if(cz.webgis_type === 'point_dn') webgis_type_title = '配电网';
+				//}
+				if(CheckIsTower(id) && (_.isUndefined($.webgis.select.prev_selected_obj) || $.webgis.select.prev_selected_obj.id != id))
 				{
 					if($.webgis.select.prev_selected_obj && $.webgis.select.prev_selected_obj.id)
 					{
