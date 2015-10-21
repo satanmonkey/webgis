@@ -8075,133 +8075,6 @@ function BuildAntiBirdImageSlide(viewer, data1)
 		}
 	]);
 }	
-function ShowBirdFamilyDialog(viewer){
-	CreateDialogSkeleton(viewer, 'dlg_antibird_birdfamily');
-	var wgt;
-	try {
-		wgt = $("#dlg_antibird_birdfamily").dialog("widget");
-	}catch(e){
-		wgt = undefined;
-	}
-	if(wgt){
-		if($( "#dlg_antibird_birdfamily" ).dialog( "isOpen" )) {
-			$("#dlg_antibird_birdfamily").dialog("close");
-		}else{
-			$( "#dlg_antibird_birdfamily" ).dialog( "open" );
-		}
-	}else
-	{
-		var buttons = [];
-		buttons.push(
-			{
-				text: "关闭",
-				click: function () {
-					$(this).dialog("close");
-				}
-			});
-		$('#dlg_antibird_birdfamily').dialog({
-			width: 370,
-			height: 590,
-			minWidth: 200,
-			minHeight: 200,
-			draggable: true,
-			resizable: true,
-			modal: false,
-			//position:{at: "right center"},
-			position: {at: "right"},
-			title: '常见鸟类图谱',
-			close: function (event, ui) {
-			},
-			show: {
-				effect: "slide",
-				direction: "right",
-				duration: 500
-			},
-			hide: {
-				effect: "slide",
-				direction: "right",
-				duration: 500
-			},
-			buttons: buttons
-		});
-		var options = {
-			allowfullscreen: false,
-			width: 320,
-			height: 380,
-			margin: 0,
-			nav: 'thumbs',//dots, thumbs, false
-			navposition: 'bottom',
-			thumbwidth: 64,
-			thumbheight: 64,
-			thumbmargin: 0,
-			thumbborderwidth: 0,
-			fit: 'scaledown', //contain, cover, scaledown, none
-			thumbfit: 'scaledown', //contain, cover, scaledown, none
-			transition: 'slide', //slide, crossfade, dissolve
-			clicktransition: 'slide',
-			transitionduration: 200,
-			startindex: 0,
-			loop: false,
-			autoplay: false,//10000,
-			stopautoplayontouch: true,
-			keyboard: false,
-			arrows: true,
-			click: false,
-			direction: 'ltr',
-			hash: true,
-			data: $.webgis.data.antibird.bird_family
-		};
-		var $fotoramaAntiBirdBirdFamilyDiv = $('#div_container_anti_bird_birdfamily_pics').fotorama(options);
-	}
-}
-function SetAntiBirdPicFlagDom(hasBird)
-{
-	var div = $('#div_container_anti_bird_info_pics' ).find('div[class=fotorama__stage]').find('div.' + 'anti_bird_pic_toolbutton_get_flag' );
-	if(div[0])
-	{
-		if(hasBird){
-			div.show();
-		}
-		else {
-			div.hide();
-		}
-	}
-}
-function GetAntiBirdPicFlag(active_frame)
-{
-	var ret = false;
-	if(active_frame.data){
-		ret = active_frame.data.hasBird;
-	}
-	return ret;
-}
-function SetAntiBirdPicFlag(active_frame,  hasBird)
-{
-	var url = active_frame.img + '/hasBird';
-	var data = {hasBird: hasBird};
-	ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
-	$.ajax({
-		type : 'PUT',
-		url: url,
-		data: JSON.stringify(data),
-		dataType: 'text',
-		async:false
-	})
-	.done(function (data1){
-		ShowProgressBar(false);
-		SetAntiBirdPicFlagDom(hasBird);
-	})
-	.fail(function (xhr, status, e){
-		ShowProgressBar(false);
-		$.jGrowl("保存失败:" + e, { 
-			life: 2000,
-			position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-			theme: 'bubblestylefail',
-			glue:'before'
-		});
-	});
-}
-
 function AddButtonToFotorama(container_id, control, options)
 {
 	var stage = $('#' + container_id).find('div[class=fotorama__stage]');
@@ -10713,7 +10586,7 @@ function BuildPoiForms()
 				{ display: "标签颜色", id: "label_fill_color",  defaultvalue:GetDefaultStyleValue(v, 'labelFillColor'), newline: true,  type: "color", group:'样式', width:50, labelwidth:120 },
 				{ display: "尺寸", id: "pixel_size", defaultvalue:GetDefaultStyleValue(v, 'pixelSize'), newline: false,  type: "spinner", step:1, min:1,max:50, group:'样式', width:30, labelwidth:120, validate:{number: true, required:true, range:[1, 50]} },
 				{ display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} },
-				{ display: "所属网络", id: "network", newline: true,  type: "select",editor: {data:dn_list}, group:'信息', width:250, validate:{required:true,minlength: 1}},
+				{ display: "所属网络", id: "network", newline: true,  type: "select", editor: {data:dn_list}, group:'信息', width:250, validate:{required:true,minlength: 1}},
 			];
 		}
 		if(v === "polyline_marker")
@@ -10787,7 +10660,15 @@ function BuildPoiForms()
 					//groupmargin:10
 				});
 		}
-		
+		var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
+
+		MongoFind(cond, function(data1){
+			if(data1.length>0)
+			{
+				console.log(data1);
+			}
+		});
+
 	});
 	return ret;
 }
