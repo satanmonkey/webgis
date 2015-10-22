@@ -4313,6 +4313,10 @@ function InitSearchBox(viewer)
 			{
 				LoadAntiBirdTowers(viewer);
 			}
+			if(ui.item.value === 'distribute_nodes')
+			{
+				LoadDistributeNodes(viewer);
+			}
 			else if(ui.item.geojson && ui.item.geojson.geometry)
 			{
 				var center = get_geojson_center(ui.item.geojson);
@@ -4391,6 +4395,58 @@ function InitSearchBox(viewer)
 
 }
 
+function LoadDistributeNodes(viewer)
+{
+	if(_.isUndefined($.webgis.data.distribute_nodes) || $.webgis.data.distribute_nodes.length === 0)
+	{
+		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'action': 'distribute_nodes'};
+		ShowProgressBar(true, 670, 200, '载入中', '正在载入配电数据，请稍候...');
+		MongoFind(cond,
+			function (data) {
+				ShowProgressBar(false);
+				$.webgis.data.distribute_nodes = data;
+				$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+				if ($.webgis.config.map_backend === 'cesium') {
+					var czmls = _.map(data, function (n) {
+						return CreateCzmlFromGeojson(n);
+					});
+					$.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+				}
+				_.forEach(data, function (item) {
+					if ($.webgis.config.map_backend === 'leaflet') {
+						//console.log(item);
+						$.webgis.control.leaflet_geojson_layer.addData(item);
+					}
+				});
+				var extent = GetExtentByCzml();
+				FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+				if ($.webgis.config.map_backend === 'cesium') {
+					ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+				}
+			});
+	}else{
+		var data = $.webgis.data.distribute_nodes;
+		$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+		if ($.webgis.config.map_backend === 'cesium') {
+			var czmls = _.map(data, function (n) {
+				return CreateCzmlFromGeojson(n);
+			});
+			$.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+		}
+		_.forEach(data, function (item) {
+			if ($.webgis.config.map_backend === 'leaflet') {
+				//console.log(item);
+				$.webgis.control.leaflet_geojson_layer.addData(item);
+			}
+		});
+		var extent = GetExtentByCzml();
+		FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+		if ($.webgis.config.map_backend === 'cesium') {
+			ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+		}
+	}
+
+}
 function LoadAntiBirdTowers(viewer)
 {
 	if($.webgis.data.anti_bird_towers.length === 0)
@@ -4401,21 +4457,6 @@ function LoadAntiBirdTowers(viewer)
 			function (data) {
 				ShowProgressBar(false);
 				$.webgis.data.anti_bird_towers = data;
-				//var imei = _.pluck($.webgis.data.antibird.anti_bird_equip_list, 'imei');
-				////console.log(imei);
-				//console.log(imei.length);
-				//var l = [];
-				//var arr = _.forEach($.webgis.data.anti_bird_towers, function(item){
-				//	l.push(item.properties.metals);
-				//});
-				//arr = _.flatten(l, true);
-				//arr = _.filter(arr, function(n){
-				//	return n.imei != undefined;
-				//});
-				//var imei1  = _.pluck(arr, 'imei');
-				////console.log(imei1);
-				//console.log(imei1.length);
-				//console.log(_.difference(imei, imei1));
 				$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
 				if ($.webgis.config.map_backend === 'cesium') {
 					var czmls = _.map(data, function (n) {
@@ -4497,6 +4538,12 @@ function BuildSearchItemList(data)
 			name = 'anti_bird_towers';
 			pos = undefined;
 			label = '安装驱鸟器的杆塔';
+		}
+		if(item.action && item.action === 'distribute_nodes')
+		{
+			name = 'distribute_nodes';
+			pos = undefined;
+			label = '配电网';
 		}
 		return {
 		  label: label,
@@ -7567,7 +7614,7 @@ function SavePoi(data, callback)
 	{
 		delete data.id;
 	}
-	if(data.type === undefined)
+	if(_.isUndefined(data.type))
 	{
 		data.type = 'Feature';
 	}
@@ -9975,8 +10022,8 @@ function ShowDNAddDialog(viewer)
 	});
 	
 	var flds = [
-		{ display: "名称", id: "display_name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}},
-		{ display: "英文助记符", id: "name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}}
+		//{ display: "名称", id: "display_name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}},
+		{ display: "名称", id: "name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}}
 	];
 	$("#form_dn_create" ).webgisform(flds, {
 			divorspan:"div",
@@ -10231,15 +10278,17 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
 								{
 									t = 'Polygon';
 								}
-								if(id === undefined)
+								if(_.isUndefined(id))
 								{
 									data.geometry = {type:t, coordinates:GetGeojsonFromPosition(ellipsoid, position, t)};
 								}
+                                //console.log(data);
+                                //return;
 								SavePoi(data, function(data1){
 									ClearSelectEntity();
 									that.dialog( "close" );
 									
-									if(id === undefined)
+									if(_.isUndefined(id))
 									{
 										$.webgis.control.drawhelper.clearPrimitive();
 										if(data1 && data1.length>0)
@@ -10257,28 +10306,6 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
 													$.webgis.control.leaflet_geojson_layer.addData(item);
 												}
 											});
-
-
-											//for(var i in data1)
-											//{
-											//	var geojson = data1[i];
-											//	var id = geojson['_id'];
-											//	if(!$.webgis.data.geojsons[id])
-											//	{
-											//		$.webgis.data.geojsons[id] = geojson; //AddTerrainZOffset(geojson);
-											//	}
-											//	if($.webgis.config.map_backend === 'cesium')
-											//	{
-											//		if(!$.webgis.data.czmls[id])
-											//		{
-											//			$.webgis.data.czmls[id] = CreateCzmlFromGeojson($.webgis.data.geojsons[id]);
-											//		}
-											//	}
-											//	if($.webgis.config.map_backend === 'leaflet')
-											//	{
-											//		$.webgis.control.leaflet_geojson_layer.addData(geojson);
-											//	}
-											//}
 											if($.webgis.config.map_backend === 'cesium')
 											{
 												ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
@@ -10372,6 +10399,32 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
 			var data = g.properties;
 			var wt = g.properties.webgis_type;
 			$("#form_poi_info_" + wt).webgisform('setdata', data);
+            if(wt === 'point_dn')
+            {
+                var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
+                MongoFind(cond, function(data1){
+                    if(data1.length>0)
+                    {
+                        //console.log(data1);
+                        $('#form_poi_info_point_dn_network').empty();
+                        $('#form_poi_info_point_dn_network').append('<option value="">(请选择)</option>');
+                        var netw;
+                        _.forEach(data1, function(item){
+                            $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                            if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
+                                if(_.includes(item.properties.nodes, id)){
+                                    netw = item._id;
+                                }
+                            }
+                        });
+                        $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+                        if(netw)
+                        {
+                            $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
+                        }
+                    }
+                });
+            }
 		}
 	}
 	
@@ -10563,7 +10616,7 @@ function BuildPoiForms()
 				{ display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} }
 			];
 		}
-		if(v.indexOf("point_dn_")>-1)
+		if(_.startsWith(v, 'point_dn_'))
 		{
 			var function_list = [];
 			var dn_list = [];
@@ -10647,7 +10700,7 @@ function BuildPoiForms()
 			];
 		}
 		var webgis_type = v;
-		if(v.indexOf('point_dn_')>-1)
+		if(_.startsWith(v, 'point_dn_'))
 		{
 			webgis_type = 'point_dn';
 		}
@@ -10660,25 +10713,6 @@ function BuildPoiForms()
 					//margin:10,
 					//groupmargin:10
 				});
-		}
-		var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
-	});
-	MongoFind(cond, function(data1){
-		if(data1.length>0)
-		{
-			//console.log(data1);
-			$('#form_poi_info_network').empty();
-			$('#form_poi_info_network').append('<option value="">(请选择)</option>');
-			var netw;
-			_.forEach(data1, function(item){
-				$('#form_poi_info_network').append('<option value="' + item.properties.name + '">' + item.properties.display_name + '</option>');
-				//if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
-				//	if(_.includes(item.properties.nodes, id)){
-				//
-				//	}
-				//}
-			});
-			$('#form_poi_info_network').multipleSelect('refresh');
 		}
 	});
 	return ret;
