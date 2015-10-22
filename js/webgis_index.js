@@ -4397,6 +4397,7 @@ function InitSearchBox(viewer)
 
 function LoadDistributeNodes(viewer)
 {
+	//console.log($.webgis.data.distribute_nodes);
 	if(_.isUndefined($.webgis.data.distribute_nodes) || $.webgis.data.distribute_nodes.length === 0)
 	{
 		var cond = {'db': $.webgis.db.db_name, 'collection': 'features', 'action': 'distribute_nodes'};
@@ -4404,6 +4405,7 @@ function LoadDistributeNodes(viewer)
 		MongoFind(cond,
 			function (data) {
 				ShowProgressBar(false);
+				//console.log(data);
 				$.webgis.data.distribute_nodes = data;
 				$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
 				if ($.webgis.config.map_backend === 'cesium') {
