@@ -9975,7 +9975,8 @@ function ShowDNAddDialog(viewer)
 	});
 	
 	var flds = [
-		{ display: "名称", id: "name", newline: true,  type: "text", group:'信息', width:250,labelwidth:90, validate:{required:true,minlength: 1}}
+		{ display: "名称", id: "display_name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}},
+		{ display: "英文助记符", id: "name", newline: true,  type: "text", group:'信息', width:250,labelwidth:120, validate:{required:true,minlength: 1}}
 	];
 	$("#form_dn_create" ).webgisform(flds, {
 			divorspan:"div",
@@ -10661,14 +10662,24 @@ function BuildPoiForms()
 				});
 		}
 		var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
-
-		MongoFind(cond, function(data1){
-			if(data1.length>0)
-			{
-				console.log(data1);
-			}
-		});
-
+	});
+	MongoFind(cond, function(data1){
+		if(data1.length>0)
+		{
+			//console.log(data1);
+			$('#form_poi_info_network').empty();
+			$('#form_poi_info_network').append('<option value="">(请选择)</option>');
+			var netw;
+			_.forEach(data1, function(item){
+				$('#form_poi_info_network').append('<option value="' + item.properties.name + '">' + item.properties.display_name + '</option>');
+				//if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
+				//	if(_.includes(item.properties.nodes, id)){
+				//
+				//	}
+				//}
+			});
+			$('#form_poi_info_network').multipleSelect('refresh');
+		}
 	});
 	return ret;
 }
