@@ -13549,9 +13549,9 @@ function PredictGridLoad2(alist)
 {
     var bar_grid_width = 160;
     var get_width = function(domain, value){
-        if(domain === '正常' && value === 1){
-            return 0;
-        }
+        //if(domain === '正常' && value === 1){
+        //    return 0;
+        //}
         var ret = Math.floor((bar_grid_width-50) * value);
         //console.log(value + ', ' + ret);
         if(ret<2){
@@ -13587,10 +13587,18 @@ function PredictGridLoad2(alist)
         //console.log(ret);
         return ret;
     };
-    var add_bar = function(domain, p, p_format){
+    var add_bar = function(domain, p, p_format, plist){
         var ret;
-        if(!_.isUndefined(p)){
-            ret = '<span class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
+        if(!_.isUndefined(p) ){
+            ret = '<span ';
+            if(!_.isUndefined(plist) && !_.isEmpty(plist)){
+                ret += ''
+                    + ' data-plist-I="' + get_p_format(plist.I) + '" ' + ' data-width-I="' + get_width(plist.I, plist.I) + '" '
+                    + ' data-plist-II="' + get_p_format(plist.II) + '" ' + ' data-width-II="' + get_width(plist.II, plist.II) + '" '
+                    + ' data-plist-III="' + get_p_format(plist.III) + '" ' + ' data-width-III="' + get_width(plist.III, plist.III) + '" '
+                    + ' data-plist-IV="' + get_p_format(plist.IV) + '" ' + ' data-width-IV="' + get_width(plist.IV, plist.IV) + '" ';
+            }
+            ret += '" class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
         }
         return ret;
     };
@@ -13609,7 +13617,7 @@ function PredictGridLoad2(alist)
                     //console.log(rowdata);
                     var domain = rowdata.value;
                     var p_format = get_p_format(value);
-                    return add_bar(domain, value, p_format);
+                    return add_bar(domain, value, p_format, rowdata.plist);
                 }else {
                     return '';
                 }
@@ -13641,6 +13649,15 @@ function PredictGridLoad2(alist)
         $.webgis.data.bbn.control.predict_grid.loadData(tabledata);
     }
     //$.webgis.data.bbn.control.predict_grid.expandAll();
+    $('.span_probability_bar').closest('div').children().off();
+    $('.span_probability_bar').closest('div').children().on('click', function(e){
+        var ps = {}, ws = {};
+        _.forEach(['I', 'II', 'III', 'IV'], function(item){
+            ps[item] = $(e.target).closest('div').find('.span_probability_bar').attr('data-plist-' + item);
+            ws[item] = $(e.target).closest('div').find('.span_probability_bar').attr('data-width-' + item);
+        });
+        console.log(ps);
+    });
 }
 function PredictGridLoad1(alist)
 {
@@ -14313,6 +14330,14 @@ function DrawPredictTable2(data)
         var l = ['I','II','III','IV'];
         return _.indexOf(l, lvl) + 1;
     };
+    var get_lvl_max = function(lvlist){
+        var l = _.map(lvlist, function(item){
+            return get_lvl_index(item);
+        });
+        var m = _.max(l);
+        var lo = ['I','II','III','IV'];
+        return lo[m-1];
+    };
     var check_lvl = function(alist, obj)
     {
         //var o = _.find(alist, {level:obj.level, id:obj.id});
@@ -14334,7 +14359,66 @@ function DrawPredictTable2(data)
     {
         return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
     };
+    var get_max_history_level = function(){
+        var ret = get_lvl_max(_.pluck($.webgis.data.state_examination.list_data_current_line, 'line_state'));
+        return ret;
+    };
+    var get_max_p = function(amap){
+        var ret = [];
+        var m = 0;
+        _.forIn(amap, function(v, k){
+            if(k === 'I' && v === 1){
+                return true;
+            }
+            if(v > m){
+                m = v;
+                ret = [k, v];
+            }
+        });
+        return ret;
+    };
+    //var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
+    //if (sels.length === 0 || sels[0].length === 0) {
+    //    ShowMessage(null, 400, 250, '错误', '请先选择线路');
+    //    return;
+    //}
+    //var line_name = sels[0];
+    var max_history_level = get_max_history_level();
+    //console.log(max_history_level);
     var list = [];
+    _.forEach(data, function(item) {
+        if (item.line_state === max_history_level) {
+            _.forEach(_.range(1, 9), function (i) {
+                var o = {};
+                o.id = 'unit_' + i;
+                o.name = '(' + get_unit_name(o.id) + ')';
+                o.unit = get_unit_name(o.id);
+                o.plist = {};
+                list.push(o);
+            });
+            _.forEach(item.result, function (item1) {
+                //if(_.startsWith(item1.name, 'unit_') && item1.p>0 && item1.value != 'I'){
+                if (_.startsWith(item1.name, 'unit_')) {
+                    //var o = {};
+                    var oidx = _.findIndex(list, 'id', item1.name);
+                    if (oidx > -1) {
+                        list[oidx].plist[item1.value] = item1.p;
+
+                    }
+                }
+            });
+            _.forEach(list, function (item1) {
+                var oidx = _.findIndex(list, 'id', item1.id);
+                list[oidx].description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'according');
+                var max_p = get_max_p(list[oidx].plist);
+                list[oidx].probability = 0;
+                if (max_p.length) {
+                    list[oidx].probability = max_p[1];
+                }
+                list[oidx].suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'strategy');
+            });
+        }
+    });
     _.forEach(data, function(item){
         _.forEach(item.result, function(item1){
             if(_.startsWith(item1.name, 'unitsub_') && item1.p>0){
@@ -14347,7 +14431,6 @@ function DrawPredictTable2(data)
                 o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
                 o.probability = item1.p;
                 o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
-
                 list.push(o);
             }
         });
@@ -14360,7 +14443,8 @@ function DrawPredictTable2(data)
         _.forEach(data, function(item){
             var line_state = item.line_state;
             _.forEach(item.result, function(item1){
-                if(_.startsWith(item1.name, 'unit_') && item1.p>0 && item1.value != 'I'){
+                //if(_.startsWith(item1.name, 'unit_') && item1.p>0 && item1.value != 'I'){
+                if(_.startsWith(item1.name, 'unit_') && item1.p>0 ){
                     var o = {};
                     var unit = item1.name;
                     o.id = item1.name;
@@ -14437,12 +14521,6 @@ function DrawPredictTable1(data)
     var list = [];
     var assume = [{name:'line_state'}];
 
-    //var sels = $('#form_state_examination_bbn_bbn_line_name').multipleSelect('getSelects');
-    //if (sels.length === 0 || sels[0].length === 0) {
-    //    ShowMessage(null, 400, 250, '错误', '请先选择线路');
-    //    return;
-    //}
-    //var line_name = sels[0];
     _.forEach(data, function(dataitem){
         var o = {
             line_state: GetDomainName(dataitem.line_state),
