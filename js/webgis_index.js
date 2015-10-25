@@ -13606,9 +13606,128 @@ function PredictGridLoad2(alist)
     {
         return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
     };
+    var get_v = function(alist, id, key)
+    {
+        var ret;
+        _.forEach(alist, function(item){
+            _.forEach(item.children, function(item1){
+                if( item1.id === id.replace('unitsub_', '')){
+                    ret = item1[key];
+                    return;
+                }
+            });
+        });
+        return ret;
+    };
     var adjustdata = function(data){
-        console.log(data);
-
+        //console.log(data);
+        var adjustdata_item = function(alist, item)
+        {
+            var unitsubs = _.filter(alist, function(item1){
+                return _.startsWith(item1.id, 'unitsub_');
+            });
+            if(item.plist.I === 1)
+            {
+                _.forEach(unitsubs, function(item1){
+                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
+                    if(item1.id.substr(8, 6) === item.id)
+                    {
+                        if(p0.II > 0){
+                            item.plist.II = p0.II;
+                            item.plist.I = 1.0 - item.plist.II;
+                        }else if(p0.III > 0){
+                            item.plist.III = p0.III;
+                            item.plist.I = 1.0 - item.plist.III;
+                        }else if(p0.IV > 0){
+                            item.plist.IV = p0.IV;
+                            item.plist.I = 1.0 - item.plist.IV;
+                        }
+                        return;
+                    }
+                });
+                //if(item.plist.I === 1){
+                //
+                //}
+            }
+            else if(item.plist.II === 1)
+            {
+                _.forEach(unitsubs, function(item1){
+                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
+                    if(item1.id.substr(8, 6) === item.id)
+                    {
+                        if(p0.I > 0){
+                            item.plist.I = p0.I;
+                            item.plist.II = 1.0 - item.plist.I;
+                        }else if(p0.III > 0){
+                            item.plist.III = p0.III;
+                            item.plist.II = 1.0 - item.plist.III;
+                        }else if(p0.IV > 0){
+                            item.plist.IV = p0.IV;
+                            item.plist.II = 1.0 - item.plist.IV;
+                        }
+                        return;
+                    }
+                });
+            }
+            else if(item.plist.III === 1)
+            {
+                _.forEach(unitsubs, function(item1){
+                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
+                    if(item1.id.substr(8, 6) === item.id)
+                    {
+                        if(p0.I > 0){
+                            item.plist.I = p0.I;
+                            item.plist.III = 1.0 - item.plist.I;
+                        }else if(p0.II > 0){
+                            item.plist.II = p0.II;
+                            item.plist.III = 1.0 - item.plist.II;
+                        }else if(p0.IV > 0){
+                            item.plist.IV = p0.IV;
+                            item.plist.III = 1.0 - item.plist.IV;
+                        }
+                        return;
+                    }
+                });
+            }
+            else if(item.plist.IV === 1)
+            {
+                var unitsubs = _.filter(alist, function(item1){
+                    return _.startsWith(item1.id, 'unitsub_');
+                });
+                _.forEach(unitsubs, function(item1){
+                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
+                    if(item1.id.substr(8, 6) === item.id)
+                    {
+                        if(p0.I > 0){
+                            item.plist.I = p0.I;
+                            item.plist.IV = 1.0 - item.plist.I;
+                        }else if(p0.II > 0){
+                            item.plist.II = p0.II;
+                            item.plist.IV = 1.0 - item.plist.II;
+                        }else if(p0.III > 0){
+                            item.plist.III = p0.III;
+                            item.plist.IV = 1.0 - item.plist.III;
+                        }
+                        return;
+                    }
+                });
+            }
+            //console.log(item);
+            return item;
+        };
+        data = _.map(data, function(item){
+            if(!_.isUndefined(item.plist)
+                && (
+                    item.plist.I === 1
+                ||  item.plist.II === 1
+                ||  item.plist.III === 1
+                ||  item.plist.IV === 1
+                ))
+            {
+                item = adjustdata_item(data, item);
+            }
+            return item;
+        });
         return data;
     };
     alist = adjustdata(alist);
@@ -14449,7 +14568,7 @@ function DrawPredictTable2(data)
         _.forEach(item.result, function(item1){
             if(_.startsWith(item1.name, 'unitsub_') && item1.p>0){
                 var o = {};
-                var unit = item1.name.substr(8, 8+5);
+                var unit = item1.name.substr(8, 6);
                 o.id = item1.name;
                 o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
                 o.unit = get_unit_name(unit);
