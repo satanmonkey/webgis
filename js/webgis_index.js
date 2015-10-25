@@ -13578,7 +13578,7 @@ function PredictGridLoad2(alist)
             }
         });
         //console.log(value);
-        if(domain === '正常' && value === 1){
+        if((domain === '正常' || domain === 'I') && value === 1){
             return ret;
         }
         if(!_.isUndefined(k0)){
@@ -13593,16 +13593,25 @@ function PredictGridLoad2(alist)
             ret = '<span ';
             if(!_.isUndefined(plist) && !_.isEmpty(plist)){
                 ret += ''
-                    + ' data-plist-I="' + get_p_format(plist.I) + '" ' + ' data-width-I="' + get_width(plist.I, plist.I) + '" '
-                    + ' data-plist-II="' + get_p_format(plist.II) + '" ' + ' data-width-II="' + get_width(plist.II, plist.II) + '" '
-                    + ' data-plist-III="' + get_p_format(plist.III) + '" ' + ' data-width-III="' + get_width(plist.III, plist.III) + '" '
-                    + ' data-plist-IV="' + get_p_format(plist.IV) + '" ' + ' data-width-IV="' + get_width(plist.IV, plist.IV) + '" ';
+                    + ' data-plist-I="' + plist.I + '" ' + ' data-width-I="' + get_width(plist.I, plist.I) + '" '
+                    + ' data-plist-II="' + plist.II + '" ' + ' data-width-II="' + get_width(plist.II, plist.II) + '" '
+                    + ' data-plist-III="' + plist.III + '" ' + ' data-width-III="' + get_width(plist.III, plist.III) + '" '
+                    + ' data-plist-IV="' + plist.IV + '" ' + ' data-width-IV="' + get_width(plist.IV, plist.IV) + '" ';
             }
             ret += '" class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
         }
         return ret;
     };
+    var get_domain_name = function(value)
+    {
+        return _.result(_.find($.webgis.data.bbn.domains_range, {value:value}), 'name');
+    };
+    var adjustdata = function(data){
+        console.log(data);
 
+        return data;
+    };
+    alist = adjustdata(alist);
     var tabledata = {Rows:alist};
     if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
     {
@@ -13651,12 +13660,29 @@ function PredictGridLoad2(alist)
     //$.webgis.data.bbn.control.predict_grid.expandAll();
     $('.span_probability_bar').closest('div').children().off();
     $('.span_probability_bar').closest('div').children().on('click', function(e){
+        var div = $(e.target).closest('div');
+        if(_.isUndefined(div.find('.span_probability_bar').attr('data-plist-I'))){
+            $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
+            return;
+        }
         var ps = {}, ws = {};
         _.forEach(['I', 'II', 'III', 'IV'], function(item){
-            ps[item] = $(e.target).closest('div').find('.span_probability_bar').attr('data-plist-' + item);
-            ws[item] = $(e.target).closest('div').find('.span_probability_bar').attr('data-width-' + item);
+            ps[item] = parseFloat(div.find('.span_probability_bar').attr('data-plist-' + item));
+            ws[item] = parseInt(div.find('.span_probability_bar').attr('data-width-' + item));
         });
-        console.log(ps);
+        var pos = div.position();
+        $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
+        $('#div_state_examination_bbn_predict_grid').append(
+            '<div class="div_probability_bar_extend" style="left:' + pos.left + 'px;top:' + pos.top + 'px;">'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('I') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('I', ps.I) + ';width:' + ws.I + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.I) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('II') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('II', ps.II) + ';width:' + ws.II + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.II) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('III') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('III', ps.III) + ';width:' + ws.III + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.III) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('IV') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('IV', ps.IV) + ';width:' + ws.IV + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.IV) + '</span></div>'
+            + '</div>');
+        $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').off();
+        $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').on('click', function(e){
+            $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
+        });
     });
 }
 function PredictGridLoad1(alist)
@@ -14940,7 +14966,7 @@ function PredictSummaryDialog(viewer)
             {
                 id:'line_state_III',
                 data: graph_data.line_state.III,
-                color: "rgb(255, 255, 0)",
+                color: "rgb(255, 159, 0)",
                 label: '异常',
                 stack: true,
                 lines: {
@@ -14952,7 +14978,7 @@ function PredictSummaryDialog(viewer)
             {
                 id:'line_state_II',
                 data: graph_data.line_state.II,
-                color: "rgb(0, 0, 255)",
+                color: "rgb(255, 255, 0)",
                 stack: false,
                 lines: {
                     show: true,
@@ -14961,20 +14987,37 @@ function PredictSummaryDialog(viewer)
                 points: { show: true },
                 label: '注意'
             },
+            {
+                id:'line_state_I',
+                data: graph_data.line_state.I,
+                color: "rgb(0, 255, 0)",
+                stack: false,
+                lines: {
+                    show: true,
+                    steps: false
+                },
+                points: { show: true },
+                label: '正常'
+            },
         ];
         _.forEach(_.range(1, 9), function(i){
-            _.forEach([ 'IV','III', 'II'], function(lvl){
+            _.forEach([ 'IV','III', 'II', 'I'], function(lvl){
                 var o = {};
                 o.id = 'unit_' + i + '_' + lvl;
                 o.label = '';//get_unit_name(i);
+                if(lvl === 'I'){
+                    o.label = '正常';
+                    o.color = "rgb(0, 255, 0)";
+                    o.stack = false;
+                }
                 if(lvl === 'II'){
                     o.label = '注意';
-                    o.color = "rgb(0, 0, 255)";
+                    o.color = "rgb(255, 255, 0)";
                     o.stack = false;
                 }
                 if(lvl === 'III'){
                     o.label = '异常';
-                    o.color = "rgb(255, 255, 0)";
+                    o.color = "rgb(255, 159, 0)";
                     o.stack = true;
                 }
                 if(lvl === 'IV'){

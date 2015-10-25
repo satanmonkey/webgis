@@ -1181,7 +1181,7 @@ input[type="button"].btn-block {
 }
 .span_probability_bar
 {
-	float:left;
+	float: left;
 	margin:2px;
 	height:20px;
 }
@@ -1293,7 +1293,7 @@ input[type="button"].btn-block {
 
 .standard2009_table_tab2 {
 	/*font-size: 6pt;*/
-	/*font-family: ËÎÌå;*/
+	/*font-family: ï¿½ï¿½ï¿½ï¿½;*/
 	width: 15.06cm;
 	/*margin-left: -0.199cm;*/
 	/*margin-right: auto;*/
@@ -1317,4 +1317,21 @@ input[type="button"].btn-block {
 }
 /***********standard2009 end*********************/
 
-
+.div_probability_bar_extend
+{
+	z-index:9;
+	position: absolute;
+	border:1px solid #2e6e9e;
+	width: 280px;
+	height: 136px;
+	background-color: #e2dee1;
+	opacity: 0.9;
+}
+.div_probability_bar
+{
+	margin: 2px;
+	min-width: 276px;
+	height:30px;
+	font-size: 0.9em;
+	/*border:1px solid #ff0000;*/
+}
