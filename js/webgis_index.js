@@ -50,7 +50,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = false;
+var DEBUG_BAYES = true;
 var TREE_COLLAPSE = true;
 
 
@@ -248,18 +248,24 @@ function InitStateExamination()
         $.getJSON( '/standard_template2009.json')
         .done(function( data0_1 ){
             $.webgis.data.bbn.unitsub_template_2009 = data0_1;
-            $.getJSON( 'js/jiakongztpj.json')
-            .done(function( data ){
-                //if(success) success(data);
-                $.webgis.data.state_examination.standard = data;
-                $.getJSON( 'js/jianxiucelv.json')
-                .done(function( data1 ){
+            $.getJSON( '/standard_template2014.json')
+            .done(function( data0_2 ){
+                $.webgis.data.bbn.unitsub_template_2014 = data0_2;
+                $.getJSON( 'js/jiakongztpj.json')
+                .done(function( data ){
                     //if(success) success(data);
-                    $.webgis.data.bbn.maintain_strategy_standard = data1;
-                    QueryBBNDomainsRange();
+                    $.webgis.data.state_examination.standard = data;
+                    $.getJSON( 'js/jianxiucelv.json')
+                    .done(function( data1 ){
+                        //if(success) success(data);
+                        $.webgis.data.bbn.maintain_strategy_standard = data1;
+                        QueryBBNDomainsRange();
+                    })
+                    .fail(function( jqxhr ){
+
+                    });
                 })
                 .fail(function( jqxhr ){
-
                 });
             })
             .fail(function( jqxhr ){
@@ -3023,9 +3029,13 @@ function InitToolPanel(viewer)
     $('#but_state_examination_analyze').on('click', function(){
         ShowStateExaminationAnalyzeDialog(viewer);
     });
-    $('#but_state_examination_strategy').button({label:'检修策略编辑'});
-    $('#but_state_examination_strategy').on('click', function(){
-        ShowStrategyEditDialog(viewer);
+    $('#but_state_examination_strategy2009').button({label:'检修策略编辑(标准2009)'});
+    $('#but_state_examination_strategy2009').on('click', function(){
+        ShowStrategyEditDialog2009(viewer);
+    });
+    $('#but_state_examination_strategy2014').button({label:'检修策略编辑(标准2014)'});
+    $('#but_state_examination_strategy2014').on('click', function(){
+        ShowStrategyEditDialog2014(viewer);
     });
 
     $('#but_dn_add').button({label:'新增配电网络'});
@@ -4371,14 +4381,22 @@ function ShowStateExaminationImportDialog(viewer, data)
         flds.push({ display: item, id: "unit_" + (_.indexOf(unitlist, item) + 1), newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-单元', width: 250, labelwidth: 120, validate:{ required: true}});
     });
     flds.push({ display: '劣化情况描述', id: "unitsub_desc" , newline: true, type: "textarea", editor: { readonly: true }, defaultvalue: '', group: '状态评价-详细', width: 250, height:60, labelwidth: 120});
-    flds.push({ display: '劣化情况输入', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '状态评价-详细', width: 250, labelwidth: 120,
+    flds.push({ display: '标准2009', id: "unitsub_input_2009" , newline: true, type: "button", defaultvalue: '填写劣化情况(2009标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
         click:function(){
             if(_.isUndefined(formdata)){
-                ShowUnitSubForm(viewer);
+                ShowUnitSubForm2009(viewer);
             }else{
-                ShowUnitSubForm(viewer, formdata.line_name, parseInt(formdata.check_year));
+                ShowUnitSubForm2009(viewer, formdata.line_name, parseInt(formdata.check_year));
             }
-            //ShowUnitSubForm2014(viewer);
+        }
+    });
+    flds.push({ display: '标准2014', id: "unitsub_input_2014" , newline: true, type: "button", defaultvalue: '填写劣化情况(2014标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
+        click:function(){
+            if(_.isUndefined(formdata)){
+                ShowUnitSubForm2014(viewer);
+            }else{
+                ShowUnitSubForm2014(viewer, formdata.line_name, parseInt(formdata.check_year));
+            }
         }
     });
 
@@ -4479,7 +4497,122 @@ function ShowStateExaminationImportDialog(viewer, data)
     });
 }
 
-function ShowStrategyEditDialog(viewer)
+function ShowStrategyEditDialog2014(viewer)
+{
+    var load_html = function(html) {
+        $('#dlg_unitsub_strategy2014').empty();
+        $('#dlg_unitsub_strategy2014').append(html);
+    };
+    var load_data = function(){
+        _.forEach($.webgis.data.bbn.unitsub_template_2014, function(item) {
+            _.forEach(item.children, function(item1) {
+                $('#form_unitsub_strategy_2014').find('#textarea_' + item1.id).val(item1.strategy);
+            });
+        });
+    };
+    var save_data = function(){
+        ShowConfirm(null, 500, 200,
+            '保存确认',
+            '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+            function () {
+                $('#form_unitsub_strategy_2014').find('textarea').each(function(idx, item){
+                    var id = $(item).attr('id').replace('textarea_', '');
+                    var unit = $(item).attr('data-unit');
+                    var idx1 = _.findIndex($.webgis.data.bbn.unitsub_template_2014, 'unit', unit);
+                    var idx2 = _.findIndex($.webgis.data.bbn.unitsub_template_2014[idx1].children, 'id', id);
+                    $.webgis.data.bbn.unitsub_template_2014[idx1].children[idx2].strategy = _.trim($(item).val());
+                    $.webgis.data.bbn.unitsub_template_2014[idx1].children[idx2].weight = parseInt($.webgis.data.bbn.unitsub_template_2014[idx1].children[idx2].weight);
+                    $.webgis.data.bbn.unitsub_template_2014[idx1].children[idx2].base_score = parseInt($.webgis.data.bbn.unitsub_template_2014[idx1].children[idx2].base_score);
+                });
+                //console.log($.webgis.data.bbn.unitsub_template_2014);
+                //return;
+                ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
+                $.ajax({
+                    url:'/state_examination/save_strategy_2014',
+                    method:'post',
+                    data: JSON.stringify($.webgis.data.bbn.unitsub_template_2014)
+                })
+                .always(function () {
+                    ShowProgressBar(false);
+                })
+                .done(function (data1) {
+                    data1 = JSON.parse(data1);
+                    $.webgis.data.bbn.unitsub_template_2014 = data1;
+                    $.jGrowl("保存成功", {
+                        life: 2000,
+                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                        theme: 'bubblestylesuccess',
+                        glue: 'before'
+                    });
+                });
+            },
+            function () {
+                $('#').dialog("close");
+            }
+        );
+    };
+    var build_dlg = function(){
+        CreateDialogSkeleton(viewer, 'dlg_unitsub_strategy2014');
+        $('#dlg_unitsub_strategy2014').dialog({
+            width: 890,
+            height: 500,
+            minWidth:200,
+            minHeight: 200,
+            draggable: true,
+            resizable: true,
+            modal: false,
+            position:{at: "center"},
+            title:'检修策略制定(标准2014)',
+            close: function(event, ui){
+            },
+            show: {
+                effect: "blind",
+                //direction: "right",
+                duration: 200
+            },
+            hide: {
+                effect: "blind",
+                //direction: "right",
+                duration: 200
+            },
+            buttons:[
+                {
+                    text: "确定",
+                    click: function(e){
+                        save_data();
+                        $( this ).dialog( "close" );
+                    }
+                },
+                {
+                    text: "关闭",
+                    click: function(e){
+                        $( this ).dialog( "close" );
+                    }
+                }
+            ]
+        });
+    };
+    build_dlg();
+    $.ajax({
+        url: '/webgis_strategy2014_form.html',
+        method: 'get',
+        dataType: 'html'
+    })
+    .done(function(page){
+        load_html(page);
+        load_data();
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("载入模板[/webgis_strategy2014_form.html]失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
+    });
+}
+
+function ShowStrategyEditDialog2009(viewer)
 {
     var load_html = function(html) {
         $('#dlg_unitsub_strategy2009').empty();
@@ -4510,7 +4643,7 @@ function ShowStrategyEditDialog(viewer)
                 //return;
                 ShowProgressBar(true, 670, 200, '保存', '正在保存，请稍候...');
                 $.ajax({
-                    url:'/state_examination/save_strategy',
+                    url:'/state_examination/save_strategy_2009',
                     method:'post',
                     data: JSON.stringify($.webgis.data.bbn.unitsub_template_2009)
                 })
@@ -4544,7 +4677,7 @@ function ShowStrategyEditDialog(viewer)
             resizable: true,
             modal: false,
             position:{at: "center"},
-            title:'检修策略制定',
+            title:'检修策略制定(标准2009)',
             close: function(event, ui){
             },
             show: {
@@ -4593,7 +4726,319 @@ function ShowStrategyEditDialog(viewer)
         });
     });
 }
-function ShowUnitSubForm(viewer, line_name, check_year)
+function ShowUnitSubForm2014(viewer, line_name, check_year)
+{
+    var load_html = function(html){
+        $('#dlg_unitsub_standard2014').empty();
+        $('#dlg_unitsub_standard2014').append(html);
+        bind_event();
+        //$.ajax({
+        //    url: '/standard_template2014.json',
+        //    method: 'get',
+        //    dataType: 'json'
+        //})
+        //.done(function(data){
+        //    $.webgis.data.bbn.unitsub_template_2014 = data;
+        $('#form_unitsub_stand_2014').find('textarea').val('');
+        if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
+            var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
+            //console.log(unitsub);
+            if(!_.isUndefined(unitsub) && unitsub.length>0){
+                load_form_data(unitsub);
+            }
+        }
+        //})
+        //.fail(function (jqxhr, textStatus, e) {
+        //    $.webgis.data.bbn.unitsub_template_2014 = [];
+        //});
+        //load_form_data();
+        //CalcUnitProbability();
+        //console.log(JSON.stringify($.webgis.data.bbn.unitsub_template_2014));
+
+    };
+    var load_form_data = function(data){
+        //if(_.isUndefined(data))
+        //{
+        //    $.webgis.data.bbn.unitsub_template_2014 = [];
+        //    $('#form_unitsub_stand_2014').find('textarea').each(function(idx, item){
+        //        var id = $(item).attr('id').replace('textarea_', '');
+        //        var unit = $(item).attr('data-unit');
+        //        var weight = $(item).attr('data-weight');
+        //        var level = $(item).attr('data-level');
+        //        var base_score = $(item).attr('data-base_score');
+        //        var name = $(item).attr('data-name');
+        //        var according = $(item).attr('data-according');
+        //        var desc = '';
+        //        var tmp  = _.find($.webgis.data.bbn.unitsub_template_2014, {unit:unit});
+        //        if(_.isUndefined(tmp))
+        //        {
+        //            var o = {unit:unit, children:[]};
+        //            o.children.push({
+        //                weight:weight,
+        //                level:level,
+        //                base_score:base_score,
+        //                name:name,
+        //                according:according,
+        //                desc:desc,
+        //                total_score:parseInt(weight) * parseInt(base_score),
+        //                p0:{I:0, II:0, III:0, IV:0}
+        //            });
+        //            $.webgis.data.bbn.unitsub_template_2014.push(o);
+        //        }else{
+        //            var iidx = _.findIndex($.webgis.data.bbn.unitsub_template_2014, 'unit', unit);
+        //            tmp.children.push({
+        //                weight:weight,
+        //                level:level,
+        //                base_score:base_score,
+        //                name:name,
+        //                according:according,
+        //                desc:desc,
+        //                total_score:parseInt(weight) * parseInt(base_score),
+        //                p0:{I:0, II:0, III:0, IV:0}
+        //            });
+        //            $.webgis.data.bbn.unitsub_template_2014[iidx] = tmp;
+        //        }
+        //    });
+        //}else{
+        if(!_.isUndefined(data)){
+            _.forEach(data, function(item){
+                 $('#form_unitsub_stand_2014').find('#textarea_' + item.id).val(item.desc);
+                 $('#form_unitsub_stand_2014').find('#totalscore_' + item.id).html(item.weight * item.base_score);
+            });
+        }
+    };
+    var event_other_sel_bind = function(){
+        $('#form_unitsub_stand_2014').find('select').off();
+        $('#form_unitsub_stand_2014').find('select').on('change', function(e){
+            var id = $(e.target).attr('id');
+            var total_score = 0;
+            var desc = $(e.target).closest('tr').find('textarea[id$=_other]').val();
+            //console.log(id);
+            if(desc.length > 0)
+            {
+                if (_.startsWith(id, 'other_weight_sel_')) {
+                    var weight = $(e.target).val();
+                    var base_score = $(e.target).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                    total_score = parseInt(weight) * parseInt(base_score);
+                }
+                if (_.startsWith(id, 'other_basescore_sel_')) {
+                    var weight = $(e.target).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    var base_score = $(e.target).val();
+                    //console.log(weight + 'x' + base_score);
+                    total_score = parseInt(weight) * parseInt(base_score);
+                }
+                //console.log(total_score);
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html(total_score);
+            }else{
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
+
+            }
+        });
+    };
+    var bind_event = function(){
+        event_other_sel_bind();
+        $('#form_unitsub_stand_2014').find('textarea').off();
+
+        $('#form_unitsub_stand_2014').find('textarea').on('keyup change', function(e){
+            var unit = $(e.target).attr('data-unit');
+            var weight = $(e.target).attr('data-weight');
+            var level = $(e.target).attr('data-level');
+            var base_score = $(e.target).attr('data-base_score');
+            var name = $(e.target).attr('data-name');
+            var according = $(e.target).attr('data-according');
+            var desc = $(e.target).val();
+            var total_score = 0;
+            if(_.trim(desc).length>0 && _.trim(desc) != '无' && _.trim(desc) != '(无)' && _.trim(desc) != '（无）'){
+                if(weight.length === 0 || base_score.length === 0){
+                    weight = $(e.target).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    base_score = $(e.target).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                }
+                total_score = parseInt(weight) * parseInt(base_score);
+            }else{
+                total_score = 0;
+            }
+            //console.log(total_score);
+            var total_score_accmulate = 0;
+            var total_desc = [];
+            $('#form_unitsub_stand_2014').find('textarea').each(function(idx, item){
+                var un = $(item).attr('data-unit');
+                var desc1 = $(item).val();
+                var weight1 = $(item).attr('data-weight');
+                var base_score1 = $(item).attr('data-base_score');
+                if(weight1.length === 0 || base_score1.length === 0){
+                    weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                }
+                var total_score1 = parseInt(weight1) * parseInt(base_score1);
+                if(un === unit){
+                    if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                        total_score_accmulate += total_score1;
+                    }
+                }
+                if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
+                    total_desc.push(desc1);
+                }
+            });
+            //console.log('unit:' + unit + ', total_score:' + total_score + ', total_score_accmulate:' + total_score_accmulate);
+            var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
+
+            if(_.trim(desc).length === 0){
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
+            }else{
+                $(e.target).closest('tr').find('p[id^=totalscore_]').html(total_score);
+            }
+            if(total_score_accmulate>0){
+                $('#form_unitsub_stand_2014').find('#finaltext_' + unit).html(t);
+            }else{
+                $('#form_unitsub_stand_2014').find('#finaltext_' + unit).html('');
+            }
+            //console.log(unit);
+            //console.log(total_score_accmulate);
+            //console.log(t);
+            if(t === '正常'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['I']);
+            }
+            if(t === '注意'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['II']);
+            }
+            if(t === '异常'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['III']);
+            }
+            if(t === '严重'){
+                $('#form_state_examination_import_single_' + unit).multipleSelect('setSelects', ['IV']);
+            }
+            $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
+        });
+        $('#btn_unitsub_import').off();
+        $('#btn_unitsub_import').on('click', function(e){
+            $('#btn_unitsub_import_file_path').html('');
+            $('#btn_unitsub_import_file').val('');
+            $('#btn_unitsub_import_file').trigger('click');
+        });
+        $('#btn_unitsub_import_file').off();
+        $('#btn_unitsub_import_file').on('change', function(e){
+            var  to_json = function(workbook) {
+                var result = [];
+                workbook.SheetNames.forEach(function(sheetName) {
+                    var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+                    if(roa.length > 0){
+                        result.push({sheet_name:sheetName, sheet_data:roa});
+                    }
+                });
+                return result;
+            };
+            var files = e.target.files;
+            var f = files[0];
+            var reader = new FileReader();
+            if(f && f.name)
+            {
+                if(!_.endsWith(f.name, '.xls'))
+                {
+                    $('#btn_unitsub_import_file_path').html('');
+                    ShowMessage(null, 400, 220, '出错了', '仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                    return;
+                }
+                $('#btn_unitsub_import_file_path').html(f.name);
+                var name = f.name;
+                //console.log(name);
+                reader.onload = function (e) {
+                    var data = e.target.result;
+                    var wb = XLS.read(data, {type: 'binary'});
+                    var sheets = to_json(wb);
+                    var sheet_data = sheets[0].sheet_data;
+                    $.webgis.data.bbn.xls_template_2014_id_mapping = [];
+                    var xlsidx = 0;
+                    _.forEach($.webgis.data.bbn.unitsub_template_2014, function(item) {
+                        if(xlsidx>0){
+                            xlsidx += 1;
+                        }
+                        _.forEach(item.children, function(item1) {
+                            $.webgis.data.bbn.xls_template_2014_id_mapping.push({id:item1.id, idx:xlsidx});
+                            xlsidx += 1;
+                        });
+                    });
+                    //console.log( $.webgis.data.bbn.xls_template_2009_id_mapping);
+                    _.forEach(sheet_data, function(item){
+                        var idx = _.indexOf(sheet_data, item);
+                        if(!_.isUndefined(item.劣化情况描述))
+                        {
+                            var id = _.result(_.find($.webgis.data.bbn.xls_template_2014_id_mapping, {idx: idx}), 'id');
+                            if (!_.isUndefined(id)) {
+                                id = 'textarea_' + id;
+                                $('#form_unitsub_stand_2014 #' + id).val(_.trim(item.劣化情况描述));
+                                $('#form_unitsub_stand_2014 #' + id).trigger('change');
+                            }
+                        }
+                    });
+                };
+                reader.readAsBinaryString(f);
+            }
+        });
+    };
+
+    CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2014');
+    $('#dlg_unitsub_standard2014').dialog({
+        width: 890,
+        height: 500,
+        minWidth:200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position:{at: "center"},
+        title:'劣化情况详细描述(标准2014)',
+        close: function(event, ui){
+        },
+        show: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        hide: {
+            effect: "blind",
+            //direction: "right",
+            duration: 200
+        },
+        buttons:[
+            {
+                text: "确定",
+                click: function(e){
+                    $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
+                    $.webgis.data.state_examination.record_single_form.line_state = GetMaxlvl($.webgis.data.state_examination.record_single_form);
+                    $('#form_state_examination_import_single_line_state').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_state]);
+
+                    $( this ).dialog( "close" );
+                }
+            },
+            {
+                text: "关闭",
+                click: function(e){
+                    //$.webgis.data.state_examination.record_single_form.list = [];
+                    $( this ).dialog( "close" );
+                }
+            }
+        ]
+    });
+
+
+    $.ajax({
+        url: '/webgis_standard2014_form.html',
+        method: 'get',
+        dataType: 'html'
+    })
+    .done(function(page){
+        load_html(page);
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("载入模板[/webgis_standard2014_form.html]失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
+    });
+}
+function ShowUnitSubForm2009(viewer, line_name, check_year)
 {
     var load_html = function(html){
         $('#dlg_unitsub_standard2009').empty();
@@ -4853,7 +5298,7 @@ function ShowUnitSubForm(viewer, line_name, check_year)
         resizable: true,
         modal: false,
         position:{at: "center"},
-        title:'劣化情况详细描述',
+        title:'劣化情况详细描述(标准2009)',
         close: function(event, ui){
         },
         show: {
@@ -4905,9 +5350,7 @@ function ShowUnitSubForm(viewer, line_name, check_year)
         });
     });
 }
-function ShowUnitSubForm2014(viewer)
-{
-}
+
 function SaveStateExaminationMultiple(viewer)
 {
     ShowConfirm(null, 500, 200,
@@ -5550,6 +5993,18 @@ function CreateDialogSkeleton(viewer, dlg_id)
         {
             $(document.body).append('\
             <div id="dlg_unitsub_strategy2009" >\
+            </div>');
+        }
+        if (dlg_id === 'dlg_unitsub_standard2014')
+        {
+            $(document.body).append('\
+            <div id="dlg_unitsub_standard2014" >\
+            </div>');
+        }
+        if (dlg_id === 'dlg_unitsub_strategy2014')
+        {
+            $(document.body).append('\
+            <div id="dlg_unitsub_strategy2014" >\
             </div>');
         }
     }
@@ -13579,26 +14034,41 @@ function PredictGridLoad2(alist)
         });
         //console.log(value);
         if((domain === '正常' || domain === 'I') && value === 1){
+            //console.log('aaa ' + domain + ',' + value + ',' + ret );
             return ret;
         }
         if(!_.isUndefined(k0)){
             ret = $.webgis.mapping.probability_gradient[k0];
         }
         //console.log(ret);
+        //console.log(domain + ',' + value + ',' + ret );
         return ret;
     };
-    var add_bar = function(domain, p, p_format, plist){
+    var add_bar = function(rowdata){
         var ret;
+        var id = rowdata.id;
+        var p = rowdata.probability;
+        var plist = rowdata.plist;
+        var maxlvlv = 0;
+        var maxlvl = 'I';
+        _.forIn(plist, function(v, k){
+            if(maxlvlv < v)
+            {
+                maxlvlv = v;
+                maxlvl = k;
+            }
+        });
         if(!_.isUndefined(p) ){
             ret = '<span ';
-            if(!_.isUndefined(plist) && !_.isEmpty(plist)){
+            if(!_.isUndefined(plist) && !_.isEmpty(plist))
+            {
                 ret += ''
-                    + ' data-plist-I="' + plist.I + '" ' + ' data-width-I="' + get_width(plist.I, plist.I) + '" '
-                    + ' data-plist-II="' + plist.II + '" ' + ' data-width-II="' + get_width(plist.II, plist.II) + '" '
-                    + ' data-plist-III="' + plist.III + '" ' + ' data-width-III="' + get_width(plist.III, plist.III) + '" '
-                    + ' data-plist-IV="' + plist.IV + '" ' + ' data-width-IV="' + get_width(plist.IV, plist.IV) + '" ';
+                    + ' data-unit-id="' + id + '" ' + ' data-plist-I="' + plist.I + '" ' + ' data-width-I="' + get_width(plist.I, plist.I) + '" '
+                    + ' data-unit-id="' + id + '" ' + ' data-plist-II="' + plist.II + '" ' + ' data-width-II="' + get_width(plist.II, plist.II) + '" '
+                    + ' data-unit-id="' + id + '" ' + ' data-plist-III="' + plist.III + '" ' + ' data-width-III="' + get_width(plist.III, plist.III) + '" '
+                    + ' data-unit-id="' + id + '" ' + ' data-plist-IV="' + plist.IV + '" ' + ' data-width-IV="' + get_width(plist.IV, plist.IV) + '" ';
             }
-            ret += '" class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(domain, p) + ';width:' + get_width(domain, p) + 'px;"></span>' + '<span style="float:left">' + p_format + '</span>';
+            ret += '" class="span_probability_bar" style="opacity:' + '1' + ';background-color:' + color_gradient(maxlvl, p) + ';width:' + get_width(maxlvl, p) + 'px;"></span>' + '<span style="float:left">' + get_p_format(p) + '</span>';
         }
         return ret;
     };
@@ -13619,115 +14089,71 @@ function PredictGridLoad2(alist)
         });
         return ret;
     };
+    var get_sugg = function(unit, lvl){
+        var ms = maintain_strategy(unit, lvl);
+        var ret = '检修策略:' + ms.strategy + '。\n建议时限:' + ms.timeline + '。\n措施:' + ms.suggestion + '。';
+        return ret;
+    };
+    var strip_string = function(str, num)
+    {
+        if(_.isUndefined(num)){
+            num = 8;
+        }
+        return str.substr(0, num);
+    };
     var adjustdata = function(data){
         //console.log(data);
         var adjustdata_item = function(alist, item)
         {
-            var unitsubs = _.filter(alist, function(item1){
-                return _.startsWith(item1.id, 'unitsub_');
-            });
-            if(item.plist.I === 1)
+            var years = _.pluck($.webgis.data.state_examination.list_data_current_line, 'check_year');
+            var latest_year = _.max(years);
+            if(!_.isUndefined(item.plist))
             {
-                _.forEach(unitsubs, function(item1){
-                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
-                    if(item1.id.substr(8, 6) === item.id)
-                    {
-                        if(p0.II > 0){
-                            item.plist.II = p0.II;
-                            item.plist.I = 1.0 - item.plist.II;
-                        }else if(p0.III > 0){
-                            item.plist.III = p0.III;
-                            item.plist.I = 1.0 - item.plist.III;
-                        }else if(p0.IV > 0){
-                            item.plist.IV = p0.IV;
-                            item.plist.I = 1.0 - item.plist.IV;
+                if(  item.plist.I === 1 || item.plist.II === 1 || item.plist.III === 1 || item.plist.IV === 1)
+                {
+                    var p = calc_past_probability($.webgis.data.state_examination.list_data_current_line, item.id, latest_year);
+                    var maxlvlv = 0;
+                    var maxlvl = 'I';
+                    _.forEach(['I', 'II', 'III', 'IV'], function(item1){
+                        item.plist[item1] = p[item.id][item1];
+                        if(maxlvlv < p[item.id][item1]){
+                            maxlvlv = p[item.id][item1];
+                            maxlvl = item1;
                         }
-                        return;
-                    }
-                });
-                //if(item.plist.I === 1){
-                //
-                //}
-            }
-            else if(item.plist.II === 1)
-            {
-                _.forEach(unitsubs, function(item1){
-                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
-                    if(item1.id.substr(8, 6) === item.id)
-                    {
-                        if(p0.I > 0){
-                            item.plist.I = p0.I;
-                            item.plist.II = 1.0 - item.plist.I;
-                        }else if(p0.III > 0){
-                            item.plist.III = p0.III;
-                            item.plist.II = 1.0 - item.plist.III;
-                        }else if(p0.IV > 0){
-                            item.plist.IV = p0.IV;
-                            item.plist.II = 1.0 - item.plist.IV;
+                    });
+                    item.probability = maxlvlv;
+                    item.description = '(' + get_domain_name(maxlvl) + ')';
+                    item.suggestion = get_sugg(item.id, maxlvl);
+                }else{
+                    var maxlvlv = 0;
+                    var maxlvl = 'I';
+                    _.forIn(item.plist, function(v, k){
+                        if(maxlvlv < v)
+                        {
+                            maxlvlv = v;
+                            maxlvl = k;
                         }
-                        return;
-                    }
-                });
+                    });
+                    item.description = '(' + get_domain_name(maxlvl) + ')';
+                    item.suggestion = get_sugg(item.id, maxlvl);
+                }
             }
-            else if(item.plist.III === 1)
-            {
-                _.forEach(unitsubs, function(item1){
-                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
-                    if(item1.id.substr(8, 6) === item.id)
-                    {
-                        if(p0.I > 0){
-                            item.plist.I = p0.I;
-                            item.plist.III = 1.0 - item.plist.I;
-                        }else if(p0.II > 0){
-                            item.plist.II = p0.II;
-                            item.plist.III = 1.0 - item.plist.II;
-                        }else if(p0.IV > 0){
-                            item.plist.IV = p0.IV;
-                            item.plist.III = 1.0 - item.plist.IV;
-                        }
-                        return;
-                    }
-                });
-            }
-            else if(item.plist.IV === 1)
-            {
-                var unitsubs = _.filter(alist, function(item1){
-                    return _.startsWith(item1.id, 'unitsub_');
-                });
-                _.forEach(unitsubs, function(item1){
-                    var p0 = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'p0');
-                    if(item1.id.substr(8, 6) === item.id)
-                    {
-                        if(p0.I > 0){
-                            item.plist.I = p0.I;
-                            item.plist.IV = 1.0 - item.plist.I;
-                        }else if(p0.II > 0){
-                            item.plist.II = p0.II;
-                            item.plist.IV = 1.0 - item.plist.II;
-                        }else if(p0.III > 0){
-                            item.plist.III = p0.III;
-                            item.plist.IV = 1.0 - item.plist.III;
-                        }
-                        return;
-                    }
-                });
-            }
-            //console.log(item);
             return item;
         };
         data = _.map(data, function(item){
-            if(!_.isUndefined(item.plist)
-                && (
-                    item.plist.I === 1
-                ||  item.plist.II === 1
-                ||  item.plist.III === 1
-                ||  item.plist.IV === 1
-                ))
-            {
-                item = adjustdata_item(data, item);
-            }
+            //if(!_.isUndefined(item.plist)
+            //    && (
+            //        item.plist.I === 1
+            //    ||  item.plist.II === 1
+            //    ||  item.plist.III === 1
+            //    ||  item.plist.IV === 1
+            //    ))
+            //{
+            item = adjustdata_item(data, item);
+            //}
             return item;
         });
+        //console.log(data);
         return data;
     };
     alist = adjustdata(alist);
@@ -13743,9 +14169,7 @@ function PredictGridLoad2(alist)
             {display:'预测发生概率', name:'probability', width: bar_grid_width, render:function (rowdata, rowindex, value){
                 if(_.isNumber(value)) {
                     //console.log(rowdata);
-                    var domain = rowdata.value;
-                    var p_format = get_p_format(value);
-                    return add_bar(domain, value, p_format, rowdata.plist);
+                    return add_bar(rowdata);
                 }else {
                     return '';
                 }
@@ -13784,6 +14208,7 @@ function PredictGridLoad2(alist)
             $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
             return;
         }
+        var unit = div.find('.span_probability_bar').attr('data-unit-id');
         var ps = {}, ws = {};
         _.forEach(['I', 'II', 'III', 'IV'], function(item){
             ps[item] = parseFloat(div.find('.span_probability_bar').attr('data-plist-' + item));
@@ -13793,15 +14218,20 @@ function PredictGridLoad2(alist)
         $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
         $('#div_state_examination_bbn_predict_grid').append(
             '<div class="div_probability_bar_extend" style="left:' + pos.left + 'px;top:' + pos.top + 'px;">'
-            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('I') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('I', ps.I) + ';width:' + ws.I + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.I) + '</span></div>'
-            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('II') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('II', ps.II) + ';width:' + ws.II + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.II) + '</span></div>'
-            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('III') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('III', ps.III) + ';width:' + ws.III + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.III) + '</span></div>'
-            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('IV') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('IV', ps.IV) + ';width:' + ws.IV + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.IV) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('I') + '</span><span' + ' class="span_probability_bar"' + ' style="background-color:' + color_gradient('I', ps.I) + ';width:' + ws.I + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.I) + '</span><span style="float: right;" title="' + get_sugg(unit, 'I') + '">' + strip_string(get_sugg(unit, 'I')) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('II') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('II', ps.II) + ';width:' + ws.II + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.II) + '</span><span style="float: right;" title="' + get_sugg(unit, 'II') + '">' + strip_string(get_sugg(unit, 'II')) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('III') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('III', ps.III) + ';width:' + ws.III + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.III) + '</span><span style="float: right;" title="' + get_sugg(unit, 'III') + '">' + strip_string(get_sugg(unit, 'III')) + '</span></div>'
+            + '<div class="div_probability_bar"><span style="float: left;">' + get_domain_name('IV') + '</span><span class="span_probability_bar"' + ' style="background-color:' + color_gradient('IV', ps.IV) + ';width:' + ws.IV + 'px;"></span>' + '<span style="float: left;">' + get_p_format(ps.IV) + '</span><span style="float: right;" title="' + get_sugg(unit, 'IV') + '">' + strip_string(get_sugg(unit, 'IV')) + '</span></div>'
             + '</div>');
         $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').off();
         $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').on('click', function(e){
             $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
         });
+        $('#div_state_examination_bbn_predict_grid').off();
+        $('#div_state_examination_bbn_predict_grid').on('mouseleave', function(e){
+            $('#div_state_examination_bbn_predict_grid .div_probability_bar_extend').remove();
+        });
+
     });
 }
 function PredictGridLoad1(alist)
@@ -14832,26 +15262,19 @@ function PredictSummaryDialog(viewer)
 
     var get_description = function()
     {
-        //var ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'IV'}), 'description');
-        //if(_.isUndefined(ret) || ret.length === 0){
-        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'III'}), 'description');
-        //}
-        //if(_.isUndefined(ret) || ret.length === 0){
-        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'II'}), 'description');
-        //}
-        //if(_.isUndefined(ret) || ret.length === 0){
-        //    ret = _.pluck(_.where($.webgis.data.state_examination.list_data_current_line, {line_state:'I'}), 'description');
-        //}
-        //if(_.isUndefined(ret) || ret.length === 0){
-        //    ret = '';
-        //}
-        var ret = _.pluck($.webgis.data.state_examination.list_data_current_line, 'description');
+        var ret = '';
+        _.forEach($.webgis.data.state_examination.list_data_current_line, function(item){
+            ret += item.check_year + '年:\n';
+            if(_.isUndefined(item.description)){
+                item.description = '';
+            }
+            ret += item.description + '\n';
+        });
         //console.log($.webgis.data.state_examination.list_data_current_line);
-
-        if(ret.length)
-        {
-            ret = ret.join('\n');
-        }
+        //if(ret.length)
+        //{
+        //    ret = ret.join('\n');
+        //}
         return ret;
     };
     var get_suggestion = function()

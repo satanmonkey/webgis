@@ -417,9 +417,10 @@ function calc_past_probability(alist, filtername, year)
         var happen = {};
         happen[filtername] = {'I':0,'II':0,'III':0,'IV':0};
         var total_cnt = list.length;
+
         _.forEach(list, function(item){
             _.forEach(['I', 'II', 'III', 'IV'], function(item1){
-                if(item[filtername] === item1){
+                if(item[filtername] === item1 ){
                     happen[filtername][item1] += 1;
                 }
             });
