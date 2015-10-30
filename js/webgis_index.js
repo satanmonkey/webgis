@@ -5546,7 +5546,7 @@ function SaveStateExaminationSingle(viewer)
                 }
                 delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
                 var check_is_2014 = $.webgis.data.state_examination.record_single_form.check_is_2014;
-                delete $.webgis.data.state_examination.record_single_form.check_is_2014;
+                //delete $.webgis.data.state_examination.record_single_form.check_is_2014;
                 var list = [];
                 var formid = '';
                 if(check_is_2014){
@@ -5594,14 +5594,17 @@ function SaveStateExaminationSingle(viewer)
                             base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
                         }
                     }
-                    if(check_is_2014){
-                        id = 'unitsub_' + id;
-                    }
+                    //if(check_is_2014){
+                    //    id = 'unitsub_' + id;
+                    //}
                     if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
                         list.push({id:id, unit:un, name:name1, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
                     }
                 });
                 $.webgis.data.state_examination.record_single_form.unitsub = list;
+                //if(check_is_2014){
+                //    $.webgis.data.state_examination.record_single_form.check_is_2014 = true;
+                //}
 
                 //console.log($.webgis.data.state_examination.record_single_form);
                 ////if(_.isString($.webgis.data.state_examination.record_single_form.check_year)){
@@ -5939,7 +5942,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
         {
             $(document.body).append('\
                 <div id="dlg_state_examination_bbn" >\
-                    <div id="tabs_state_examination_bbn">\
+                    <div-- id="tabs_state_examination_bbn">\
                         <ul>\
                             <li><a href="#div_state_examination_bbn_bbn">贝叶斯信度网(BBN)</a></li>\
                             <!--li><a href="#div_state_examination_bbn_bbn_view">概率节点编辑</a></li-->\
@@ -5953,8 +5956,8 @@ function CreateDialogSkeleton(viewer, dlg_id)
                             <form id="form_state_examination_bbn_bbn_view_grid"></form>\
                             <div id="div_state_examination_bbn_bbn_view_grid_container">\
                                 <div id="div_state_examination_bbn_bbn_view_grid"></div>\
-                            </div-->\
-                        </div>\
+                            </div>\
+                        </div-->\
                         <div id="div_state_examination_bbn_predict">\
                             <form id="form_state_examination_bbn_assume">\
                             <fieldset style="display: none;">\
@@ -14978,13 +14981,18 @@ function DrawPredictTable2(data)
     var get_v = function(alist, id, key)
     {
         var ret;
+        var findit = false;
         _.forEach(alist, function(item){
             _.forEach(item.children, function(item1){
                 if( item1.id === id.replace('unitsub_', '')){
                     ret = item1[key];
+                    findit = true;
                     return;
                 }
             });
+            if(findit){
+                return;
+            }
         });
         return ret;
     };
@@ -15077,12 +15085,18 @@ function DrawPredictTable2(data)
             _.forEach(list, function (item1) {
                 var oidx = _.findIndex(list, 'id', item1.id);
                 list[oidx].description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'according');
+                if(_.isUndefined(list[oidx].description)){
+                    list[oidx].description = get_v($.webgis.data.bbn.unitsub_template_2014, item1.id, 'according');
+                }
                 var max_p = get_max_p(list[oidx].plist);
                 list[oidx].probability = 0;
                 if (max_p.length) {
                     list[oidx].probability = max_p[1];
                 }
                 list[oidx].suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.id, 'strategy');
+                if(_.isUndefined(list[oidx].suggestion)){
+                    list[oidx].suggestion = get_v($.webgis.data.bbn.unitsub_template_2014, item1.id, 'strategy');
+                }
             });
         }
     });
@@ -15093,11 +15107,20 @@ function DrawPredictTable2(data)
                 var unit = item1.name.substr(8, 6);
                 o.id = item1.name;
                 o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
+                if(_.isUndefined(o.name)){
+                    o.name = get_v($.webgis.data.bbn.unitsub_template_2014, item1.name, 'name');
+                }
                 o.unit = get_unit_name(unit);
                 //o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
                 o.description = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'according');
+                if(_.isUndefined(o.description)){
+                    o.description = get_v($.webgis.data.bbn.unitsub_template_2014, item1.name, 'according');
+                }
                 o.probability = item1.p;
                 o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'strategy');
+                if(_.isUndefined(o.suggestion)){
+                    o.suggestion = get_v($.webgis.data.bbn.unitsub_template_2014, item1.name, 'strategy');
+                }
                 list.push(o);
             }
         });
