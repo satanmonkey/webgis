@@ -50,7 +50,7 @@ $.webgis.data.bbn.graphiz_label = [
 ];
 
 
-var DEBUG_BAYES = true;
+var DEBUG_BAYES = false;
 var TREE_COLLAPSE = true;
 
 
@@ -4381,24 +4381,43 @@ function ShowStateExaminationImportDialog(viewer, data)
         flds.push({ display: item, id: "unit_" + (_.indexOf(unitlist, item) + 1), newline: true, type: "select", editor: { data: levs }, defaultvalue: 'I', group: '状态评价-单元', width: 250, labelwidth: 120, validate:{ required: true}});
     });
     flds.push({ display: '劣化情况描述', id: "unitsub_desc" , newline: true, type: "textarea", editor: { readonly: true }, defaultvalue: '', group: '状态评价-详细', width: 250, height:60, labelwidth: 120});
-    flds.push({ display: '标准2009', id: "unitsub_input_2009" , newline: true, type: "button", defaultvalue: '填写劣化情况(2009标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
+    flds.push({ display: '使用2014标准', id: "check_is_2014" , newline: true, type: "checkbox", defaultvalue: false,  group: '劣化情况输入', width: 250, labelwidth: 120});
+    flds.push({ display: '', id: "unitsub_input" , newline: true, type: "button", defaultvalue: '填写劣化情况',  group: '劣化情况输入', width: 360, labelwidth: 1,
         click:function(){
-            if(_.isUndefined(formdata)){
-                ShowUnitSubForm2009(viewer);
+            var fdata = $('#form_state_examination_import_single').webgisform('getdata');
+            if(!fdata.check_is_2014){
+                if(_.isUndefined(formdata)) {
+                    ShowUnitSubForm2009(viewer);
+                }else{
+                    ShowUnitSubForm2009(viewer, formdata.line_name, parseInt(formdata.check_year));
+                }
             }else{
-                ShowUnitSubForm2009(viewer, formdata.line_name, parseInt(formdata.check_year));
+                if(_.isUndefined(formdata)) {
+                    ShowUnitSubForm2014(viewer);
+                }else{
+                    ShowUnitSubForm2014(viewer, formdata.line_name, parseInt(formdata.check_year));
+                }
             }
         }
     });
-    flds.push({ display: '标准2014', id: "unitsub_input_2014" , newline: true, type: "button", defaultvalue: '填写劣化情况(2014标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
-        click:function(){
-            if(_.isUndefined(formdata)){
-                ShowUnitSubForm2014(viewer);
-            }else{
-                ShowUnitSubForm2014(viewer, formdata.line_name, parseInt(formdata.check_year));
-            }
-        }
-    });
+    //flds.push({ display: '标准2009', id: "unitsub_input_2009" , newline: true, type: "button", defaultvalue: '填写劣化情况(2009标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
+    //    click:function(){
+    //        if(_.isUndefined(formdata)){
+    //            ShowUnitSubForm2009(viewer);
+    //        }else{
+    //            ShowUnitSubForm2009(viewer, formdata.line_name, parseInt(formdata.check_year));
+    //        }
+    //    }
+    //});
+    //flds.push({ display: '标准2014', id: "unitsub_input_2014" , newline: true, type: "button", defaultvalue: '填写劣化情况(2014标准)',  group: '劣化情况输入', width: 250, labelwidth: 120,
+    //    click:function(){
+    //        if(_.isUndefined(formdata)){
+    //            ShowUnitSubForm2014(viewer);
+    //        }else{
+    //            ShowUnitSubForm2014(viewer, formdata.line_name, parseInt(formdata.check_year));
+    //        }
+    //    }
+    //});
 
 
     $('#form_state_examination_import_single').webgisform(flds, {
@@ -4732,13 +4751,6 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
         $('#dlg_unitsub_standard2014').empty();
         $('#dlg_unitsub_standard2014').append(html);
         bind_event();
-        //$.ajax({
-        //    url: '/standard_template2014.json',
-        //    method: 'get',
-        //    dataType: 'json'
-        //})
-        //.done(function(data){
-        //    $.webgis.data.bbn.unitsub_template_2014 = data;
         $('#form_unitsub_stand_2014').find('textarea').val('');
         if(!_.isUndefined(line_name) && !_.isUndefined(check_year)){
             var unitsub = _.result(_.find($.webgis.data.state_examination.list_data, {line_name:line_name, check_year:check_year}), 'unitsub');
@@ -4835,25 +4847,45 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
             }
         });
     };
+    var get_unit = function(uuu){
+        return uuu.substr(0, 6);
+    };
+    var get_item = function(alist, id)
+    {
+        var ret;
+        var findit = false;
+        _.forEach(alist, function(item){
+            _.forEach(item.children, function(item1){
+                if( item1.id === id){
+                    ret = item1;
+                    findit = true;
+                    return;
+                }
+            });
+            if(findit){
+                return;
+            }
+        });
+        return ret;
+    };
     var bind_event = function(){
-        event_other_sel_bind();
+        //event_other_sel_bind();
         $('#form_unitsub_stand_2014').find('textarea').off();
 
         $('#form_unitsub_stand_2014').find('textarea').on('keyup change', function(e){
-            var unit = $(e.target).attr('data-unit');
-            var weight = $(e.target).attr('data-weight');
-            var level = $(e.target).attr('data-level');
-            var base_score = $(e.target).attr('data-base_score');
-            var name = $(e.target).attr('data-name');
-            var according = $(e.target).attr('data-according');
+            var id = $(e.target).attr('id').replace('textarea_', '');
+
+            var unit = get_unit(id);
+            var it = get_item($.webgis.data.bbn.unitsub_template_2014, id);
+            var weight = it.weight;
+            var level = it.level;
+            var base_score = it.base_score;
+            var name = it.name;
+            var according = it.according;
             var desc = $(e.target).val();
             var total_score = 0;
             if(_.trim(desc).length>0 && _.trim(desc) != '无' && _.trim(desc) != '(无)' && _.trim(desc) != '（无）'){
-                if(weight.length === 0 || base_score.length === 0){
-                    weight = $(e.target).closest('tr').find('select[id^=other_weight_sel_]').val();
-                    base_score = $(e.target).closest('tr').find('select[id^=other_basescore_sel_]').val();
-                }
-                total_score = parseInt(weight) * parseInt(base_score);
+                total_score = weight *  base_score;
             }else{
                 total_score = 0;
             }
@@ -4861,15 +4893,13 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
             var total_score_accmulate = 0;
             var total_desc = [];
             $('#form_unitsub_stand_2014').find('textarea').each(function(idx, item){
-                var un = $(item).attr('data-unit');
+                var id1 = $(item).attr('id').replace('textarea_', '');
+                var un = get_unit(id1);
+                var it1 = get_item($.webgis.data.bbn.unitsub_template_2014, id1);
                 var desc1 = $(item).val();
-                var weight1 = $(item).attr('data-weight');
-                var base_score1 = $(item).attr('data-base_score');
-                if(weight1.length === 0 || base_score1.length === 0){
-                    weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
-                    base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
-                }
-                var total_score1 = parseInt(weight1) * parseInt(base_score1);
+                var weight1 = it1.weight;
+                var base_score1 = it1.base_score;
+                var total_score1 = weight1 * base_score1;
                 if(un === unit){
                     if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
                         total_score_accmulate += total_score1;
@@ -4880,7 +4910,7 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
                 }
             });
             //console.log('unit:' + unit + ', total_score:' + total_score + ', total_score_accmulate:' + total_score_accmulate);
-            var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
+            var t = CalcUnitLevelByScore2014(unit, total_score, total_score_accmulate);
 
             if(_.trim(desc).length === 0){
                 $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
@@ -4909,71 +4939,71 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
             }
             $('#form_state_examination_import_single_unitsub_desc').val(total_desc.join(';'));
         });
-        $('#btn_unitsub_import').off();
-        $('#btn_unitsub_import').on('click', function(e){
-            $('#btn_unitsub_import_file_path').html('');
-            $('#btn_unitsub_import_file').val('');
-            $('#btn_unitsub_import_file').trigger('click');
-        });
-        $('#btn_unitsub_import_file').off();
-        $('#btn_unitsub_import_file').on('change', function(e){
-            var  to_json = function(workbook) {
-                var result = [];
-                workbook.SheetNames.forEach(function(sheetName) {
-                    var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-                    if(roa.length > 0){
-                        result.push({sheet_name:sheetName, sheet_data:roa});
-                    }
-                });
-                return result;
-            };
-            var files = e.target.files;
-            var f = files[0];
-            var reader = new FileReader();
-            if(f && f.name)
-            {
-                if(!_.endsWith(f.name, '.xls'))
-                {
-                    $('#btn_unitsub_import_file_path').html('');
-                    ShowMessage(null, 400, 220, '出错了', '仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
-                    return;
-                }
-                $('#btn_unitsub_import_file_path').html(f.name);
-                var name = f.name;
-                //console.log(name);
-                reader.onload = function (e) {
-                    var data = e.target.result;
-                    var wb = XLS.read(data, {type: 'binary'});
-                    var sheets = to_json(wb);
-                    var sheet_data = sheets[0].sheet_data;
-                    $.webgis.data.bbn.xls_template_2014_id_mapping = [];
-                    var xlsidx = 0;
-                    _.forEach($.webgis.data.bbn.unitsub_template_2014, function(item) {
-                        if(xlsidx>0){
-                            xlsidx += 1;
-                        }
-                        _.forEach(item.children, function(item1) {
-                            $.webgis.data.bbn.xls_template_2014_id_mapping.push({id:item1.id, idx:xlsidx});
-                            xlsidx += 1;
-                        });
-                    });
-                    //console.log( $.webgis.data.bbn.xls_template_2009_id_mapping);
-                    _.forEach(sheet_data, function(item){
-                        var idx = _.indexOf(sheet_data, item);
-                        if(!_.isUndefined(item.劣化情况描述))
-                        {
-                            var id = _.result(_.find($.webgis.data.bbn.xls_template_2014_id_mapping, {idx: idx}), 'id');
-                            if (!_.isUndefined(id)) {
-                                id = 'textarea_' + id;
-                                $('#form_unitsub_stand_2014 #' + id).val(_.trim(item.劣化情况描述));
-                                $('#form_unitsub_stand_2014 #' + id).trigger('change');
-                            }
-                        }
-                    });
-                };
-                reader.readAsBinaryString(f);
-            }
-        });
+        //$('#btn_unitsub_import').off();
+        //$('#btn_unitsub_import').on('click', function(e){
+        //    $('#btn_unitsub_import_file_path').html('');
+        //    $('#btn_unitsub_import_file').val('');
+        //    $('#btn_unitsub_import_file').trigger('click');
+        //});
+        //$('#btn_unitsub_import_file').off();
+        //$('#btn_unitsub_import_file').on('change', function(e){
+        //    var  to_json = function(workbook) {
+        //        var result = [];
+        //        workbook.SheetNames.forEach(function(sheetName) {
+        //            var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+        //            if(roa.length > 0){
+        //                result.push({sheet_name:sheetName, sheet_data:roa});
+        //            }
+        //        });
+        //        return result;
+        //    };
+        //    var files = e.target.files;
+        //    var f = files[0];
+        //    var reader = new FileReader();
+        //    if(f && f.name)
+        //    {
+        //        if(!_.endsWith(f.name, '.xls'))
+        //        {
+        //            $('#btn_unitsub_import_file_path').html('');
+        //            ShowMessage(null, 400, 220, '出错了', '仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+        //            return;
+        //        }
+        //        $('#btn_unitsub_import_file_path').html(f.name);
+        //        var name = f.name;
+        //        //console.log(name);
+        //        reader.onload = function (e) {
+        //            var data = e.target.result;
+        //            var wb = XLS.read(data, {type: 'binary'});
+        //            var sheets = to_json(wb);
+        //            var sheet_data = sheets[0].sheet_data;
+        //            $.webgis.data.bbn.xls_template_2014_id_mapping = [];
+        //            var xlsidx = 0;
+        //            _.forEach($.webgis.data.bbn.unitsub_template_2014, function(item) {
+        //                if(xlsidx>0){
+        //                    xlsidx += 1;
+        //                }
+        //                _.forEach(item.children, function(item1) {
+        //                    $.webgis.data.bbn.xls_template_2014_id_mapping.push({id:item1.id, idx:xlsidx});
+        //                    xlsidx += 1;
+        //                });
+        //            });
+        //            //console.log( $.webgis.data.bbn.xls_template_2009_id_mapping);
+        //            _.forEach(sheet_data, function(item){
+        //                var idx = _.indexOf(sheet_data, item);
+        //                if(!_.isUndefined(item.劣化情况描述))
+        //                {
+        //                    var id = _.result(_.find($.webgis.data.bbn.xls_template_2014_id_mapping, {idx: idx}), 'id');
+        //                    if (!_.isUndefined(id)) {
+        //                        id = 'textarea_' + id;
+        //                        $('#form_unitsub_stand_2014 #' + id).val(_.trim(item.劣化情况描述));
+        //                        $('#form_unitsub_stand_2014 #' + id).trigger('change');
+        //                    }
+        //                }
+        //            });
+        //        };
+        //        reader.readAsBinaryString(f);
+        //    }
+        //});
     };
 
     CreateDialogSkeleton(viewer, 'dlg_unitsub_standard2014');
@@ -5006,7 +5036,6 @@ function ShowUnitSubForm2014(viewer, line_name, check_year)
                     $.webgis.data.state_examination.record_single_form = $('#form_state_examination_import_single').webgisform('getdata');
                     $.webgis.data.state_examination.record_single_form.line_state = GetMaxlvl($.webgis.data.state_examination.record_single_form);
                     $('#form_state_examination_import_single_line_state').multipleSelect('setSelects', [$.webgis.data.state_examination.record_single_form.line_state]);
-
                     $( this ).dialog( "close" );
                 }
             },
@@ -5059,10 +5088,6 @@ function ShowUnitSubForm2009(viewer, line_name, check_year)
                 load_form_data(unitsub);
             }
         }
-        //})
-        //.fail(function (jqxhr, textStatus, e) {
-        //    $.webgis.data.bbn.unitsub_template_2009 = [];
-        //});
         //load_form_data();
         //CalcUnitProbability();
         //console.log(JSON.stringify($.webgis.data.bbn.unitsub_template_2009));
@@ -5192,7 +5217,7 @@ function ShowUnitSubForm2009(viewer, line_name, check_year)
                 }
             });
             //console.log('unit:' + unit + ', total_score:' + total_score + ', total_score_accmulate:' + total_score_accmulate);
-            var t = CalcUnitLevelByScore(unit, total_score, total_score_accmulate);
+            var t = CalcUnitLevelByScore2009(unit, total_score, total_score_accmulate);
 
             if(_.trim(desc).length === 0){
                 $(e.target).closest('tr').find('p[id^=totalscore_]').html('');
@@ -5485,6 +5510,27 @@ function SaveStateExamination(viewer, data, success, fail)
 }
 function SaveStateExaminationSingle(viewer)
 {
+    var get_unit = function(uuu){
+        return uuu.substr(0, 6);
+    };
+    var get_item = function(alist, id)
+    {
+        var ret;
+        var findit = false;
+        _.forEach(alist, function(item){
+            _.forEach(item.children, function(item1){
+                if( item1.id === id){
+                    ret = item1;
+                    findit = true;
+                    return;
+                }
+            });
+            if(findit){
+                return;
+            }
+        });
+        return ret;
+    };
     if($('#form_state_examination_import_single').valid()) {
         ShowConfirm(null, 500, 200,
             '保存确认',
@@ -5499,20 +5545,57 @@ function SaveStateExaminationSingle(viewer)
                     $.webgis.data.state_examination.record_single_form.description =  $.webgis.data.state_examination.record_single_form.unitsub_desc;
                 }
                 delete $.webgis.data.state_examination.record_single_form.unitsub_desc;
+                var check_is_2014 = $.webgis.data.state_examination.record_single_form.check_is_2014;
+                delete $.webgis.data.state_examination.record_single_form.check_is_2014;
                 var list = [];
-                $('#form_unitsub_stand_2009').find('textarea').each(function(idx, item){
+                var formid = '';
+                if(check_is_2014){
+                    formid = 'form_unitsub_stand_2014';
+                }else{
+                    formid = 'form_unitsub_stand_2009';
+                }
+                $('#' + formid).find('textarea').each(function(idx, item){
                     var id = $(item).attr('id').replace('textarea_', '');
-                    var un = $(item).attr('data-unit');
-                    var desc1 = $(item).val();
-                    var weight1 = $(item).attr('data-weight');
-                    var base_score1 = $(item).attr('data-base_score');
-                    var name1 = $(item).attr('data-name');
-                    //var total_score1 = parseInt(weight1) * parseInt(base_score1);
-                    if(weight1.length === 0){
-                        weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                    var it;
+                    var un;
+                    if(check_is_2014)
+                    {
+                        un = get_unit(id);
+                        it = get_item($.webgis.data.bbn.unitsub_template_2014, id);
+                    }else{
+                        un = $(item).attr('data-unit');
                     }
-                    if(base_score1.length === 0){
-                        base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                    var desc1 = $(item).val();
+                    var weight1;
+                    if(check_is_2014){
+                        weight1 = it.weight;
+                    }else{
+                        weight1 = $(item).attr('data-weight');
+                    }
+                    var base_score1;
+                    if(check_is_2014){
+                        base_score1 = it.base_score;
+                    }else{
+                        base_score1 = $(item).attr('data-base_score');
+                    }
+                    var name1;
+                    if(check_is_2014){
+                        name1 = it.name;
+                    }else{
+                        name1 = $(item).attr('data-name');
+                    }
+
+                    if(!check_is_2014)
+                    {
+                        if(weight1.length === 0){
+                            weight1 = $(item).closest('tr').find('select[id^=other_weight_sel_]').val();
+                        }
+                        if(base_score1.length === 0){
+                            base_score1 = $(item).closest('tr').find('select[id^=other_basescore_sel_]').val();
+                        }
+                    }
+                    if(check_is_2014){
+                        id = 'unitsub_' + id;
                     }
                     if(_.trim(desc1).length>0 && _.trim(desc1) != '无' && _.trim(desc1) != '(无)' && _.trim(desc1) != '（无）'){
                         list.push({id:id, unit:un, name:name1, desc:desc1, weight:parseInt(weight1), base_score:parseInt(base_score1) });
@@ -5521,9 +5604,9 @@ function SaveStateExaminationSingle(viewer)
                 $.webgis.data.state_examination.record_single_form.unitsub = list;
 
                 //console.log($.webgis.data.state_examination.record_single_form);
-                //if(_.isString($.webgis.data.state_examination.record_single_form.check_year)){
-                //    $.webgis.data.state_examination.record_single_form.check_year = parseInt($.webgis.data.state_examination.record_single_form.check_year);
-                //}
+                ////if(_.isString($.webgis.data.state_examination.record_single_form.check_year)){
+                ////    $.webgis.data.state_examination.record_single_form.check_year = parseInt($.webgis.data.state_examination.record_single_form.check_year);
+                ////}
                 //return;
                 SaveStateExamination(viewer, $.webgis.data.state_examination.record_single_form, function(){
                     $.ajax({
@@ -14083,13 +14166,18 @@ function PredictGridLoad2(alist)
     var get_v = function(alist, id, key)
     {
         var ret;
+        var findit = false;
         _.forEach(alist, function(item){
             _.forEach(item.children, function(item1){
                 if( item1.id === id.replace('unitsub_', '')){
                     ret = item1[key];
+                    findit = true;
                     return;
                 }
             });
+            if(findit){
+                return;
+            }
         });
         return ret;
     };

@@ -20,7 +20,7 @@ $.webgis.data.bbn.grown_model.score_range = [
 $.webgis.data.bbn.unitsub_template_2009 = [];
 
 
-function CalcUnitLevelByScore(unit, score, score_accmu)
+function CalcUnitLevelByScore2009(unit, score, score_accmu)
 {
     var ret = '正常';
     if(unit === 'unit_1' || unit === 'unit_4')
@@ -127,6 +127,36 @@ function CalcUnitLevelByScore(unit, score, score_accmu)
     }
     return ret;
 }
+function CalcUnitLevelByScore2014(unit, score, score_accmu)
+{
+    var ret = '正常';
+    if(score_accmu <= 10 && score != score_accmu)
+    {
+        ret = '正常';
+    }
+    if(score < 10 && score === score_accmu)
+    {
+        ret = '正常';
+    }
+    if(score_accmu > 30 && score != score_accmu)
+    {
+        ret = '注意';
+    }
+    if(score >= 12 && score <= 20 && score === score_accmu)
+    {
+        ret = '注意';
+    }
+    if(score >= 24 && score <= 30)
+    {
+        ret = '异常';
+    }
+    if(score >= 30)
+    {
+        ret = '严重';
+    }
+    return ret;
+}
+
 function CalcUnitProbability()
 {
     var get_percom = function(number){
