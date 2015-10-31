@@ -3016,10 +3016,13 @@ function InitToolPanel(viewer)
     $('#but_state_examination_import').on('click', function(){
         ShowStateExaminationImportDialog(viewer);
     });
-    $('#but_state_examination_standard').button({label:'查看标准'});
-    $('#but_state_examination_standard').on('click', function(){
-        ShowStateExaminationStandardDialog(viewer);
-        //ShowStateExaminationStandardDialog2014(viewer);
+    $('#but_state_examination_standard_2009').button({label:'查看标准(2009)'});
+    $('#but_state_examination_standard_2009').on('click', function(){
+        ShowStateExaminationStandardDialog2009(viewer);
+    });
+    $('#but_state_examination_standard_2014').button({label:'查看标准(2014)'});
+    $('#but_state_examination_standard_2014').on('click', function(){
+        ShowStateExaminationStandardDialog2014(viewer);
     });
     $('#but_state_examination_bbn').button({label:'分析预测'});
     $('#but_state_examination_bbn').on('click', function(){
@@ -3124,7 +3127,7 @@ function ShowStateExaminationBBNDialog(viewer)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    ShowStateExaminationStandardDialog(viewer);
+                    ShowStateExaminationStandardDialog2009(viewer);
                     //ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
@@ -3223,32 +3226,32 @@ function ShowStateExaminationBBNDialog(viewer)
                 query_graphiz();
                 LoadTowerByLineName(viewer, $.webgis.db.db_name, line_name, function(data){
                     //console.log(data);
-                    if(data.length){
-                        LoadLineByLineName(viewer, $.webgis.db.db_name, line_name, function(data1){
-                            var extent = GetExtentByCzml();
-                            FlyToExtent(viewer, {extent:extent});
-                            if($.webgis.config.map_backend === 'cesium')
-                            {
-                                ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
-                            }
-                            //if(_.isUndefined($.webgis.data.state_examination.list_data_current_line))
-                            //{
-                                ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
-                                $.ajax({
-                                    url:'/state_examination/query',
-                                    method:'post',
-                                    data: JSON.stringify({line_name:line_name})
-                                })
-                                .always(function () {
-                                    ShowProgressBar(false);
-                                })
-                                .done(function (data2) {
-                                    data2 = JSON.parse(data2);
-                                    $.webgis.data.state_examination.list_data_current_line = data2;
-                                });
-                            //}
-                        });
-                    }
+                    //if(data.length){
+                    LoadLineByLineName(viewer, $.webgis.db.db_name, line_name, function(data1){
+                        var extent = GetExtentByCzml();
+                        FlyToExtent(viewer, {extent:extent});
+                        if($.webgis.config.map_backend === 'cesium')
+                        {
+                            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                        }
+                        //if(_.isUndefined($.webgis.data.state_examination.list_data_current_line))
+                        //{
+                            ShowProgressBar(true, 670, 200, '查询', '正在查询，请稍候...');
+                            $.ajax({
+                                url:'/state_examination/query',
+                                method:'post',
+                                data: JSON.stringify({line_name:line_name})
+                            })
+                            .always(function () {
+                                ShowProgressBar(false);
+                            })
+                            .done(function (data2) {
+                                data2 = JSON.parse(data2);
+                                $.webgis.data.state_examination.list_data_current_line = data2;
+                            });
+                        //}
+                    });
+                    //}
                 });
             });
         }
@@ -3492,7 +3495,7 @@ function ShowMaintainStrategyStandardDialog(viewer)
     //});
 }
 
-function ShowStateExaminationStandardDialog(viewer)
+function ShowStateExaminationStandardDialog2009(viewer)
 {
     CreateDialogSkeleton(viewer, 'dlg_state_examination_standard');
     $('#dlg_state_examination_standard').dialog({
@@ -4298,7 +4301,7 @@ function ShowStateExaminationImportDialog(viewer, data)
             {
                 text: "查看评价标准",
                 click: function(e){
-                    ShowStateExaminationStandardDialog(viewer);
+                    ShowStateExaminationStandardDialog2009(viewer);
                     //ShowStateExaminationStandardDialog2014(viewer);
                 }
             },
@@ -14207,6 +14210,7 @@ function PredictGridLoad2(alist)
                 if(  item.plist.I === 1 || item.plist.II === 1 || item.plist.III === 1 || item.plist.IV === 1)
                 {
                     var p = calc_past_probability($.webgis.data.state_examination.list_data_current_line, item.id, latest_year);
+                    //console.log(p);
                     var maxlvlv = 0;
                     var maxlvl = 'I';
                     _.forEach(['I', 'II', 'III', 'IV'], function(item1){
@@ -15109,6 +15113,7 @@ function DrawPredictTable2(data)
                 o.name = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'name');
                 if(_.isUndefined(o.name)){
                     o.name = get_v($.webgis.data.bbn.unitsub_template_2014, item1.name, 'name');
+                    o.name = get_v($.webgis.data.bbn.unitsub_template_2014, item1.name, 'cat') + o.name;
                 }
                 o.unit = get_unit_name(unit);
                 //o.level = get_v($.webgis.data.bbn.unitsub_template_2009, item1.name, 'level');
@@ -15483,7 +15488,11 @@ function PredictSummaryDialog(viewer)
             ret = sarr.join('\n');
             sarr = [];
             _.forEach(unitsubids, function(item){
-                sarr.push(get_v($.webgis.data.bbn.unitsub_template_2009, item, 'strategy'));
+                var sugg = get_v($.webgis.data.bbn.unitsub_template_2009, item, 'strategy');
+                if(_.isUndefined(sugg)){
+                    sugg = get_v($.webgis.data.bbn.unitsub_template_2014, item, 'strategy');
+                }
+                sarr.push(sugg);
             });
             ret += '\n';
             ret += sarr.join('\n');
@@ -15541,10 +15550,15 @@ function PredictSummaryDialog(viewer)
         //console.log(check_year1);
         //console.log(graph_data[filtername]);
         var ret = [];
-        _.forEach([ 'IV','III', 'II'], function(lvl){
+        _.forEach([ 'IV','III', 'II', 'I'], function(lvl){
             var o = {};
             o.id = filtername + '_' + lvl;
             o.label = '';//get_unit_name(i);
+            if(lvl === 'I'){
+                o.label = '正常';
+                o.color = "rgb(0, 255, 0)";
+                o.stack = false;
+            }
             if(lvl === 'II'){
                 o.label = '注意';
                 o.color = "rgb(0, 0, 255)";
@@ -15574,8 +15588,8 @@ function PredictSummaryDialog(viewer)
     var draw_chart = function(){
         var sels = $('#form_state_examination_bbn_assume_years').multipleSelect('getSelects');
         var ys = parseInt(sels[0]);
-        //console.log($.webgis.data.state_examination.list_data_current_line);
         var probs = calc_future_probability_series($.webgis.data.state_examination.list_data_current_line, ys);
+        //console.log(probs);
         var check_year = _.map(_.pluck(probs, 'check_year'), function(item){
             return moment(item, 'YYYY').toDate().getTime();
         });
@@ -15597,6 +15611,7 @@ function PredictSummaryDialog(viewer)
                 graph_data['unit_' + i][item] = _.zip(check_year, prob['unit_' + i][item]);
             });
         });
+        //console.log(graph_data);
         //if(!_.isUndefined($.webgis.control.flot_graph))
         //{
         //    $.webgis.control.flot_graph.destroy();

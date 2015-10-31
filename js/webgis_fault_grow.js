@@ -385,6 +385,7 @@ function calc_future_probability(alist, year_num)
                 list.push(calc_next_year_probability(latest));
             });
         }
+        //console.log(list);
         var happen = {};
         happen.line_state = {'I':0,'II':0,'III':0,'IV':0};
         _.forEach(_.range(1, 9), function(i){
