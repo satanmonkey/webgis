@@ -983,12 +983,15 @@ input[type="button"].btn-block {
 	color:#00FF00;
 }
 
-#line_choose
+#line_choose, #dn_network_choose
 {
 	margin:10px;
 	width:250px;
 }
-
+.ms-search input
+{
+	background-color: #000000;
+}
 #button_anti_bird{
 	opacity:0.6;
     position: absolute;

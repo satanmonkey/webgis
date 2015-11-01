@@ -11387,7 +11387,114 @@ function ShowDNEditDialog(viewer)
             }
         ]
     });
+
+
+    var flds = [
+        { display: "名称", id: "name", newline: true, type: "text", group: '信息', width: 250, labelwidth: 120, validate: { required: true, minlength: 1 } },
+
+        //{ display: "电压等级", id: "voltage", newline: true, type: "select", editor: { data: voltagelist }, defaultvalue: '13', group: '南网分类标准', width: 200, labelwidth: 140},
+    ];
+	$('#dn_network_choose').empty();
+	$('#dn_network_choose').multipleSelect({
+		selectAll: false,
+		selectAllText: '全部',
+		selectAllDelimiter: ['(', ')'],
+		allSelected: '(全部)',
+		countSelected: '(选择#个,共%个)',
+		noMatchesFound: '(无匹配)',
+		single: true,
+		filter: true,
+		position: 'bottom',
+		onClick:function(view){
+			if(view.checked)
+			{
+				console.log(view);
+				var dn = _.find(data1, {_id: view.value});
+				if(dn)
+				{
+					$("#form_dn_network_info").webgisform('clear');
+					$("#form_dn_network_info").webgisform('setdata', dn.properties);
+				}
+			}
+		},
+		styler: function(value) {
+			return 'color: ' + $.webgis.color.base_color + ';background: #000000;';
+		}
+	});
+	$.ajax({
+		url:'/distribute_network/query/network_names',
+		method:'post',
+		data: JSON.stringify({})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		data1 = JSON.parse(data1);
+		console.log(data1);
+		$('#dn_network_choose').empty();
+		_.forEach(data1, function(item)
+		{
+			$('#dn_network_choose').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+		});
+		$('#dn_network_choose').multipleSelect('refresh');
+	});
+
+
+    $("#form_dn_network_info").webgisform(flds, {
+        //divorspan: "div",
+        prefix: "form_dn_network_info_",
+        maxwidth: 420
+        //margin:10,
+        //groupmargin:10
+    });
+    $('#tabs_dn_network_info').tabs({
+        collapsible: false,
+        active: 0,
+        beforeActivate: function( event, ui ) {
+            var title = ui.newTab.context.innerText;
+            if(title == '基础信息')
+            {
+            }
+            if(title == '照片文档')
+            {
+                var arr = $('#dn_network_choose').multipleSelect("getSelects");
+                if(arr.length>0)
+                {
+                    var id = arr[0];
+                    ShowProgressBar(true, 670, 200, '载入中', '正在载入，请稍候...');
+                    CreateFileBrowser('dn_network_info_photo', 450, 450, ['jpg','jpeg','png', 'bmp', 'gif', 'doc', 'xls', 'xlsx', 'docx', 'pdf'], 'network', id);
+                }else
+                {
+                    ShowMessage(null, 400, 200, '无法获取图片数据', '无法获取图片数据,请先选择配电网络.');
+                }
+            }
+        }
+    });
+    $('#but_dn_network_delete').button({label:'删除'});
+	$('#but_dn_network_delete').off();
+    $('#but_dn_network_delete').on('click', function(){
+        if(!CheckPermission('dn_network_delete'))
+        {
+            return;
+        }
+        var arr = $('#dn_network_choose').multipleSelect("getSelects");
+        var textarr = $('#dn_network_choose').multipleSelect("getSelects", 'text');
+        if(arr.length>0)
+        {
+            ShowConfirm(null, 500, 200,
+                '删除确认',
+                '确认删除[' + textarr[0] + ']并保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+                function () {
+                },
+                function () {
+                    //$('#').dialog("close");
+                }
+            );
+        }
+    });
 }
+
 function ShowLineDialog(viewer, mode)
 {
     CreateDialogSkeleton(viewer, 'dlg_line_info');
@@ -11469,42 +11576,39 @@ function ShowLineDialog(viewer, mode)
             }
         ]
     });
-    var i;
     var list = ['08', '09', '10', '11', '12', '13', '15'];
     var voltagelist = [];
-    for (i = 0; i < list.length; i++)
+	_.forEach(list,  function(item)
     {
-        for (var key in $.webgis.data.codes['voltage_level']) {
-            if (key == list[i]) 
+		_.forIn($.webgis.data.codes['voltage_level'], function(value, key) {
+            if (key === item)
             {
-                voltagelist.push({ value: key, label: $.webgis.data.codes['voltage_level'][key] });
+                voltagelist.push({ value: key, label: value });
             }
-        }
-    }
-    list = ['F000', 'A313'];
+        });
+    });
+    list = ['F000', 'A313', 'D000'];
     var equipment_class = [];
-    for (i = 0; i < list.length; i++)
+    _.forEach(list,  function(item)
     {
-        for (var key in $.webgis.data.codes['equipment_class']) 
-        {
-            if (key == list[i]) 
+        _.forIn($.webgis.data.codes['equipment_class'], function(value, key) {
+            if (key === item)
             {
-                equipment_class.push({ value: key, label: $.webgis.data.codes['equipment_class'][key] });
+                equipment_class.push({ value: key, label: value });
             }
-        }
-    }
+        });
+    });
     list = ['C', 'B', 'D', 'F', 'Q', 'P', 'S'];
     var object_class = []
-    for (i = 0; i < list.length; i++)
+    _.forEach(list,  function(item)
     {
-        for (var key in $.webgis.data.codes['object_class']) 
-        {
-            if (key == list[i]) 
+        _.forIn($.webgis.data.codes['object_class'], function(value, key) {
+            if (key === item)
             {
-                object_class.push({ value: key, label: $.webgis.data.codes['object_class'][key] });
+                object_class.push({ value: key, label: value });
             }
-        }
-    }
+        });
+    });
     var line_status = [
         { value: '00', label: '测试' },
         { value: '20', label: '试运行' },
