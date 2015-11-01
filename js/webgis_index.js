@@ -3156,15 +3156,40 @@ function ShowStateExaminationBBNDialog(viewer)
         //console.log(svg);
         return svg;
     };
+    var get_v = function(alist, id, key)
+    {
+        var ret;
+        var findit = false;
+        _.forEach(alist, function(item){
+            _.forEach(item.children, function(item1){
+                if( item1.id === id){
+                    ret = item1[key];
+                    findit = true;
+                    return;
+                }
+            });
+            if(findit){
+                return;
+            }
+        });
+        return ret;
+    };
     var replace_name = function(svg)
     {
         $(svg).find('g[class=node]').each(function(i, item){
             var key = $(item).find('title').html();
             var id = $(item).attr('id');
-            //console.log(key);
+            var id1 = key;
+            if(_.startsWith(id1, 'f_unitsub_')){
+                id1 = id1.replace('f_unitsub_', '');
+            }
             var display_name = _.result(_.find($.webgis.data.bbn.grid_data, {name: key.replace('f_', '')}), 'display_name');
             if(_.isUndefined(display_name)){
                 display_name = _.result(_.find($.webgis.data.bbn.graphiz_label, {name: key.replace('f_', '')}), 'display_name');
+            }
+            var cat = get_v($.webgis.data.bbn.unitsub_template_2014, id1, 'cat');
+            if(cat){
+                display_name = '(' + cat + ')' + display_name;
             }
             var desc = _.result(_.find($.webgis.data.bbn.grid_data, {name: key.replace('f_', '')}), 'description');
             if(_.isUndefined(desc)){
@@ -3363,6 +3388,7 @@ function ShowStateExaminationBBNDialog(viewer)
         }
     });
     var options = '';
+    $('#form_state_examination_bbn_assume_years').empty();
     _.forEach(_.range(1, 11), function(item){
         options += '<option value="' + (item+1) + '">' + item + '年</option>';
     });
@@ -14252,10 +14278,15 @@ function PredictGridLoad2(alist)
             //}
             return item;
         });
-        //console.log(data);
+
         return data;
     };
+    //console.log(alist);
+    alist = _.uniq(alist, function(n){
+        return n.id;
+    });
     alist = adjustdata(alist);
+    //console.log(alist);
     var tabledata = {Rows:alist};
     if(_.isUndefined($.webgis.data.bbn.control.predict_grid))
     {
