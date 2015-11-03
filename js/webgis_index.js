@@ -11376,7 +11376,53 @@ function ShowDNEditDialog(viewer)
         buttons: [
             {
                 text: "保存",
-                click: function () {
+                click: function ()
+                {
+                    var arr = $('#dn_network_choose').multipleSelect("getSelects");
+                    if(arr.length)
+                    {
+                        var formdata = $("#form_dn_network_info").webgisform('getdata');
+                        ShowConfirm(null, 500, 200,
+                            '保存确认',
+                            '确认保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
+                            function () {
+                                ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
+                                $.ajax({
+                                    url: '/distribute_network/save/network',
+                                    method: 'post',
+                                    data: JSON.stringify({_id: arr[0], name:formdata.name})
+                                })
+                                .always(function () {
+                                    ShowProgressBar(false);
+                                })
+                                .done(function (data1) {
+                                    $.jGrowl("保存成功", {
+                                        life: 2000,
+                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        theme: 'bubblestylesuccess',
+                                        glue:'before'
+                                    });
+                                    data1 = JSON.parse(data1);
+                                    $.webgis.data.distribute_network = data1;
+                                    $('#dn_network_choose').empty();
+                                    _.forEach(data1, function(item)
+                                    {
+                                        $('#dn_network_choose').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                                    });
+                                    $('#dn_network_choose').multipleSelect('refresh');
+                                })
+                                .fail(function (jqxhr, textStatus, e) {
+                                    $.jGrowl("保存失败:" + e, {
+                                        life: 2000,
+                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        theme: 'bubblestylefail',
+                                        glue: 'before'
+                                    });
+                                });
+                            },function(){
+
+                            });
+                    }
                 }
             },
             {
@@ -11408,13 +11454,15 @@ function ShowDNEditDialog(viewer)
 		onClick:function(view){
 			if(view.checked)
 			{
-				console.log(view);
-				var dn = _.find(data1, {_id: view.value});
-				if(dn)
-				{
-					$("#form_dn_network_info").webgisform('clear');
-					$("#form_dn_network_info").webgisform('setdata', dn.properties);
-				}
+				//console.log(view);
+                if(!_.isUndefined($.webgis.data.distribute_network)){
+                    var dn = _.find($.webgis.data.distribute_network, {_id: view.value});
+                    if(dn)
+                    {
+                        $("#form_dn_network_info").webgisform('clear');
+                        $("#form_dn_network_info").webgisform('setdata', dn.properties);
+                    }
+                }
 			}
 		},
 		styler: function(value) {
@@ -11431,7 +11479,7 @@ function ShowDNEditDialog(viewer)
 	})
 	.done(function (data1) {
 		data1 = JSON.parse(data1);
-		console.log(data1);
+		$.webgis.data.distribute_network = data1;
 		$('#dn_network_choose').empty();
 		_.forEach(data1, function(item)
 		{
@@ -11486,6 +11534,32 @@ function ShowDNEditDialog(viewer)
                 '删除确认',
                 '确认删除[' + textarr[0] + ']并保存吗? 确认的话数据将会提交到服务器上，以便所有人都能看到修改的结果。',
                 function () {
+                    $.ajax({
+                        url:'/distribute_network/remove/network',
+                        method:'post',
+                        data: JSON.stringify({_id:arr[0]})
+                    })
+                    .always(function () {
+                        ShowProgressBar(false);
+                    })
+                    .done(function (data1) {
+                        data1 = JSON.parse(data1);
+                        $.webgis.data.distribute_network = data1;
+                        $('#dn_network_choose').empty();
+                        _.forEach(data1, function(item)
+                        {
+                            $('#dn_network_choose').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                        });
+                        $('#dn_network_choose').multipleSelect('refresh');
+                    })
+                    .fail(function (jqxhr, textStatus, e) {
+                        $.jGrowl("删除失败:" + e, {
+                            life: 2000,
+                            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                            theme: 'bubblestylefail',
+                            glue:'before'
+                        });
+                    });
                 },
                 function () {
                     //$('#').dialog("close");
