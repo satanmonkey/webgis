@@ -1,37 +1,4 @@
 
-$.webgis.data.czmls = [];
-$.webgis.data.geojsons = [];
-$.webgis.data.lines = [];
-$.webgis.data.codes = {};
-$.webgis.data.segments = [];
-$.webgis.data.gltf_models_mapping = {};
-$.webgis.data.models_gltf_files = [];
-$.webgis.data.buffers = [];
-$.webgis.data.borders = [];
-$.webgis.mapping.models_mapping = {};
-$.webgis.geometry.segments = [];
-$.webgis.geometry.lines = [];
-
-
-$.webgis.config.is_tower_focus = false;
-
-
-
-$.webgis.data.image_thumbnail_tower_info = [];
-$.webgis.config.terrain_z_offset = -40;
-$.webgis.config.node_connect_mode = false;
-
-$.webgis.mapping.leaflet_old_style = {};
-
-$.webgis.data.heatmap_layers = {};
-
-$.webgis.data.sysrole = [];
-$.webgis.config.map_backend = 'cesium';
-$.webgis.config.use_catenary = true;
-
-
-
-$.webgis.config.max_file_size = 5000000;
 
 
 /*
@@ -3070,7 +3037,11 @@ function InitToolPanel(viewer)
             ClearEdges2D(viewer, 'edge_dn');
         }
     });
-    
+    $('#but_dn_fault_detect').button({label:'故障检测与送电恢复'});
+    $('#but_dn_fault_detect').on('click', function(){
+        ShowDNFaultDetectDialog(viewer);
+    });
+
     $('#but_sys_change_password').button({label:'修改密码'});
     $('#but_sys_change_password').on('click', function(){
         ShowChangePassword(viewer);
@@ -3294,6 +3265,25 @@ function CreateDialogSkeleton(viewer, dlg_id)
             $(document.body).append('\
                 <div id="dlg_dn_network_create" >\
                     <form id="form_dn_network_create"></form>\
+                </div>\
+            ');
+        }
+        if (dlg_id === 'dlg_dn_network_fault_detect')
+        {
+            $(document.body).append('\
+                <div id="dlg_dn_network_fault_detect" >\
+                    <div id="tabs_dn_network_fault_detect" >\
+                        <ul>\
+                            <li><a href="#dn_network_fault_detect">故障定位</a></li>\
+                            <li><a href="#dn_network_power_resume">供电恢复</a></li>\
+                        </ul>\
+                        <div id="dn_network_fault_detect">\
+                            <form id="form_dn_network_fault_detect"></form>\
+                        </div>\
+                        <div id="dn_network_power_resume" >\
+                            <form id="form_dn_network_power_resume"></form>\
+                        </div>\
+                    </div>\
                 </div>\
             ');
         }
@@ -11348,6 +11338,102 @@ function OnSelect(viewer, e, selectedEntity)
 
 }
 
+function ShowDNFaultDetectDialog(viewer)
+{
+    CreateDialogSkeleton(viewer, 'dlg_dn_network_fault_detect');
+    $('#dlg_dn_network_fault_detect').dialog({
+        width: 540,
+        height: 700,
+        minWidth: 200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position: {at: "right center"},
+        title: '故障检测与供电恢复',
+        close: function (event, ui) {
+        },
+        show: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        hide: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        buttons: [
+            {
+                text: "关闭",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
+
+    var algorithmlist = [{value:'ants', label:'蚁群优化算法'}, {value:'rset', label:'粗糙集算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var flds = [
+        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [] }, group: '配电网', width: 200, labelwidth: 140,
+        change:function(v){
+            //console.log(v);
+            var _id = v;
+            LoadDNNodesByDNId(viewer, $.webgis.db.db_name, _id, function(){
+                LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, _id, function(){
+                    var extent = GetExtentByCzml();
+                    FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                    if($.webgis.config.map_backend === 'cesium')
+                    {
+                        ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                    }
+                });
+            });
+        }},
+        { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
+        { display: "故障定位", id: "fault_position", newline: true, type: "button", defaultvalue:'定位',  group: '操作', width: 200, labelwidth: 140,
+            click:function(){
+
+            }
+        }
+    ];
+    $('#form_dn_network_fault_detect').webgisform(flds, {
+        prefix: "form_dn_network_fault_detect_",
+        maxwidth: 420
+    });
+    $('#tabs_dn_network_fault_detect').tabs({
+        collapsible: false,
+        active: 0,
+        beforeActivate: function( event, ui ) {
+            var title = ui.newTab.context.innerText;
+            if(title == '')
+            {
+            }
+            if(title == '')
+            {
+            }
+        }
+    });
+    ShowProgressBar(true, 670, 200, '载入中', '正在载入，请稍候...');
+	$.ajax({
+		url:'/distribute_network/query/network_names',
+		method:'post',
+		data: JSON.stringify({})
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+		data1 = JSON.parse(data1);
+		$.webgis.data.distribute_network = data1;
+		$('#form_dn_network_fault_detect_name').empty();
+		_.forEach(data1, function(item)
+		{
+			$('#form_dn_network_fault_detect_name').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+		});
+		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
+	});
+}
 function ShowDNEditDialog(viewer)
 {
     CreateDialogSkeleton(viewer, 'dlg_dn_network_info');
@@ -11410,6 +11496,7 @@ function ShowDNEditDialog(viewer)
                                         $('#dn_network_choose').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
                                     });
                                     $('#dn_network_choose').multipleSelect('refresh');
+                                    $("#form_dn_network_info").webgisform('clear');
                                 })
                                 .fail(function (jqxhr, textStatus, e) {
                                     $.jGrowl("保存失败:" + e, {
