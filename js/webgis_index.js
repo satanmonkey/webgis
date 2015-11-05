@@ -14285,6 +14285,7 @@ function PredictGridLoad2(alist)
     alist = _.uniq(alist, function(n){
         return n.id;
     });
+    //console.log(alist);
     alist = adjustdata(alist);
     //console.log(alist);
     var tabledata = {Rows:alist};
