@@ -3234,6 +3234,33 @@ function CreateDialogSkeleton(viewer, dlg_id)
 {
     if($('#' + dlg_id).length === 0)
     {
+        if (dlg_id === 'dlg_dn_algorithm_option')
+        {
+            $(document.body).append('\
+                <div id="dlg_dn_algorithm_option" >\
+                    <div id="tabs_dn_algorithm_option" >\
+                        <ul>\
+                            <li><a href="#dn_algorithm_option_rset">粗糙集算法</a></li>\
+                            <li><a href="#dn_algorithm_option_ants">蚁群优化算法</a></li>\
+                            <li><a href="#dn_algorithm_option_bayes">贝叶斯算法</a></li>\
+                        </ul>\
+                        <div id="dn_algorithm_option_rset">\
+                            <form id="form_dn_algorithm_option_rset"></form>\
+                            <div id="div_dn_algorithm_option_rset_grid_container">\
+                                <div id="div_dn_algorithm_option_rset_grid"></div>\
+                            </div>\
+                        </div>\
+                        <div id="dn_algorithm_option_ants" >\
+                            <form id="form_dn_algorithm_option_ants"></form>\
+                        </div>\
+                        <div id="dn_algorithm_option_bayes" >\
+                            <form id="form_dn_algorithm_option_bayes"></form>\
+                        </div>\
+                    </div>\
+                </div>\
+            ');
+        }
+
         if (dlg_id === 'dlg_line_info')
         {
             $(document.body).append('\
@@ -11373,7 +11400,7 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'ants', label:'蚁群优化算法'}, {value:'rset', label:'粗糙集算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [] }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -11391,6 +11418,14 @@ function ShowDNFaultDetectDialog(viewer)
             });
         }},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
+        { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
+            click:function(){
+                var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
+                if(formdata.algorithm && formdata.algorithm.length){
+                    ShowDNAlgorithmOption(viewer, formdata.algorithm);
+                }
+            }
+        },
         { display: "故障定位", id: "fault_position", newline: true, type: "button", defaultvalue:'定位',  group: '操作', width: 200, labelwidth: 140,
             click:function(){
 
@@ -11433,6 +11468,133 @@ function ShowDNFaultDetectDialog(viewer)
 		});
 		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
 	});
+}
+function ShowDNAlgorithmOption(viewer, algorithm)
+{
+    CreateDialogSkeleton(viewer, 'dlg_dn_algorithm_option');
+    $('#dlg_dn_algorithm_option').dialog({
+        width: 540,
+        height: 700,
+        minWidth: 200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position: {at: "center"},
+        title: '算法参数信息',
+        close: function (event, ui) {
+        },
+        show: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        hide: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        buttons: [
+            {
+                text: "定位",
+                click: function () {
+
+                }
+            },
+            {
+                text: "关闭",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
+    $('#tabs_dn_algorithm_option').tabs({
+        collapsible: false,
+        active: 0,
+        beforeActivate: function( event, ui ) {
+            var id = ui.newTab.context.hash;
+            console.log(id);
+            if (_.endsWith(id, algorithm)) {
+            }
+        }
+    });
+    $('#tabs_dn_algorithm_option').tabs('disable', 0 );
+    $('#tabs_dn_algorithm_option').tabs('disable', 1 );
+    $('#tabs_dn_algorithm_option').tabs('disable', 2 );
+    if(algorithm === 'rset'){
+        $('#tabs_dn_algorithm_option').tabs('enable', 0 );
+        $('#tabs_dn_algorithm_option').tabs('option', 'active', 0 );
+    }
+    else if(algorithm === 'ants'){
+        $('#tabs_dn_algorithm_option').tabs('enable', 1 );
+        $('#tabs_dn_algorithm_option').tabs('option', 'active', 1 );
+    }
+    else if(algorithm === 'bayes'){
+        $('#tabs_dn_algorithm_option').tabs('enable', 2 );
+        $('#tabs_dn_algorithm_option').tabs('option', 'active', 2 );
+    }
+    RebuildAlgorithmOptionForm(viewer, algorithm);
+
+}
+function RebuildAlgorithmOptionForm(viewer, algorithm)
+{
+
+    if(algorithm === 'rset'){
+        $('#div_dn_algorithm_option_rset_grid_container').empty();
+        $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
+        $('#form_dn_algorithm_option_rset').empty();
+        var flds = [
+            { display: "选择数据文件", id: "json_file", newline: true, type: "file", group: '导入外部数据', width: 250, labelwidth: 120,
+            handleFile:function(e){
+                function to_json(workbook) {
+                    var result = [];
+                    workbook.SheetNames.forEach(function(sheetName) {
+                        var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+                        if(roa.length > 0){
+                            result.push({sheet_name:sheetName, sheet_data:roa});
+                        }
+                    });
+                    return result;
+                }
+                var files = e.target.files;
+                var f = files[0];
+
+                var reader = new FileReader();
+                if(f && f.name) {
+                    if(!_.endsWith(f.name, '.xls')){
+                        ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                        return;
+                    }
+                    var name = f.name;
+                    console.log(name);
+                    reader.onload = function (e) {
+                        var data = e.target.result;
+                        var wb = XLS.read(data, {type: 'binary'});
+                        $.webgis.data.state_examination.import_excel_data = to_json(wb);
+                        var arr = _.pluck($.webgis.data.state_examination.import_excel_data, 'sheet_name');
+                        $('#form_state_examination_import_multiple_sheet_name').empty();
+                        $('#form_state_examination_import_multiple_sheet_name').append('<option value="">(请选择Sheet名称)</option>');
+                        _.forEach(arr, function (item) {
+                            $('#form_state_examination_import_multiple_sheet_name').append('<option value="' + item + '">' + item + '</option>');
+                        });
+                        $('#form_state_examination_import_multiple_sheet_name').multipleSelect('refresh');
+                    };
+                    reader.readAsBinaryString(f);
+                }else{
+                    $('#form_state_examination_import_multiple_sheet_name').empty();
+                    $('#form_state_examination_import_multiple_sheet_name').multipleSelect('refresh');
+                    rebuild_column_select(unitlist, []);
+                }
+            }
+            },
+        ];
+    }
+    else if(algorithm === 'ants') {
+    }
+    else if(algorithm === 'bayes'){
+
+    }
 }
 function ShowDNEditDialog(viewer)
 {
