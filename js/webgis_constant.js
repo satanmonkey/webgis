@@ -140,9 +140,9 @@ $.webgis.data.models_gltf_files = [];
 $.webgis.data.buffers = [];
 $.webgis.data.borders = [];
 $.webgis.data.dn_network.import_excel_data = {};
-$.webgis.data.dn_network.import_excel_data.rset = [];
-$.webgis.data.dn_network.import_excel_data.ants = [];
-$.webgis.data.dn_network.import_excel_data.bayes = [];
+$.webgis.data.dn_network.import_excel_data.rset = {};
+$.webgis.data.dn_network.import_excel_data.ants = {};
+$.webgis.data.dn_network.import_excel_data.bayes = {};
 
 $.webgis.constant = {};
 $.webgis.constant.dn = {

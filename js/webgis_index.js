@@ -3247,7 +3247,6 @@ function CreateDialogSkeleton(viewer, dlg_id)
                         <div id="dn_algorithm_option_rset">\
                             <form id="form_dn_algorithm_option_rset"></form>\
                             <div id="div_dn_algorithm_option_rset_grid_container">\
-                                <div id="div_dn_algorithm_option_rset_grid"></div>\
                             </div>\
                         </div>\
                         <div id="dn_algorithm_option_ants" >\
@@ -11539,22 +11538,76 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
 }
 function RebuildAlgorithmOptionForm(viewer, algorithm)
 {
-    var handleFile = function(e){
-        var to_json = function(workbook) {
-            var result = [];
-            workbook.SheetNames.forEach(function(sheetName) {
-                var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
-                roa = _.map(roa, function(item){
-                    _.forIn(item, function(v, k){
-                        item[k] = parseFloat(v);
-                    });
-                    delete item.__rowNum__;
-                    return item;
+    var to_json = function(workbook) {
+        var result = [];
+        workbook.SheetNames.forEach(function(sheetName) {
+            var roa = XLS.utils.sheet_to_row_object_array(workbook.Sheets[sheetName]);
+            roa = _.map(roa, function(item){
+                _.forIn(item, function(v, k){
+                    item[k] = parseFloat(v);
                 });
-                result.push({sheet_name:sheetName, sheet_data:roa});
+                delete item.__rowNum__;
+                return item;
             });
-            return result;
-        };
+            //result.push({sheet_name:sheetName, sheet_data:roa});
+            result.push(roa);
+        });
+        return result;
+    };
+    var handleFile_rset_G_state = function(e){
+        var files = e.target.files;
+        var f = files[0];
+
+        var reader = new FileReader();
+        if(f && f.name) {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            var name = f.name;
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var tabledata = {Rows:[]};
+                $('#div_dn_algorithm_option_rset_grid_container').empty();
+                $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
+                $.webgis.data.dn_network.import_excel_data.rset.G_state = to_json(wb);
+                var col_headers  = [
+                    {display:'供电区1', id:'a2'},
+                    {display:'供电区2', id:'a3'},
+                    {display:'供电区3', id:'a4'},
+                    {display:'供电区4', id:'a5'},
+                    {display:'供电区5', id:'a6'},
+                    {display:'供电区6', id:'a7'},
+                ];
+                var idx = 0;
+                _.forEach($.webgis.data.dn_network.import_excel_data.rset.G_state, function(item){
+                    tabledata.Rows.push({sheets:idx+1, children:item});
+                    idx += 1;
+                });
+                var columns = [];
+                columns.push({display:'序号', name:'sheets', width: 100});
+                _.forEach(col_headers, function(item){
+                    var header = {display:item.display, name:item.id, width: 100};
+                    columns.push(header);
+                });
+                var g = $('#div_dn_algorithm_option_rset_grid').ligerGrid({
+                    columns: columns,
+                    data: tabledata,
+                    usePager:false,
+                    enabledEdit: false,
+                    clickToEdit: false,
+                    //checkbox: true,
+                    tree: { columnName: 'sheets' },
+                    pageSize: 50,
+                    alternatingRow:false
+                });
+                g.collapseAll();
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+    var handleFile_bayes_init_vector = function(e){
         var files = e.target.files;
         var f = files[0];
 
@@ -11570,42 +11623,26 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                 var wb = XLS.read(data, {type: 'binary'});
                 var col_headers  = [];
                 var gridid, tabledata = {Rows:[]};
-                if(algorithm === 'rset')
-                {
-                    $('#div_dn_algorithm_option_rset_grid_container').empty();
-                    $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
-                    $.webgis.data.dn_network.import_excel_data.rset = to_json(wb);
-                    //console.log(algorithm);
-                    //console.log($.webgis.data.dn_network.import_excel_data.rset);
-                    col_headers  = [
-                        {display:'LnBR_No',id:'LnBR_No'},
-                        {display:'Feeder_from', id:'Feeder_from'},
-                        {display:'Feeder_to', id:'Feeder_to'},
-                        {display:'Bus_from', id:'Bus_from'},
-                        {display:'Bus_to', id:'Bus_to'},
-                        {display:'R', id:'R'},
-                        {display:'X', id:'R'},
-                        {display:'B_1_2', id:'B_1_2'},
-                        {display:'kVA', id:'kVA'},
-                        {display:'State', id:'State'},
-                    ];
-                    gridid = 'div_dn_algorithm_option_rset_grid';
-                    _.forEach($.webgis.data.dn_network.import_excel_data.rset, function(item){
-                        tabledata.Rows.push({sheets:item.sheet_name, children:item.sheet_data});
-                    });
-                }
-                else if(algorithm === 'ants') {
-                    $.webgis.data.dn_network.import_excel_data.rset = to_json(wb);
-                    //console.log(algorithm);
-                    //console.log($.webgis.data.dn_network.import_excel_data.ants);
-                }
-                else if(algorithm === 'bayes'){
-                    $.webgis.data.dn_network.import_excel_data.bayes = to_json(wb);
-                    //console.log(algorithm);
-                    //console.log($.webgis.data.dn_network.import_excel_data.bayes);
-                }
+                $('#div_dn_algorithm_option_bayes_init_vector_grid_container').empty();
+                $('#div_dn_algorithm_option_bayes_init_vector_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
+                $.webgis.data.dn_network.import_excel_data.bayes.init_vector = to_json(wb);
+                col_headers  = [
+                    {display:'S1', id:'S1'},
+                    {display:'S2', id:'S2'},
+                    {display:'S3', id:'S3'},
+                    {display:'S4', id:'S4'},
+                    {display:'S5', id:'S5'},
+                    {display:'S6', id:'S6'},
+                    {display:'S7', id:'S7'},
+                ];
+                gridid = 'div_dn_algorithm_option_rset_grid';
+                var idx = 0;
+                _.forEach($.webgis.data.dn_network.import_excel_data.bayes.init_vector, function(item){
+                    tabledata.Rows.push({sheets:idx+1, children:item});
+                    idx += 1;
+                });
                 var columns = [];
-                columns.push({display:'工作簿', name:'sheets', width: 100});
+                columns.push({display:'序号', name:'sheets', width: 100});
                 _.forEach(col_headers, function(item){
                     var header = {display:item.display, name:item.id, width: 100};
                     columns.push(header);
@@ -11631,7 +11668,9 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
         $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
         $('#form_dn_algorithm_option_rset').empty();
         var flds = [
-            { display: "选择数据文件", id: "json_file", newline: true, type: "file", group: '导入外部数据', width: 250, labelwidth: 120,handleFile:handleFile},
+            { display: "原始决策表数据", id: "json_file", newline: true, type: "file", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_rset_G_state
+            },
         ];
         $('#form_dn_algorithm_option_rset').webgisform(flds, {
             prefix: "form_dn_algorithm_option_rset_",
@@ -11641,6 +11680,21 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     else if(algorithm === 'ants') {
     }
     else if(algorithm === 'bayes'){
+        $('#form_dn_algorithm_option_bayes').empty();
+        var flds = [
+            { display: "故障概率", id: "bayes_q", newline: true, type: "spinner", step:0.01,max:1.0, min:0.0, group: '初始化数据', width: 250, labelwidth: 120,
+                change:function(v){
+
+                }
+            },
+            { display: "故障信息向量", id: "init_vector", newline: true, type: "file", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_bayes_init_vector
+            },
+        ];
+        $('#form_dn_algorithm_option_bayes').webgisform(flds, {
+            prefix: "form_dn_algorithm_option_bayes_",
+            maxwidth: 420
+        });
     }
 }
 function ShowDNEditDialog(viewer)
