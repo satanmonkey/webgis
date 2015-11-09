@@ -496,6 +496,25 @@ function InitWebGISFormDefinition()
                             $('#' + fldid).parent().hide();
                         }
                     }
+                    if(fld.type == 'grid' && fld.group == group)
+                    {
+                        var provider = 'ligerui';
+                        var defaultvalue = '...';
+                        if(fld.provider) provider = fld.provider;
+                        if(fld.defaultvalue) defaultvalue = fld.defaultvalue;
+                        $('#' + 'fieldset_' + uid).append('<div style="' + stylewidth + 'margin:' + that.options.margin + 'px;' + newline
+                        + '"><label for="' + fldid + '" style="display:inline-block;text-align:right;width:' + that.options.labelwidth + 'px;">' + fld.display + ':</label>'
+                        + '<label for="' + fldid + '" name="' + fldid + '" style="border:1px solid ' + $.webgis.color.base_color + ';text-align:center;width:' + fld.width + 'px;heihgt:30px;display:inline-block;padding:6px 12px;cursor: pointer;">' + defaultvalue + '</label>'
+                        + '<input id="' + fldid + '"name="' + fldid + '" type="file" style="display:none;"/>'
+                        + '<div id="' + fldid + '_hasdatatip"></div>'
+                        + '</div>');
+                        if(fld.handleFile){
+                            $('#' + fldid).off();
+                            $('#' + fldid).on('change', fld.handleFile);
+                        }
+
+                    }
+
                 });
             });
 
