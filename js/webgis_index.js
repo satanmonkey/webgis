@@ -11468,21 +11468,117 @@ function ShowDNFaultDetectDialog(viewer)
 }
 function ShowDNAlgorithmOptionDialog(viewer, algorithm)
 {
-    var check_form = function(){
-        var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
-        if(formdata.algorithm === 'rset'){
-            //var formdata1 = $('#form_dn_network_fault_detect').webgisform('getdata');
+    var get_form_data = function(algorithm){
+        var ret = {};
+        //var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
+        ret.algorithm = algorithm;
+        if(algorithm === 'rset')
+        {
             if(_.isUndefined($.webgis.data.dn_network.import_excel_data.rset.G_state) || $.webgis.data.dn_network.import_excel_data.rset.G_state.length===0)
             {
-
+                ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
+                ret = {};
+            }else{
+                ret.G_state = $.webgis.data.dn_network.import_excel_data.rset.G_state;
             }
         }
-        if(formdata.algorithm === 'ants'){
+        if(algorithm === 'ants')
+        {
+            var formdata1 = $('#form_dn_algorithm_option_ants').webgisform('getdata');
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.ants.init_vector) || $.webgis.data.dn_network.import_excel_data.ants.init_vector.length===0)
+            {
+                ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
+                ret = {};
+            }else{
+                ret.init_vector = $.webgis.data.dn_network.import_excel_data.ants.init_vector;
+            }
+
+            if(_.isNumber(formdata1.ants_NC_max)){
+                ret.ants_NC_max = formdata1.ants_NC_max;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入最大迭代次数.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.ants_m)){
+                ret.ants_m = formdata1.ants_m;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入蚂蚁个数.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.ants_Alpha)){
+                ret.ants_Alpha = formdata1.ants_Alpha;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入信息素重要程度.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.ants_Beta)){
+                ret.ants_Beta = formdata1.ants_Beta;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入启发式因子.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.ants_Rho)){
+                ret.ants_Rho = formdata1.ants_Rho;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入信息素蒸发系数.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.ants_Q)){
+                ret.ants_Q = formdata1.ants_Q;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入信息素增加强度系数.');
+                ret = {};
+            }
 
         }
-        if(formdata.algorithm === 'bayes'){
+        if(algorithm === 'bayes'){
+            var formdata1 = $('#form_dn_algorithm_option_bayes').webgisform('getdata');
+            if(_.isNumber(formdata1.bayes_q)){
+                ret.bayes_q = formdata1.bayes_q;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入故障概率.');
+                ret = {};
+            }
+            if(_.isNumber(formdata1.bayes_q)){
+                ret.bayes_q = formdata1.bayes_q;
+            }else{
+                ShowMessage(null, 400, 250, '错误', '请输入故障概率.');
+                ret = {};
+            }
 
         }
+        if(algorithm === 'ants' || algorithm === 'bayes')
+        {
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_bus) || $.webgis.data.dn_network.import_excel_data.data_bus.length===0)
+            {
+                ShowMessage(null, 400, 250, '错误', '请载入bus数据.');
+                ret = {};
+            }else{
+                ret.init_vector = $.webgis.data.dn_network.import_excel_data.data_bus;
+            }
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_gen) || $.webgis.data.dn_network.import_excel_data.data_gen.length===0)
+            {
+                ShowMessage(null, 400, 250, '错误', '请载入gen数据.');
+                ret = {};
+            }else{
+                ret.data_gen = $.webgis.data.dn_network.import_excel_data.data_gen;
+            }
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_Lnbr) || $.webgis.data.dn_network.import_excel_data.data_Lnbr.length===0)
+            {
+                ShowMessage(null, 400, 250, '错误', '请载入Lnbr数据.');
+                ret = {};
+            }else{
+                ret.data_Lnbr = $.webgis.data.dn_network.import_excel_data.data_Lnbr;
+            }
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_ConLnbr) || $.webgis.data.dn_network.import_excel_data.data_ConLnbr.length===0)
+            {
+                ShowMessage(null, 400, 250, '错误', '请载入ConLnbr数据.');
+                ret = {};
+            }else{
+                ret.data_ConLnbr = $.webgis.data.dn_network.import_excel_data.data_ConLnbr;
+            }
+        }
+        return ret;
     };
     CreateDialogSkeleton(viewer, 'dlg_dn_algorithm_option');
     $('#dlg_dn_algorithm_option').dialog({
@@ -11511,8 +11607,42 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
             {
                 text: "定位",
                 click: function () {
-                    if(check_form()){
+                    var formdata = get_form_data(algorithm)
+                    if(!_.isEmpty(formdata)){
+                        ShowConfirm(null, 500, 200,
+                            '提交确认',
+                            '确认提交吗? ',
+                            function () {
+                                ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
+                                $.ajax({
+                                    url: '/distribute_network/fault_position/position',
+                                    method: 'post',
+                                    data: JSON.stringify(formdata)
+                                })
+                                .always(function () {
+                                    ShowProgressBar(false);
+                                })
+                                .done(function (data1) {
+                                    //$.jGrowl("保存成功", {
+                                    //    life: 2000,
+                                    //    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                    //    theme: 'bubblestylesuccess',
+                                    //    glue:'before'
+                                    //});
+                                    data1 = JSON.parse(data1);
+                                    console.log(data1);
+                                })
+                                .fail(function (jqxhr, textStatus, e) {
+                                    $.jGrowl("提交失败:" + e, {
+                                        life: 2000,
+                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        theme: 'bubblestylefail',
+                                        glue: 'before'
+                                    });
+                                });
+                            },function(){
 
+                            });
 
                     }
                 }
