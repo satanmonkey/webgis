@@ -3246,8 +3246,6 @@ function CreateDialogSkeleton(viewer, dlg_id)
                         </ul>\
                         <div id="dn_algorithm_option_rset">\
                             <form id="form_dn_algorithm_option_rset"></form>\
-                            <div id="div_dn_algorithm_option_rset_grid_container">\
-                            </div>\
                         </div>\
                         <div id="dn_algorithm_option_ants" >\
                             <form id="form_dn_algorithm_option_ants"></form>\
@@ -11425,11 +11423,11 @@ function ShowDNFaultDetectDialog(viewer)
                 }
             }
         },
-        { display: "故障定位", id: "fault_position", newline: true, type: "button", defaultvalue:'定位',  group: '操作', width: 200, labelwidth: 140,
-            click:function(){
-
-            }
-        }
+        //{ display: "故障定位", id: "fault_position", newline: true, type: "button", defaultvalue:'定位',  group: '操作', width: 200, labelwidth: 140,
+        //    click:function(){
+        //
+        //    }
+        //}
     ];
     $('#form_dn_network_fault_detect').webgisform(flds, {
         prefix: "form_dn_network_fault_detect_",
@@ -11470,6 +11468,22 @@ function ShowDNFaultDetectDialog(viewer)
 }
 function ShowDNAlgorithmOptionDialog(viewer, algorithm)
 {
+    var check_form = function(){
+        var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
+        if(formdata.algorithm === 'rset'){
+            //var formdata1 = $('#form_dn_network_fault_detect').webgisform('getdata');
+            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.rset.G_state) || $.webgis.data.dn_network.import_excel_data.rset.G_state.length===0)
+            {
+
+            }
+        }
+        if(formdata.algorithm === 'ants'){
+
+        }
+        if(formdata.algorithm === 'bayes'){
+
+        }
+    };
     CreateDialogSkeleton(viewer, 'dlg_dn_algorithm_option');
     $('#dlg_dn_algorithm_option').dialog({
         width: 540,
@@ -11497,7 +11511,10 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
             {
                 text: "定位",
                 click: function () {
+                    if(check_form()){
 
+
+                    }
                 }
             },
             {
@@ -11513,9 +11530,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         active: 0,
         beforeActivate: function( event, ui ) {
             var id = ui.newTab.context.hash;
-            console.log(id);
-            if (_.endsWith(id, algorithm)) {
-            }
+            //if (_.endsWith(id, algorithm)) {
+            //}
         }
     });
     $('#tabs_dn_algorithm_option').tabs('disable', 0 );
@@ -11557,52 +11573,40 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     var handleFile_rset_G_state = function(e){
         var files = e.target.files;
         var f = files[0];
-
+        var inputfile = e.target;
         var reader = new FileReader();
         if(f && f.name) {
             if(!_.endsWith(f.name, '.xls')){
                 ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
                 return;
             }
-            var name = f.name;
             reader.onload = function (e) {
                 var data = e.target.result;
                 var wb = XLS.read(data, {type: 'binary'});
-                var tabledata = {Rows:[]};
-                $('#div_dn_algorithm_option_rset_grid_container').empty();
-                $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
+                var id = $(inputfile).attr('id');
                 $.webgis.data.dn_network.import_excel_data.rset.G_state = to_json(wb);
-                var col_headers  = [
-                    {display:'供电区1', id:'a2'},
-                    {display:'供电区2', id:'a3'},
-                    {display:'供电区3', id:'a4'},
-                    {display:'供电区4', id:'a5'},
-                    {display:'供电区5', id:'a6'},
-                    {display:'供电区6', id:'a7'},
-                ];
-                var idx = 0;
-                _.forEach($.webgis.data.dn_network.import_excel_data.rset.G_state, function(item){
-                    tabledata.Rows.push({sheets:idx+1, children:item});
-                    idx += 1;
-                });
-                var columns = [];
-                columns.push({display:'序号', name:'sheets', width: 100});
-                _.forEach(col_headers, function(item){
-                    var header = {display:item.display, name:item.id, width: 100};
-                    columns.push(header);
-                });
-                var g = $('#div_dn_algorithm_option_rset_grid').ligerGrid({
-                    columns: columns,
-                    data: tabledata,
-                    usePager:false,
-                    enabledEdit: false,
-                    clickToEdit: false,
-                    //checkbox: true,
-                    tree: { columnName: 'sheets' },
-                    pageSize: 50,
-                    alternatingRow:false
-                });
-                g.collapseAll();
+                var jsondata = $.webgis.data.dn_network.import_excel_data.rset.G_state;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [
+                            {display:'供电区1', id:'a2'},
+                            {display:'供电区2', id:'a3'},
+                            {display:'供电区3', id:'a4'},
+                            {display:'供电区4', id:'a5'},
+                            {display:'供电区5', id:'a6'},
+                            {display:'供电区6', id:'a7'},
+                        ];
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+
+
             };
             reader.readAsBinaryString(f);
         }
@@ -11610,9 +11614,10 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     var handleFile_bayes_init_vector = function(e){
         var files = e.target.files;
         var f = files[0];
-
+        var inputfile = e.target;
         var reader = new FileReader();
-        if(f && f.name) {
+        if(f && f.name)
+        {
             if(!_.endsWith(f.name, '.xls')){
                 ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
                 return;
@@ -11620,70 +11625,245 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
             reader.onload = function (e) {
                 var data = e.target.result;
                 var wb = XLS.read(data, {type: 'binary'});
-                var tabledata = {Rows:[]};
-                var id = $(e.target).attr('id');
-                $(e.target).parent().find('id[$=_grid_container]').empty();
-                $(e.target).parent().find('id[$=_grid_container]').append('<div id="' + id + '_grid"></div>');
+                var id = $(inputfile).attr('id');
                 $.webgis.data.dn_network.import_excel_data.bayes.init_vector = to_json(wb);
-                if($.webgis.data.dn_network.import_excel_data.bayes.init_vector.length){
+                var jsondata = $.webgis.data.dn_network.import_excel_data.bayes.init_vector;
+                if(jsondata.length){
                     $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
                 }else{
                     $('#' + id + '_hasdatatip').html('');
                 }
-                if($.webgis.data.dn_network.import_excel_data.bayes.init_vector.length){
+                if(jsondata.length){
                     $('#' + id + '_hasdatatip').find('a').off();
-                    $('#' + id + '_hasdatatip').find('a').on('click', function(){
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [];
-                        if($.webgis.data.dn_network.import_excel_data.bayes.init_vector[0].length){
+                        if(jsondata[0].length){
                             var idx = 1;
-                            _.forIn($.webgis.data.dn_network.import_excel_data.bayes.init_vector[0][0], function(v, k){
+                            _.forIn(jsondata[0][0], function(v, k){
                                 col_headers.push({display:'S' + idx, id:'S' + idx});
                                 idx += 1;
                             });
                         }
-                        ShowDNParameterTipGrid(viewer, col_headers, $.webgis.data.dn_network.import_excel_data.bayes.init_vector);
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
                 }
-
-
-
-
-
-
-                var gridid = id + '_grid';
-                var idx = 0;
-                _.forEach($.webgis.data.dn_network.import_excel_data.bayes.init_vector, function(item){
-                    tabledata.Rows.push({sheets:idx+1, children:item});
-                    idx += 1;
-                });
-                var columns = [];
-                columns.push({display:'序号', name:'sheets', width: 100});
-                _.forEach(col_headers, function(item){
-                    var header = {display:item.display, name:item.id, width: 100};
-                    columns.push(header);
-                });
-                var g = $('#' + gridid).ligerGrid({
-                    columns: columns,
-                    data: tabledata,
-                    usePager:false,
-                    enabledEdit: false,
-                    clickToEdit: false,
-                    //checkbox: true,
-                    tree: { columnName: 'sheets' },
-                    pageSize: 50,
-                    alternatingRow:false
-                });
-                g.collapseAll();
             };
             reader.readAsBinaryString(f);
         }
     };
+    var handleFile_ants_init_vector = function(e){
+        var files = e.target.files;
+        var f = files[0];
+        var inputfile = e.target;
+        var reader = new FileReader();
+        if(f && f.name)
+        {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var id = $(inputfile).attr('id');
+                $.webgis.data.dn_network.import_excel_data.ants.init_vector = to_json(wb);
+                var jsondata = $.webgis.data.dn_network.import_excel_data.ants.init_vector;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [];
+                        if(jsondata[0].length){
+                            var idx = 1;
+                            _.forIn(jsondata[0][0], function(v, k){
+                                col_headers.push({display:'S' + idx, id:'S' + idx});
+                                idx += 1;
+                            });
+                        }
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+    var handleFile_data_bus = function(e){
+        var files = e.target.files;
+        var f = files[0];
+        var inputfile = e.target;
+        var reader = new FileReader();
+        if(f && f.name)
+        {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var id = $(inputfile).attr('id');
+                $.webgis.data.dn_network.import_excel_data.data_bus = to_json(wb);
+                var jsondata = $.webgis.data.dn_network.import_excel_data.data_bus;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [
+                            {display:'No', id:'No'},
+                            {display:'Type', id:'Type'},
+                            {display:'MW', id:'MW'},
+                            {display:'Mvar', id:'Mvar'},
+                            {display:'GS', id:'GS'},
+                            {display:'Bs', id:'Bs'},
+                            {display:'Mag', id:'Mag'},
+                            {display:'Deg', id:'Deg'},
+                        ];
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+    var handleFile_data_gen = function(e){
+        var files = e.target.files;
+        var f = files[0];
+        var inputfile = e.target;
+        var reader = new FileReader();
+        if(f && f.name)
+        {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var id = $(inputfile).attr('id');
+                $.webgis.data.dn_network.import_excel_data.data_gen = to_json(wb);
+                var jsondata = $.webgis.data.dn_network.import_excel_data.data_gen;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [
+                            {display:'Bus_No', id:'Bus_No'},
+                            {display:'Gen_MW', id:'Gen_MW'},
+                            {display:'Gen_MVA', id:'Gen_MVA'},
+                            {display:'Q_Max', id:'Q_Max'},
+                            {display:'Q_Min', id:'Q_Min'},
+                            {display:'Vol_Mag', id:'Vol_Mag'},
+                        ];
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+    var handleFile_data_Lnbr = function(e){
+        var files = e.target.files;
+        var f = files[0];
+        var inputfile = e.target;
+        var reader = new FileReader();
+        if(f && f.name)
+        {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var id = $(inputfile).attr('id');
+                $.webgis.data.dn_network.import_excel_data.data_Lnbr = to_json(wb);
+                var jsondata = $.webgis.data.dn_network.import_excel_data.data_Lnbr;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [
+                            {display:'LnBR', id:'LnBR'},
+                            {display:'Bus_from', id:'Bus_from'},
+                            {display:'Bus_to', id:'Bus_to'},
+                            {display:'R', id:'R'},
+                            {display:'X', id:'X'},
+                            {display:'B_1_2', id:'B_1_2'},
+                            {display:'kVA', id:'kVA'},
+                            {display:'State', id:'State'},
+                        ];
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+    var handleFile_data_ConLnbr = function(e){
+        var files = e.target.files;
+        var f = files[0];
+        var inputfile = e.target;
+        var reader = new FileReader();
+        if(f && f.name)
+        {
+            if(!_.endsWith(f.name, '.xls')){
+                ShowMessage(null, 400, 220, '出错了', '批量导入仅支持Excel97-2003格式(.xls),如果是(.xlsx)，请转换为(.xls)');
+                return;
+            }
+            reader.onload = function (e) {
+                var data = e.target.result;
+                var wb = XLS.read(data, {type: 'binary'});
+                var id = $(inputfile).attr('id');
+                $.webgis.data.dn_network.import_excel_data.data_ConLnbr = to_json(wb);
+                var jsondata = $.webgis.data.dn_network.import_excel_data.data_ConLnbr;
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
+                }else{
+                    $('#' + id + '_hasdatatip').html('');
+                }
+                if(jsondata.length){
+                    $('#' + id + '_hasdatatip').find('a').off();
+                    $('#' + id + '_hasdatatip').find('a').on('click', function(e){
+                        var col_headers  = [
+                            {display:'LnBR_No', id:'LnBR_No'},
+                            {display:'Feeder_from', id:'Feeder_from'},
+                            {display:'Feeder_to', id:'Feeder_to'},
+                            {display:'Bus_from', id:'Bus_from'},
+                            {display:'Bus_to', id:'Bus_to'},
+                            {display:'R', id:'R'},
+                            {display:'X', id:'X'},
+                            {display:'B_1_2', id:'B_1_2'},
+                            {display:'kVA', id:'kVA'},
+                            {display:'State', id:'State'},
+                        ];
+                        ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
+                    });
+                }
+            };
+            reader.readAsBinaryString(f);
+        }
+    };
+
     if(algorithm === 'rset'){
-        $('#div_dn_algorithm_option_rset_grid_container').empty();
-        $('#div_dn_algorithm_option_rset_grid_container').append('<div id="div_dn_algorithm_option_rset_grid"></div>');
         $('#form_dn_algorithm_option_rset').empty();
         var flds = [
-            { display: "原始决策表数据", id: "json_file", newline: true, type: "file", group: '导入外部数据', width: 220, labelwidth: 150,
+            { display: "原始决策表", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
                 handleFile:handleFile_rset_G_state
             },
         ];
@@ -11693,17 +11873,81 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
         });
     }
     else if(algorithm === 'ants') {
-    }
-    else if(algorithm === 'bayes'){
-        $('#form_dn_algorithm_option_bayes').empty();
+        $('#form_dn_algorithm_option_ants').empty();
         var flds = [
-            { display: "故障概率", id: "bayes_q", newline: true, type: "spinner", step:0.01,max:1.0, min:0.0, group: '初始化数据', width: 250, labelwidth: 120,
+            { display: "最大迭代次数", id: "ants_NC_max", newline: true, type: "spinner", step:1,max:100, min:1, defaultvalue:100, group: '初始化数据', width: 250, labelwidth: 120,
                 change:function(v){
 
                 }
             },
-            { display: "故障信息向量", id: "init_vector", newline: true, type: "grid", group: '导入外部数据', width: 220, labelwidth: 150,
+            { display: "蚂蚁个数", id: "ants_m", newline: true, type: "spinner", step:1,max:50, min:1, defaultvalue:20, group: '初始化数据', width: 250, labelwidth: 120,
+                change:function(v){
+
+                }
+            },
+            { display: "信息素重要程度", id: "ants_Alpha", newline: true, type: "spinner", step:1,max:10, min:1, defaultvalue:1, group: '初始化数据', width: 230, labelwidth: 140,
+                change:function(v){
+
+                }
+            },
+            { display: "启发式因子", id: "ants_Beta", newline: true, type: "spinner", step:1,max:10, min:1, defaultvalue:1, group: '初始化数据', width: 230, labelwidth: 140,
+                change:function(v){
+
+                }
+            },
+            { display: "信息素蒸发系数", id: "ants_Rho", newline: true, type: "spinner", step:0.01,max:1.0, min:0.0, defaultvalue:0.95, group: '初始化数据', width: 230, labelwidth: 140,
+                change:function(v){
+
+                }
+            },
+            { display: "信息素增加强度系数", id: "ants_Q", newline: true, type: "spinner", step:1,max:10, min:1, defaultvalue:1, group: '初始化数据', width: 200, labelwidth: 170,
+                change:function(v){
+
+                }
+            },
+            { display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_ants_init_vector
+            },
+            { display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_bus
+            },
+            { display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_gen
+            },
+            { display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_Lnbr
+            },
+            { display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
+                handleFile:handleFile_data_ConLnbr
+            },
+        ];
+        $('#form_dn_algorithm_option_ants').webgisform(flds, {
+            prefix: "form_dn_algorithm_option_ants_",
+            maxwidth: 420
+        });
+    }
+    else if(algorithm === 'bayes'){
+        $('#form_dn_algorithm_option_bayes').empty();
+        var flds = [
+            { display: "故障概率", id: "bayes_q", newline: true, type: "spinner", step:0.01,max:1.0, min:0.0, defaultvalue:0.3, group: '初始化数据', width: 250, labelwidth: 120,
+                change:function(v){
+
+                }
+            },
+            { display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
                 handleFile:handleFile_bayes_init_vector
+            },
+            { display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_bus
+            },
+            { display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_gen
+            },
+            { display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_Lnbr
+            },
+            { display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
+                handleFile:handleFile_data_ConLnbr
             },
         ];
         $('#form_dn_algorithm_option_bayes').webgisform(flds, {
@@ -11711,6 +11955,60 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
             maxwidth: 420
         });
     }
+}
+function ShowDNParameterTipGrid(viewer, pos, col_headers, data){
+    var divw = 800, divh = 400;
+    //console.log(pos);
+    $('#dn_parameter_tip_grid_container').remove();
+    $('body').append('<div id="dn_parameter_tip_grid_container" ><div id="dn_parameter_tip_grid_container1" ><div id="dn_parameter_tip_grid"></div></div><div' +
+        ' id="dn_parameter_tip_grid_close"></div></div>');
+    $('#dn_parameter_tip_grid_container').hide();
+    //var top = Math.floor(pos.top), left = Math.floor(pos.left);
+    var left = Math.floor(($( window ).width() - divw)/2);
+    var top = Math.floor(($( window ).height()- divh)/2);
+    $('#dn_parameter_tip_grid_container')
+        .css('top', top + 'px')
+        .css('left', left + 'px')
+        .css('width', divw + 'px')
+        .css('height', divh + 'px');
+    $('#dn_parameter_tip_grid_container1')
+        .css('width', divw + 'px')
+        .css('max-height', (divh - 50) + 'px')
+        .css('overflow', 'auto');
+    ;
+    var idx = 0;
+    var tabledata = {Rows:[]};
+    _.forEach(data, function(item){
+        tabledata.Rows.push({sheets:idx+1, children:item});
+        idx += 1;
+    });
+    var columns = [];
+    columns.push({display:'序号', name:'sheets', width: 100});
+    _.forEach(col_headers, function(item){
+        var header = {display:item.display, name:item.id, width: 100};
+        columns.push(header);
+    });
+
+    var g = $('#dn_parameter_tip_grid').ligerGrid({
+        columns: columns,
+        data: tabledata,
+        usePager:false,
+        enabledEdit: false,
+        clickToEdit: false,
+        //checkbox: true,
+        tree: { columnName: 'sheets' },
+        pageSize: 20,
+        alternatingRow:false
+    });
+    g.collapseAll();
+    $('#dn_parameter_tip_grid_container').show('scale', { percent: 100 }, 500);
+    $('#dn_parameter_tip_grid_close').button({label:'关闭'});
+    //$('#dn_parameter_tip_grid_container').off();
+    $('#dn_parameter_tip_grid_close').on('click', function(){
+        $('#dn_parameter_tip_grid_container').hide('scale', { percent: 0 }, 500, function(){
+            $('#dn_parameter_tip_grid_container').remove();
+        });
+    });
 }
 function ShowDNEditDialog(viewer)
 {

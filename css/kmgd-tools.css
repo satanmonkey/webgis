@@ -1080,3 +1080,18 @@ input[type="button"].btn-block {
 	text-align: center;
 	width:95%;
 }
+#dn_parameter_tip_grid_container
+{
+	z-index: 9999;
+	opacity: 0.8;
+	position: absolute;
+	border:1px solid #00FF00;
+	background-color:#000000;
+}
+#dn_parameter_tip_grid_close
+{
+	width:95%;
+	position:absolute;
+	bottom: 10px;
+}
+
