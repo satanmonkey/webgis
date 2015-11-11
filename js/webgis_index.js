@@ -10255,7 +10255,7 @@ function SaveEdge(viewer, id, callback)
 
 function SaveDN(viewer, callback)
 {
-    var formdata = $("#form_dn_create" ).webgisform('getdata');
+    var formdata = $("#form_dn_network_create" ).webgisform('getdata');
     var geojson = {};
     geojson._id = null;
     geojson.properties = {};
@@ -10263,28 +10263,33 @@ function SaveDN(viewer, callback)
     _.forEach(formdata, function(v, k){
         geojson['properties'][k] = v;
     });
-    var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'action':'save', 'data':geojson};
     ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
-    MongoFind(cond, function(data1){
-        ShowProgressBar(false);
-        if(data1.length>0)
-        {
-            $.jGrowl("保存成功", { 
-                life: 2000,
-                position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                theme: 'bubblestylesuccess',
-                glue:'before'
-            });
-        }else
-        {
-            $.jGrowl("保存失败", { 
-                life: 2000,
-                position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                theme: 'bubblestylefail',
-                glue:'before'
-            });
-        }
+    $.ajax({
+        url:'/distribute_network/save/network',
+		method: 'post',
+		data: JSON.stringify(geojson)
+	})
+	.always(function () {
+		ShowProgressBar(false);
+	})
+	.done(function (data1) {
+        $.jGrowl("保存成功", {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylesuccess',
+            glue:'before'
+        });
+        data1 = JSON.parse(data1);
+        $.webgis.data.distribute_network = data1;
         if(callback) callback(data1);
+	})
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("保存失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
     });
 }
 
@@ -12251,18 +12256,15 @@ function ShowDNEditDialog(viewer)
 		filter: true,
 		position: 'bottom',
 		onClick:function(view){
-			if(view.checked)
-			{
-				//console.log(view);
-                if(!_.isUndefined($.webgis.data.distribute_network)){
-                    var dn = _.find($.webgis.data.distribute_network, {_id: view.value});
-                    if(dn)
-                    {
-                        $("#form_dn_network_info").webgisform('clear');
-                        $("#form_dn_network_info").webgisform('setdata', dn.properties);
-                    }
+            if(!_.isUndefined($.webgis.data.distribute_network))
+            {
+                var dn = _.find($.webgis.data.distribute_network, {_id: view.value});
+                if(dn)
+                {
+                    $("#form_dn_network_info").webgisform('clear');
+                    $("#form_dn_network_info").webgisform('setdata', dn.properties);
                 }
-			}
+            }
 		},
 		styler: function(value) {
 			return 'color: ' + $.webgis.color.base_color + ';background: #000000;';
