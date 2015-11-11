@@ -11178,7 +11178,7 @@ function OnSelect(viewer, e, selectedEntity)
                     }
                     var webgis_type_title = '';
                     if(cz.webgis_type === 'point_tower') webgis_type_title = '杆塔';
-                    if(cz.webgis_type === 'point_dn') webgis_type_title = '配电网';
+                    if(cz.webgis_type === 'point_dn') webgis_type_title = '配电网设备';
                     ShowPoiInfoDialog(viewer, webgis_type_title + '编辑', 'point', [], id);
                 }
                 //if(cz && cz.webgis_type.indexOf('point_')>-1)
@@ -11607,43 +11607,49 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
             {
                 text: "定位",
                 click: function () {
-                    var formdata = get_form_data(algorithm)
-                    if(!_.isEmpty(formdata)){
-                        ShowConfirm(null, 500, 200,
-                            '提交确认',
-                            '确认提交吗? ',
-                            function () {
-                                ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
-                                $.ajax({
-                                    url: '/distribute_network/fault_position/position',
-                                    method: 'post',
-                                    data: JSON.stringify(formdata)
-                                })
-                                .always(function () {
-                                    ShowProgressBar(false);
-                                })
-                                .done(function (data1) {
-                                    //$.jGrowl("保存成功", {
-                                    //    life: 2000,
-                                    //    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                                    //    theme: 'bubblestylesuccess',
-                                    //    glue:'before'
-                                    //});
-                                    data1 = JSON.parse(data1);
-                                    console.log(data1);
-                                })
-                                .fail(function (jqxhr, textStatus, e) {
-                                    $.jGrowl("提交失败:" + e, {
-                                        life: 2000,
-                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                                        theme: 'bubblestylefail',
-                                        glue: 'before'
+                    var formdata1 = $('#form_dn_network_fault_detect').webgisform('getdata');
+                    if(formdata1.name && formdata1.name.length)
+                    {
+                        var formdata = get_form_data(algorithm)
+                        formdata.dn_id = formdata1.name;
+                        if(!_.isEmpty(formdata)){
+                            ShowConfirm(null, 500, 200,
+                                '提交确认',
+                                '确认提交吗? ',
+                                function () {
+                                    ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
+                                    $.ajax({
+                                        url: '/distribute_network/fault_position/position',
+                                        method: 'post',
+                                        data: JSON.stringify(formdata)
+                                    })
+                                    .always(function () {
+                                        ShowProgressBar(false);
+                                    })
+                                    .done(function (data1) {
+                                        //$.jGrowl("保存成功", {
+                                        //    life: 2000,
+                                        //    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        //    theme: 'bubblestylesuccess',
+                                        //    glue:'before'
+                                        //});
+                                        data1 = JSON.parse(data1);
+                                        console.log(data1);
+                                    })
+                                    .fail(function (jqxhr, textStatus, e) {
+                                        $.jGrowl("提交失败:" + e, {
+                                            life: 2000,
+                                            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                            theme: 'bubblestylefail',
+                                            glue: 'before'
+                                        });
                                     });
+                                },function(){
+
                                 });
-                            },function(){
-
-                            });
-
+                        }
+                    }else{
+                        ShowMessage(null, 400, 250, '错误', '请先选择配电网.');
                     }
                 }
             },
@@ -11725,12 +11731,12 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [
-                            {display:'供电区1', id:'a2'},
-                            {display:'供电区2', id:'a3'},
-                            {display:'供电区3', id:'a4'},
-                            {display:'供电区4', id:'a5'},
-                            {display:'供电区5', id:'a6'},
-                            {display:'供电区6', id:'a7'},
+                            {display:'供电区1', id:'_001_a2'},
+                            {display:'供电区2', id:'_002_a3'},
+                            {display:'供电区3', id:'_003_a4'},
+                            {display:'供电区4', id:'_004_a5'},
+                            {display:'供电区5', id:'_005_a6'},
+                            {display:'供电区6', id:'_006_a7'},
                         ];
                         ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
@@ -11847,14 +11853,14 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [
-                            {display:'No', id:'No'},
-                            {display:'Type', id:'Type'},
-                            {display:'MW', id:'MW'},
-                            {display:'Mvar', id:'Mvar'},
-                            {display:'GS', id:'GS'},
-                            {display:'Bs', id:'Bs'},
-                            {display:'Mag', id:'Mag'},
-                            {display:'Deg', id:'Deg'},
+                            {display:'No', id:'_001_No'},
+                            {display:'Type', id:'_002_Type'},
+                            {display:'MW', id:'_003_MW'},
+                            {display:'Mvar', id:'_004_Mvar'},
+                            {display:'GS', id:'_005_GS'},
+                            {display:'Bs', id:'_006_Bs'},
+                            {display:'Mag', id:'_007_Mag'},
+                            {display:'Deg', id:'_008_Deg'},
                         ];
                         ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
@@ -11889,12 +11895,12 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [
-                            {display:'Bus_No', id:'Bus_No'},
-                            {display:'Gen_MW', id:'Gen_MW'},
-                            {display:'Gen_MVA', id:'Gen_MVA'},
-                            {display:'Q_Max', id:'Q_Max'},
-                            {display:'Q_Min', id:'Q_Min'},
-                            {display:'Vol_Mag', id:'Vol_Mag'},
+                            {display:'Bus_No', id:'_001_Bus_No'},
+                            {display:'Gen_MW', id:'_002_Gen_MW'},
+                            {display:'Gen_MVA', id:'_003_Gen_MVA'},
+                            {display:'Q_Max', id:'_004_Q_Max'},
+                            {display:'Q_Min', id:'_005_Q_Min'},
+                            {display:'Vol_Mag', id:'_006_Vol_Mag'},
                         ];
                         ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
@@ -11929,14 +11935,14 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [
-                            {display:'LnBR', id:'LnBR'},
-                            {display:'Bus_from', id:'Bus_from'},
-                            {display:'Bus_to', id:'Bus_to'},
-                            {display:'R', id:'R'},
-                            {display:'X', id:'X'},
-                            {display:'B_1_2', id:'B_1_2'},
-                            {display:'kVA', id:'kVA'},
-                            {display:'State', id:'State'},
+                            {display:'LnBR', id:'_001_LnBR'},
+                            {display:'Bus_from', id:'_002_Bus_from'},
+                            {display:'Bus_to', id:'_003_Bus_to'},
+                            {display:'R', id:'_004_R'},
+                            {display:'X', id:'_005_X'},
+                            {display:'B_1_2', id:'_006_B_1_2'},
+                            {display:'kVA', id:'_007_kVA'},
+                            {display:'State', id:'_008_State'},
                         ];
                         ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
@@ -11971,16 +11977,16 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
                         var col_headers  = [
-                            {display:'LnBR_No', id:'LnBR_No'},
-                            {display:'Feeder_from', id:'Feeder_from'},
-                            {display:'Feeder_to', id:'Feeder_to'},
-                            {display:'Bus_from', id:'Bus_from'},
-                            {display:'Bus_to', id:'Bus_to'},
-                            {display:'R', id:'R'},
-                            {display:'X', id:'X'},
-                            {display:'B_1_2', id:'B_1_2'},
-                            {display:'kVA', id:'kVA'},
-                            {display:'State', id:'State'},
+                            {display:'LnBR_No', id:'_001_LnBR_No'},
+                            {display:'Feeder_from', id:'_002_Feeder_from'},
+                            {display:'Feeder_to', id:'_003_Feeder_to'},
+                            {display:'Bus_from', id:'_004_Bus_from'},
+                            {display:'Bus_to', id:'_005_Bus_to'},
+                            {display:'R', id:'_006_R'},
+                            {display:'X', id:'_007_X'},
+                            {display:'B_1_2', id:'_008_B_1_2'},
+                            {display:'kVA', id:'_009_kVA'},
+                            {display:'State', id:'_010_State'},
                         ];
                         ShowDNParameterTipGrid(viewer, $(e.target).position(), col_headers, jsondata);
                     });
