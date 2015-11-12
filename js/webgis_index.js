@@ -5394,7 +5394,7 @@ function LoadDNNodesByDNId(viewer, db_name,  _id,  callback)
 {
     ShowProgressBar(true, 670, 200, '载入中', '正在载入数据，请稍候...');
     $.ajax({
-        url:'/distribute_network/query/network',
+        url:'/distribute_network/query/network_nodes',
         method:'post',
         data: JSON.stringify({_id:_id})
     })
@@ -5409,8 +5409,9 @@ function LoadDNNodesByDNId(viewer, db_name,  _id,  callback)
             var czmls = _.map(data1, function (n) {
                 return CreateCzmlFromGeojson(n);
             });
+            //console.log(czmls);
             $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
-
+            //console.log($.webgis.data.czmls);
         }
         _.forEach(data1, function(item){
             if($.webgis.config.map_backend === 'leaflet')
@@ -5622,7 +5623,7 @@ function ReloadCzmlDataSource(viewer, z_aware, forcereload)
     var ellipsoid = viewer.scene.globe.ellipsoid;
     var arr = [];
     var pos;
-    //console.log('z_aware=' + z_aware);
+    //console.log($.webgis.data.czmls);
     arr.push({"id":"document", "version":"1.0"});
     _.forEach($.webgis.data.czmls, function(item)
     {
@@ -7740,8 +7741,6 @@ function SaveTower(viewer)
 
 function SavePoi(data, callback)
 {
-    //console.log(data);
-    //data = RemoveTerrainZOffset(data);
     if(data.point)
     {
         delete data.point;
@@ -7763,6 +7762,8 @@ function SavePoi(data, callback)
         data.type = 'Feature';
     }
     var cond = {'db':$.webgis.db.db_name, 'collection':'features', 'action':'save', 'data':data};
+    //console.log(data);
+    //return;
     ShowProgressBar(true, 670, 200, '保存中', '正在保存数据，请稍候...');
     MongoFind(cond, function(data1){
         ShowProgressBar(false);
@@ -10547,6 +10548,7 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
         if(g){
             var data = g.properties;
             var wt = g.properties.webgis_type;
+            //console.log(data);
             $("#form_poi_info_" + wt).webgisform('setdata', data);
             if(wt === 'point_dn')
             {
@@ -10771,8 +10773,6 @@ function BuildPoiForms()
         if(_.startsWith(v, 'point_dn_'))
         {
             var function_list = [];
-            var dn_list = [];
-            //console.log($.webgis.data.codes['functional_type']);
             for(var k in $.webgis.data.codes['functional_type'])
             {
                 
@@ -10792,7 +10792,7 @@ function BuildPoiForms()
                 { display: "标签颜色", id: "label_fill_color",  defaultvalue:GetDefaultStyleValue(v, 'labelFillColor'), newline: true,  type: "color", group:'样式', width:50, labelwidth:120 },
                 { display: "尺寸", id: "pixel_size", defaultvalue:GetDefaultStyleValue(v, 'pixelSize'), newline: false,  type: "spinner", step:1, min:1,max:50, group:'样式', width:30, labelwidth:120, validate:{number: true, required:true, range:[1, 50]} },
                 { display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} },
-                { display: "所属网络", id: "network", newline: true,  type: "select", editor: {data:dn_list}, group:'信息', width:250, validate:{required:true,minlength: 1}},
+                { display: "所属网络", id: "network", newline: true,  type: "select", editor: {data:[]}, group:'信息', width:250, validate:{required:true,minlength: 1}},
             ];
         }
         if(v === "polyline_marker")
@@ -10855,6 +10855,24 @@ function BuildPoiForms()
         if(_.startsWith(v, 'point_dn_'))
         {
             webgis_type = 'point_dn';
+            $.ajax({
+                url:'/distribute_network/query/network_names',
+                method:'post',
+                data: JSON.stringify({})
+            })
+            .always(function () {
+                ShowProgressBar(false);
+            })
+            .done(function (data1) {
+                data1 = JSON.parse(data1);
+                $.webgis.data.distribute_network = data1;
+                $('#form_poi_info_point_dn_network').empty();
+                _.forEach(data1, function(item)
+                {
+                    $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                });
+                $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+            });
         }
         if(!ret[webgis_type] && fields)
         {
@@ -11639,7 +11657,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                         //    glue:'before'
                                         //});
                                         data1 = JSON.parse(data1);
-                                        console.log(data1);
+                                        data1 = ['56441ba1d8b95a19185b734c', '56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'];
+                                        DrawDNFaultPointPrimitive(viewer, true, data1);
                                     })
                                     .fail(function (jqxhr, textStatus, e) {
                                         $.jGrowl("提交失败:" + e, {
@@ -11691,7 +11710,62 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         $('#tabs_dn_algorithm_option').tabs('option', 'active', 2 );
     }
     RebuildAlgorithmOptionForm(viewer, algorithm);
+}
+function DrawDNFaultPointPrimitive(viewer, is_draw, data)
+{
+    if(!is_draw)
+    {
+        if(!_.isUndefined($.webgis.geometry.dn_fault_points) && $.webgis.geometry.dn_fault_points.length)
+        {
+            //viewer.scene.primitives.remove($.webgis.geometry.dn_fault_points);
+            _.forEach($.webgis.geometry.dn_fault_points, function(item){
+                viewer.entities.remove(item);
+            });
+            delete $.webgis.geometry.dn_fault_points;
+        }
 
+    }else{
+        //$.webgis.geometry.dn_fault_points = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
+        //_.forEach(data, function(_id){
+        //    var g = _.find($.webgis.data.geojsons, {_id:_id});
+        //    if(!_.isUndefined(g.geometry))
+        //    {
+        //        //console.log(g);
+        //        var z = 0;
+        //        if($.webgis.config.zaware){
+        //            z = g.geometry.coordinates[2];
+        //        }
+        //        $.webgis.geometry.dn_fault_points.add({
+        //            position : Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+        //            color : Cesium.Color.RED,
+        //            pixelSize : 40
+        //        });
+        //    }
+        //});
+        var pinBuilder = new Cesium.PinBuilder();
+        $.webgis.geometry.dn_fault_points = [];
+        _.forEach(data, function(_id){
+            var g = _.find($.webgis.data.geojsons, {_id:_id});
+            if(!_.isUndefined(g.geometry))
+            {
+                //console.log(g);
+                var z = 0;
+                if($.webgis.config.zaware){
+                    z = g.geometry.coordinates[2];
+                }
+                var entity = new Cesium.Entity({
+                    name: g.properties.name,
+                    position : Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+                    billboard : {
+                        image : pinBuilder.fromText('故障', Cesium.Color.RED, 128).toDataURL(),
+                        verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+                    }
+                });
+                viewer.entities.add(entity);
+                $.webgis.geometry.dn_fault_points.push(entity);
+            }
+        });
+    }
 }
 function RebuildAlgorithmOptionForm(viewer, algorithm)
 {
@@ -12193,7 +12267,7 @@ function ShowDNEditDialog(viewer)
                                 $.ajax({
                                     url: '/distribute_network/save/network',
                                     method: 'post',
-                                    data: JSON.stringify({_id: arr[0], name:formdata.name})
+                                    data: JSON.stringify({_id: arr[0], properties:{name:formdata.name}})
                                 })
                                 .always(function () {
                                     ShowProgressBar(false);

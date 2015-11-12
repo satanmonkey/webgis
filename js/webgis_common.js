@@ -668,12 +668,12 @@ function InitWebGISFormDefinition()
                 }
                 else if(typ === 'icon')
                 {
-                    //console.log(data);
                     if( data.style && data.style.icon && data.style.icon.uri)
                     {
-                        var cls = 'icon-selector-' + data.webgis_type + ' ui-selectee';
-                        this.find('#' + prefix + id).attr('class', '');
-                        this.find('#' + prefix + id).addClass(cls);
+                        //var cls = 'icon-selector-' + data.webgis_type + ' ui-selectee';
+                        //this.find('#' + prefix + id).attr('class', '');
+                        //this.find('#' + prefix + id).addClass(cls);
+                        this.find('#' + prefix + id).css('background-image', 'url(' + data.style.icon.uri + ')');
                     }
                 
                 }
