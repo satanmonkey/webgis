@@ -11634,8 +11634,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                     if(formdata1.name && formdata1.name.length)
                     {
                         var formdata = get_form_data(algorithm)
-                        formdata.dn_id = formdata1.name;
                         if(!_.isEmpty(formdata)){
+                            formdata.dn_id = formdata1.name;
                             ShowConfirm(null, 500, 200,
                                 '提交确认',
                                 '确认提交吗? ',
@@ -11895,7 +11895,12 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                         if(jsondata[0].length){
                             var idx = 1;
                             _.forIn(jsondata[0][0], function(v, k){
-                                col_headers.push({display:'S' + idx, id:'S' + idx});
+                                var id_s = '0' + idx;
+                                if(id_s.length <3 ){
+                                    id_s = '0' + id_s;
+                                }
+                                id_s = '_' + id_s + '_' + 'S' + idx;
+                                col_headers.push({display:'S' + idx, id:id_s});
                                 idx += 1;
                             });
                         }
