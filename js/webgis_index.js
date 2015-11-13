@@ -3041,6 +3041,15 @@ function InitToolPanel(viewer)
     $('#but_dn_fault_detect').on('click', function(){
         ShowDNFaultDetectDialog(viewer);
     });
+    $('#btn_dn_fault_position_clear').button({label:'清除故障显示'});
+    $('#btn_dn_fault_position_clear').on('click', function(){
+       DrawDNFaultPointPrimitive(viewer, false);
+    });
+    $('#btn_dn_power_resume_clear').button({label:'清除恢复显示'});
+    $('#btn_dn_power_resume_clear').on('click', function(){
+       DrawDNPowerResumeLinePrimitive(viewer, false);
+    });
+
 
     $('#but_sys_change_password').button({label:'修改密码'});
     $('#but_sys_change_password').on('click', function(){
@@ -11452,8 +11461,44 @@ function ShowDNFaultDetectDialog(viewer)
         //    }
         //}
     ];
+    var flds1 = [
+        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [] }, group: '配电网', width: 200, labelwidth: 140,
+        change:function(v){
+            var _id = v;
+            LoadDNNodesByDNId(viewer, $.webgis.db.db_name, _id, function(){
+                LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, _id, function(){
+                    var extent = GetExtentByCzml();
+                    FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                    if($.webgis.config.map_backend === 'cesium')
+                    {
+                        ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                    }
+                });
+            });
+        }},
+        { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
+            click:function(){
+                var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
+                if(formdata.algorithm && formdata.algorithm.length){
+                    ShowDNAlgorithmOptionDialog(viewer, formdata.algorithm);
+                }
+            }
+        },
+        { display: "恢复计算", id: "btn_power_resume", newline: true, type: "button", defaultvalue:'计算',  group: '操作', width: 200, labelwidth: 140,
+            click:function(){
+                //var data = [['56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'], ['56443d78d8b95a19185b7350', '56443d25d8b95a19185b734e'], ['56443e09d8b95a19185b7354', '5643edc6d8b95a164008f4a4']];
+                var data = [['5643edc6d8b95a164008f4a4', '56443d4ed8b95a19185b734f'], ['56443d4ed8b95a19185b734f', '56441ba1d8b95a19185b734c'], ['56441ba1d8b95a19185b734c', '56443df4d8b95a19185b7353']];
+                DrawDNPowerResumeLinePrimitive(viewer, true, data);
+            }
+        }
+    ];
+
     $('#form_dn_network_fault_detect').webgisform(flds, {
         prefix: "form_dn_network_fault_detect_",
+        maxwidth: 420
+    });
+    $('#form_dn_network_power_resume').webgisform(flds1, {
+        prefix: "form_dn_network_power_resume_",
         maxwidth: 420
     });
     $('#tabs_dn_network_fault_detect').tabs({
@@ -11482,11 +11527,14 @@ function ShowDNFaultDetectDialog(viewer)
 		data1 = JSON.parse(data1);
 		$.webgis.data.distribute_network = data1;
 		$('#form_dn_network_fault_detect_name').empty();
+		$('#form_dn_network_power_resume_name').empty();
 		_.forEach(data1, function(item)
 		{
 			$('#form_dn_network_fault_detect_name').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+			$('#form_dn_network_power_resume_name').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
 		});
 		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
+		$('#form_dn_network_power_resume_name').multipleSelect('refresh');
 	});
 }
 function ShowDNAlgorithmOptionDialog(viewer, algorithm)
@@ -11658,7 +11706,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                         //});
                                         data1 = JSON.parse(data1);
                                         data1 = ['56441ba1d8b95a19185b734c', '56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'];
-                                        DrawDNFaultPointPrimitive(viewer, true, data1);
+                                        data1 = ['56443df4d8b95a19185b7353', '56443e09d8b95a19185b7354'];
+                                        DrawDNFaultPointPrimitive(viewer, true, algorithm, data1);
                                     })
                                     .fail(function (jqxhr, textStatus, e) {
                                         $.jGrowl("提交失败:" + e, {
@@ -11711,7 +11760,53 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     }
     RebuildAlgorithmOptionForm(viewer, algorithm);
 }
-function DrawDNFaultPointPrimitive(viewer, is_draw, data)
+
+function DrawDNPowerResumeLinePrimitive(viewer, is_draw, data)
+{
+    if(!is_draw)
+    {
+        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
+        {
+            _.forEach($.webgis.geometry.dn_power_resume_line, function(item){
+                viewer.entities.remove(item);
+            });
+            delete $.webgis.geometry.dn_power_resume_line;
+        }
+    }else{
+        $.webgis.geometry.dn_power_resume_line = [];
+        _.forEach(data, function(item){
+            var pos = []
+            var g1 = _.find($.webgis.data.geojsons, {_id:item[0]});
+            var g2 = _.find($.webgis.data.geojsons, {_id:item[1]});
+            if(!_.isUndefined(g1.geometry) && !_.isUndefined(g2.geometry))
+            {
+                var z1 = 0, z2 = 0;
+                if($.webgis.config.zaware){
+                    z1 = g1.geometry.coordinates[2];
+                    z2 = g2.geometry.coordinates[2];
+                }
+                pos.push(g1.geometry.coordinates[0], g1.geometry.coordinates[1], z1);
+                pos.push(g2.geometry.coordinates[0], g2.geometry.coordinates[1], z2);
+
+
+                var entity = new Cesium.Entity({
+                    name: g1.properties.name + '->' + g2.properties.name,
+                    polyline : {
+                        positions : Cesium.Cartesian3.fromDegreesArrayHeights(pos),
+                        width : 50,
+                        followSurface : true,
+                        material : new Cesium.PolylineArrowMaterialProperty(
+                            Cesium.Color.fromCssColorString('rgba(64, 255, 64, 0.7)'))
+                    }
+                });
+                viewer.entities.add(entity);
+                $.webgis.geometry.dn_power_resume_line.push(entity);
+            }
+        });
+    }
+}
+
+function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
 {
     if(!is_draw)
     {
@@ -11753,11 +11848,25 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, data)
                 if($.webgis.config.zaware){
                     z = g.geometry.coordinates[2];
                 }
+                var color, text;
+                if(algorithm === 'rset'){
+                    text = '粗糙度';
+                    color = 'rgba(220, 64, 64, 0.7)';
+                }
+                if(algorithm === 'bayes'){
+                    text = '贝叶斯';
+                    color = 'rgba(220, 0, 64, 0.7)';
+                }
+                if(algorithm === 'ants'){
+                    text = '蚁群';
+                    color = 'rgba(220, 64, 0, 0.7)';
+                }
+
                 var entity = new Cesium.Entity({
                     name: g.properties.name,
                     position : Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
                     billboard : {
-                        image : pinBuilder.fromText('故障', Cesium.Color.RED, 128).toDataURL(),
+                        image : pinBuilder.fromText(text, Cesium.Color.fromCssColorString(color), 128).toDataURL(),
                         verticalOrigin : Cesium.VerticalOrigin.BOTTOM
                     }
                 });
@@ -11767,6 +11876,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, data)
         });
     }
 }
+
 function RebuildAlgorithmOptionForm(viewer, algorithm)
 {
     var to_json = function(workbook) {
