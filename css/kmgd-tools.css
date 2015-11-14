@@ -1094,4 +1094,9 @@ input[type="button"].btn-block {
 	position:absolute;
 	bottom: 10px;
 }
+#dn_network_power_resume_candidate_grid_conatiner1{
+	height:300px;
+	overflow-y:auto;
+	margin:6px;
+}
 

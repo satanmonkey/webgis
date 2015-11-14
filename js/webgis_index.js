@@ -3243,6 +3243,25 @@ function CreateDialogSkeleton(viewer, dlg_id)
 {
     if($('#' + dlg_id).length === 0)
     {
+        if (dlg_id === 'dlg_dn_network_power_resume_candidate_grid')
+        {
+            $(document.body).append('\
+                <div id="dlg_dn_network_power_resume_candidate_grid" >\
+                    <div id="tabs_dn_network_power_resume_candidate" >\
+                        <ul>\
+                            <li><a href="#dn_network_power_resume_candidate_grid_conatiner">供电恢复方案</a></li>\
+                        </ul>\
+                        <div id="dn_network_power_resume_candidate_grid_conatiner">\
+                            <div id="dn_network_power_resume_candidate_grid_conatiner1">\
+                                <div id="dn_network_power_resume_candidate_grid">\
+                                </div>\
+                            </div>\
+                        </div>\
+                    </div>\
+                </div>\
+            ');
+
+        }
         if (dlg_id === 'dlg_dn_algorithm_option')
         {
             $(document.body).append('\
@@ -11489,6 +11508,7 @@ function ShowDNFaultDetectDialog(viewer)
                 //var data = [['56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'], ['56443d78d8b95a19185b7350', '56443d25d8b95a19185b734e'], ['56443e09d8b95a19185b7354', '5643edc6d8b95a164008f4a4']];
                 var data = [['5643edc6d8b95a164008f4a4', '56443d4ed8b95a19185b734f'], ['56443d4ed8b95a19185b734f', '56441ba1d8b95a19185b734c'], ['56441ba1d8b95a19185b734c', '56443df4d8b95a19185b7353']];
                 DrawDNPowerResumeLinePrimitive(viewer, true, data);
+                DrawDNPowerResumeCandidateTable(viewer, data);
             }
         }
     ];
@@ -11536,6 +11556,256 @@ function ShowDNFaultDetectDialog(viewer)
 		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
 		$('#form_dn_network_power_resume_name').multipleSelect('refresh');
 	});
+}
+function DrawDNPowerResumeCandidateTable(viewer, data)
+{
+    CreateDialogSkeleton(viewer, 'dlg_dn_network_power_resume_candidate_grid');
+    $('#dn_network_power_resume_candidate_grid_conatiner').empty();
+    $('#dn_network_power_resume_candidate_grid_conatiner').append(
+        '<div id="dn_network_power_resume_candidate_grid_conatiner1">\
+            <div id="dn_network_power_resume_candidate_grid">\
+            </div>\
+         </div>\
+        '
+    );
+    $('#dlg_dn_algorithm_option').dialog({
+        width: 540,
+        height: 700,
+        minWidth: 200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position: {at: "center"},
+        title: '算法参数信息',
+        close: function (event, ui) {
+        },
+        show: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        hide: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        buttons: [
+            {
+                text: "关闭",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
+    $('#tabs_dn_network_power_resume_candidate').tabs({
+        collapsible: false,
+        active: 0,
+        beforeActivate: function( event, ui ) {
+            var id = ui.newTab.context.hash;
+        }
+    });
+    data = [
+        {
+            type_name:'整区供电',
+            data:[
+                {
+                    solution_index:1,
+                    conlnbr_index:['line3'],
+                    voltage_quality:[0.09930],
+                    load_transfer:[{real:2.38518, j:1.94750}]
+                }
+            ]
+        },
+        {
+            type_name:'整区供电',
+            data:[
+                {
+                    solution_index: 1,
+                    switches: [],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.09930,
+                            load_transfer:
+                            {real:2.38518, j:1.94750}
+                        }],
+                }
+            ]
+        },
+        {
+            type_name:'馈线两分区',
+            data:[
+                {
+                    solution_index:1,
+                    switches:[{start:'S8', end:'S7'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.028,
+                            load_transfer: {real:0.610, j:0.552}
+                        },
+                        {
+                            line:'line1',
+                            voltage_quality:0.044,
+                            load_transfer: {real:1.775, j:1.396}
+                        },
+                    ],
+                },
+                {
+                    solution_index:2,
+                    switches:[{start:'S2', end:'S3'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.086,
+                            load_transfer: {real:1.943, j:1.517}
+                        },
+                        {
+                            line:'line2',
+                            voltage_quality:0.034,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                    ],
+                },
+                {
+                    solution_index:3,
+                    switches:[{start:'S2', end:'S3'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.086,
+                            load_transfer: {real:1.943, j:1.517}
+                        },
+                        {
+                            line:'line4',
+                            voltage_quality:0.050,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                    ],
+                }
+            ]
+        },
+        {
+            type_name:'馈线三分区',
+            data:[
+                {
+                    solution_index:1,
+                    switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.007,
+                            load_transfer: {real:0.168, j:0.121}
+                        },
+                        {
+                            line:'line1',
+                            voltage_quality: 0.044,
+                            load_transfer: {real:1.775, j:1.396}
+                        },
+                        {
+                            line:'line2',
+                            voltage_quality:0.034,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                    ],
+                },
+                {
+                    solution_index:2,
+                    switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.007,
+                            load_transfer: {real:0.168, j:0.121}
+                        },
+                        {
+                            line:'line1',
+                            voltage_quality: 0.044,
+                            load_transfer: {real:1.775, j:1.396}
+                        },
+                        {
+                            line:'line4',
+                            voltage_quality:0.050,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                    ],
+                },
+            ]
+        },
+        {
+            type_name:'馈线四分区',
+            data:[
+                {
+                    solution_index:1,
+                    switches:[{start:'S2', end:'S3'},{start:'S8', end:'S7'},{start:'S5', end:'S3'}],
+                    line_parameters: [
+                        {
+                            line:'line3',
+                            voltage_quality:0.007,
+                            load_transfer: {real:0.168, j:0.121}
+                        },
+                        {
+                            line:'line2',
+                            voltage_quality: 0.034,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                        {
+                            line:'line1',
+                            voltage_quality:0.034,
+                            load_transfer: {real:0.442, j:0.431}
+                        },
+                        {
+                            line:'line4',
+                            voltage_quality:0.044,
+                            load_transfer: {real:0.336, j:0.241}
+                        },
+                    ],
+                },
+            ]
+        },
+    ];
+    var tabledata = {Rows:[]};
+
+    var columns = [
+        { display: '方案类型', name: 'type_name', align: 'left',  width:160 },
+        { display: '方案编号', name: 'solution_index', align: 'left',  width:160 },
+        { display: '分段开关(起节点<->末节点)', name: 'switches', align: 'left',  width:320 },
+        { display: '线路编号', name: 'line', align: 'left',  width:160 },
+        { display: '电压质量指标', name: 'voltage_quality', align: 'left',  width:160 },
+        { display: '转移负荷总量', name: 'load_transfer', align: 'left',  width:160 },
+    ];
+    _.forEach(data, function(item){
+        var o = {};
+        o.type_name = item.type_name;
+        o.children = [];
+        _.forEach(item.data, function(item1){
+            var o1 = {};
+            o1.solution_index = item1.solution_index;
+            var switches = [];
+            _.forEach(item1.switches, function(item2){
+                switches.push(item2.start + '<->' + item2.start);
+            });
+            o1.switches = switches.join(',');
+            o1.children = [];
+            _.forEach(item1.line_parameters, function(item2){
+                o1.children.push(item2);
+            });
+
+            o.children.push(o);
+        });
+        tabledata.Rows.push(o);
+    });
+    $('#dn_network_power_resume_candidate_grid').ligerGrid({
+            columns: columns,
+            width: '100%',
+            height: '70%',
+            data: tabledata,
+            alternatingRow: false,
+            usePager: false,
+            tree: { columnId: 'type_name' }
+    });
 }
 function ShowDNAlgorithmOptionDialog(viewer, algorithm)
 {
