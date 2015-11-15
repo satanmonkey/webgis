@@ -1094,9 +1094,11 @@ input[type="button"].btn-block {
 	position:absolute;
 	bottom: 10px;
 }
-#dn_network_power_resume_candidate_grid_conatiner1{
-	height:300px;
-	overflow-y:auto;
-	margin:6px;
+#dn_network_power_resume_candidate_grid_container1{
+	max-height:420px;
+	/*overflow-x:auto;*/
+	/*overflow-y:auto;*/
+	overflow:auto;
+	margin:2px;
 }
 

@@ -3252,7 +3252,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
                             <li><a href="#dn_network_power_resume_candidate_grid_conatiner">供电恢复方案</a></li>\
                         </ul>\
                         <div id="dn_network_power_resume_candidate_grid_conatiner">\
-                            <div id="dn_network_power_resume_candidate_grid_conatiner1">\
+                            <div id="dn_network_power_resume_candidate_grid_container1">\
                                 <div id="dn_network_power_resume_candidate_grid">\
                                 </div>\
                             </div>\
@@ -11562,13 +11562,13 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
     CreateDialogSkeleton(viewer, 'dlg_dn_network_power_resume_candidate_grid');
     $('#dn_network_power_resume_candidate_grid_conatiner').empty();
     $('#dn_network_power_resume_candidate_grid_conatiner').append(
-        '<div id="dn_network_power_resume_candidate_grid_conatiner1">\
+        '<div id="dn_network_power_resume_candidate_grid_container1">\
             <div id="dn_network_power_resume_candidate_grid">\
             </div>\
          </div>\
         '
     );
-    $('#dlg_dn_algorithm_option').dialog({
+    $('#dlg_dn_network_power_resume_candidate_grid').dialog({
         width: 540,
         height: 700,
         minWidth: 200,
@@ -11577,7 +11577,7 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
         resizable: true,
         modal: false,
         position: {at: "center"},
-        title: '算法参数信息',
+        title: '供电恢复候选方案',
         close: function (event, ui) {
         },
         show: {
@@ -11603,21 +11603,10 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
         collapsible: false,
         active: 0,
         beforeActivate: function( event, ui ) {
-            var id = ui.newTab.context.hash;
+            //var id = ui.newTab.context.hash;
         }
     });
     data = [
-        {
-            type_name:'整区供电',
-            data:[
-                {
-                    solution_index:1,
-                    conlnbr_index:['line3'],
-                    voltage_quality:[0.09930],
-                    load_transfer:[{real:2.38518, j:1.94750}]
-                }
-            ]
-        },
         {
             type_name:'整区供电',
             data:[
@@ -11628,9 +11617,9 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
                         {
                             line:'line3',
                             voltage_quality:0.09930,
-                            load_transfer:
-                            {real:2.38518, j:1.94750}
-                        }],
+                            load_transfer:{real:2.38518, j:1.94750}
+                        }
+                    ],
                 }
             ]
         },
@@ -11769,12 +11758,12 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
     var tabledata = {Rows:[]};
 
     var columns = [
-        { display: '方案类型', name: 'type_name', align: 'left',  width:160 },
-        { display: '方案编号', name: 'solution_index', align: 'left',  width:160 },
-        { display: '分段开关(起节点<->末节点)', name: 'switches', align: 'left',  width:320 },
-        { display: '线路编号', name: 'line', align: 'left',  width:160 },
-        { display: '电压质量指标', name: 'voltage_quality', align: 'left',  width:160 },
-        { display: '转移负荷总量', name: 'load_transfer', align: 'left',  width:160 },
+        { display: '方案类型', name: 'type_name', align: 'center',  width:160 },
+        { display: '方案编号', name: 'solution_index', align: 'center',  width:160 },
+        { display: '分段开关(起节点<->末节点)', name: 'switches', align: 'center',  width:320 },
+        { display: '线路编号', name: 'line', align: 'center',  width:160 },
+        { display: '电压质量指标', name: 'voltage_quality', align: 'center',  width:160 },
+        { display: '转移负荷总量', name: 'load_transfer', align: 'center',  width:160 },
     ];
     _.forEach(data, function(item){
         var o = {};
@@ -11790,22 +11779,27 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
             o1.switches = switches.join(',');
             o1.children = [];
             _.forEach(item1.line_parameters, function(item2){
-                o1.children.push(item2);
+                var o2 = {};
+                o2.line = item2.line;
+                o2.voltage_quality = item2.voltage_quality;
+                o2.load_transfer = item2.load_transfer.real + '+ j' + item2.load_transfer.j ;
+                o1.children.push(o2);
             });
-
-            o.children.push(o);
+            o.children.push(o1);
         });
         tabledata.Rows.push(o);
     });
-    $('#dn_network_power_resume_candidate_grid').ligerGrid({
+    var g = $('#dn_network_power_resume_candidate_grid').ligerGrid({
             columns: columns,
             width: '100%',
-            height: '70%',
+            height: '90%',
             data: tabledata,
-            alternatingRow: false,
             usePager: false,
-            tree: { columnId: 'type_name' }
+            tree: { columnId: 'type_name' },
+            pageSize: 20,
+            alternatingRow: false
     });
+    //g.collapseAll();
 }
 function ShowDNAlgorithmOptionDialog(viewer, algorithm)
 {
