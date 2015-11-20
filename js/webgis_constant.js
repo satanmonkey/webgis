@@ -15,7 +15,7 @@ $.webgis.data.antibird = {};
 $.webgis.data.dn_network = {};
 $.webgis.data.anti_bird_towers = [];
 $.webgis.key_event = {};
-$.webgis.remote.localhost = 'localhost';//10.181.160.72
+$.webgis.remote.localhost = '192.168.1.113';//10.181.160.72
 $.webgis.remote.arcserver_host = $.webgis.remote.localhost;
 $.webgis.remote.host = $.webgis.remote.localhost;
 $.webgis.remote.port = 8088;
@@ -47,6 +47,9 @@ $.webgis.mapping.style_mapping = {
     'point_marker' :    {icon_img:'img/marker30x48.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:3, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
     'point_dn' :    {icon_img:'img/features/expert.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
     'point_dn_switch' :    {icon_img:'img/features/metronetwork.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
+    'point_dn_fuse' :    {icon_img:'img/features/metronetwork.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
+    'point_dn_load' :    {icon_img:'img/features/metronetwork.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
+    'point_dn_cutoff' :    {icon_img:'img/features/metronetwork.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
     'point_dn_link'    :            {icon_img:'img/features/linedown.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
     'point_dn_transform' :        {icon_img:'img/features/factory.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},
     'point_dn_transformarea' :    {icon_img:'img/features/expert.png', color:[64, 128, 255, 255],outlineColor:[255, 255, 255, 255], outlineWidth:1, pixelSize:8, labelFillColor:[255, 255, 0, 255], labelOutlineColor:[255, 255, 255, 255], labelScale: 0.6},

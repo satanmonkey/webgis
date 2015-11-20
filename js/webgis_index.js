@@ -4935,6 +4935,10 @@ function CreatePointCzmlFromGeojson(geojson)
     {
         subtype = 'point_dn_switch'
     }
+    if(geojson['properties']['function_type'] === 'LAD')
+    {
+        subtype = 'point_tower'
+    }
     if(geojson['properties']['function_type'] === 'PAB')
     {
         subtype = 'point_dn_transform'
@@ -4946,6 +4950,18 @@ function CreatePointCzmlFromGeojson(geojson)
     if(geojson['properties']['function_type'] === 'T')
     {
         subtype = 'point_dn_transformarea'
+    }
+    if(geojson['properties']['function_type'] === 'PAJ')
+    {
+        subtype = 'point_dn_fuse'
+    }
+    if(geojson['properties']['function_type'] === 'PAD')
+    {
+        subtype = 'point_dn_load'
+    }
+    if(geojson['properties']['function_type'] === 'PAC')
+    {
+        subtype = 'point_dn_cutoff'
     }
     var style = $.webgis.mapping.style_mapping[subtype];
     var v;
@@ -10801,14 +10817,14 @@ function BuildPoiForms()
         if(_.startsWith(v, 'point_dn_'))
         {
             var function_list = [];
-            for(var k in $.webgis.data.codes['functional_type'])
+            _.forIn($.webgis.data.codes['functional_type'], function(v, k)
             {
                 
-                if(k == 'PAE' || k == 'PAB' || k == 'PLM')
+                if(k == 'PAE' || k == 'PAB' || k == 'PLM'  || k == 'PAJ' || k == 'PAD' || k == 'PAC')
                 {
                     function_list.push({value:k, label:$.webgis.data.codes['functional_type'][k]});
                 }
-            }
+            });
             function_list.push({value:'T', label:'变压器区域'});
             fields = [    
                 //{ id: "id", type: "hidden" },
