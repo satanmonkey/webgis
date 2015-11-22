@@ -11466,7 +11466,7 @@ function ShowDNFaultDetectDialog(viewer)
 
     var algorithmlist = [{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
-        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [] }, group: '配电网', width: 200, labelwidth: 140,
+        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
             //console.log(v);
             var _id = v;
@@ -11497,7 +11497,7 @@ function ShowDNFaultDetectDialog(viewer)
         //}
     ];
     var flds1 = [
-        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [] }, group: '配电网', width: 200, labelwidth: 140,
+        { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
             var _id = v;
             LoadDNNodesByDNId(viewer, $.webgis.db.db_name, _id, function(){
