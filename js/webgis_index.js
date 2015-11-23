@@ -2813,16 +2813,19 @@ function InitToolPanel(viewer)
     });
     $('input[id^=chb_show_geometry_]').on("ifChanged", function(e){
         var webgis_type = $(this).attr('id').replace('chb_show_geometry_', '');
+
         if(webgis_type === 'edge_tower')
         {
             if($(this).is(':checked'))
             {
-                console.log('turn on edge:' + webgis_type);
+                //console.log('turn on edge:' + webgis_type);
                 if($.webgis.config.map_backend === 'cesium')
                 {
+                    //console.log($.webgis.data.czmls);
                     _.forEach($.webgis.data.geojsons,function(item)
                     {
                         DrawEdgeBetweenTwoNode(viewer, 'edge_tower', item.properties.start, item.properties.end, false);
+                        DrawEdgeBetweenTwoNode(viewer, 'edge_dn', item.properties.start, item.properties.end, false);
                     });
                 }
                 if($.webgis.config.map_backend === 'leaflet')
@@ -4427,7 +4430,32 @@ function InitSearchBox(viewer)
             }
             if(ui.item.value === 'distribute_nodes')
             {
-                LoadDistributeNodes(viewer);
+                LoadDistributeNodes(viewer, function(data){
+                    LoadAllDNEdges(viewer, function(data1){
+                        //$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+                        var data2 = $.webgis.data.geojsons;
+                        if ($.webgis.config.map_backend === 'cesium')
+                        {
+                            var czmls = _.map(data2, function (n) {
+                                return CreateCzmlFromGeojson(n);
+                            });
+                            czmls = _.filter(czmls, function (n) {
+                                return !_.isUndefined(n);
+                            });
+                            $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+                        }
+                        if($.webgis.config.map_backend === 'leaflet') {
+                            _.forEach(data2, function (item) {
+                                $.webgis.control.leaflet_geojson_layer.addData(item);
+                            });
+                        }
+                        var extent = GetExtentByCzml();
+                        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                        if ($.webgis.config.map_backend === 'cesium') {
+                            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                        }
+                    });
+                });
             }
             else if(ui.item.geojson && ui.item.geojson.geometry)
             {
@@ -4520,7 +4548,34 @@ function InitSearchBox(viewer)
 
 }
 
-function LoadDistributeNodes(viewer)
+function LoadAllDNEdges(viewer, callback)
+{
+    ShowProgressBar(true, 670, 200, '载入中', '正在载入数据，请稍候...');
+    $.ajax({
+        url:'/distribute_network/query/edges',
+        method:'post',
+        data: JSON.stringify({})
+    })
+    .always(function () {
+        ShowProgressBar(false);
+    })
+    .done(function (data1) {
+        data1 = JSON.parse(data1);
+        $.webgis.data.geojsons =  _.uniq(_.union($.webgis.data.geojsons, data1), _.property('_id'));
+        if(callback) callback(data1);
+    })
+    .fail(function (jqxhr, textStatus, e) {
+        $.jGrowl("查询失败:" + e, {
+            life: 2000,
+            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+            theme: 'bubblestylefail',
+            glue:'before'
+        });
+    });
+
+}
+
+function LoadDistributeNodes(viewer, callback)
 {
     //console.log($.webgis.data.distribute_nodes);
     if(_.isUndefined($.webgis.data.distribute_nodes) || $.webgis.data.distribute_nodes.length === 0)
@@ -4530,50 +4585,50 @@ function LoadDistributeNodes(viewer)
         MongoFind(cond,
             function (data) {
                 ShowProgressBar(false);
-                //console.log(data);
                 $.webgis.data.distribute_nodes = data;
                 $.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
-                if ($.webgis.config.map_backend === 'cesium') {
-                    var czmls = _.map(data, function (n) {
-                        return CreateCzmlFromGeojson(n);
-                    });
-                    czmls = _.filter(czmls, function (n) {
-                        return !_.isUndefined(n);
-                    });
-                    $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
-                }
-                _.forEach(data, function (item) {
-                    if ($.webgis.config.map_backend === 'leaflet') {
-                        //console.log(item);
-                        $.webgis.control.leaflet_geojson_layer.addData(item);
-                    }
-                });
-                var extent = GetExtentByCzml();
-                FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
-                if ($.webgis.config.map_backend === 'cesium') {
-                    ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
-                }
+                //if ($.webgis.config.map_backend === 'cesium')
+                //{
+                //    var czmls = _.map(data, function (n) {
+                //        return CreateCzmlFromGeojson(n);
+                //    });
+                //    czmls = _.filter(czmls, function (n) {
+                //        return !_.isUndefined(n);
+                //    });
+                //    $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+                //}
+                //if($.webgis.config.map_backend === 'leaflet') {
+                //    _.forEach(data, function (item) {
+                //        $.webgis.control.leaflet_geojson_layer.addData(item);
+                //    });
+                //}
+                //var extent = GetExtentByCzml();
+                //FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                //if ($.webgis.config.map_backend === 'cesium') {
+                //    ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                //}
+                if(callback) callback(data);
             });
     }else{
         var data = $.webgis.data.distribute_nodes;
-        $.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
-        if ($.webgis.config.map_backend === 'cesium') {
-            var czmls = _.map(data, function (n) {
-                return CreateCzmlFromGeojson(n);
-            });
-            $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
-        }
-        _.forEach(data, function (item) {
-            if ($.webgis.config.map_backend === 'leaflet') {
-                //console.log(item);
-                $.webgis.control.leaflet_geojson_layer.addData(item);
-            }
-        });
-        var extent = GetExtentByCzml();
-        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
-        if ($.webgis.config.map_backend === 'cesium') {
-            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
-        }
+        //$.webgis.data.geojsons = _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+        //if ($.webgis.config.map_backend === 'cesium') {
+        //    var czmls = _.map(data, function (n) {
+        //        return CreateCzmlFromGeojson(n);
+        //    });
+        //    $.webgis.data.czmls = _.uniq(_.union($.webgis.data.czmls, czmls), _.property('id'));
+        //}
+        //if ($.webgis.config.map_backend === 'leaflet') {
+        //    _.forEach(data, function (item) {
+        //        $.webgis.control.leaflet_geojson_layer.addData(item);
+        //    });
+        //}
+        //var extent = GetExtentByCzml();
+        //FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+        //if ($.webgis.config.map_backend === 'cesium') {
+        //    ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+        //}
+        if(callback) callback(data);
     }
 
 }
