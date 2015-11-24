@@ -256,10 +256,11 @@ function LoadAllDNEdge(viewer, db_name, callback)
         if(data.length>0)
         {
             $.webgis.data.geojsons =  _.uniq(_.union($.webgis.data.geojsons, data), _.property('_id'));
+            //console.log(data.length);
             _.forEach(data, function(item){
                 DrawEdgeBetweenTwoNode(viewer, 'edge_dn',
-                    _.result(_.find($.webgis.data.geojsons, {_id:item._id}),'properties.start'),
-                    _.result(_.find($.webgis.data.geojsons, {_id:item._id}),'properties.end'),
+                    _.result(_.find(data, {_id:item._id}),'properties.start'),
+                    _.result(_.find(data, {_id:item._id}),'properties.end'),
                     false);
             });
         }
@@ -923,15 +924,6 @@ function InitKeyboardEvent(viewer)
                 var get_id = function()
                 {
                     var ret;
-                    //for(var k in $.webgis.data.geojsons)
-                    //{
-                    //    var g = $.webgis.data.geojsons[k];
-                    //    if(g.properties.start == $.webgis.select.selected_obj.id.properties.start && g.properties.end == $.webgis.select.selected_obj.id.properties.end)
-                    //    {
-                    //        ret = g['_id'];
-                    //        break;
-                    //    }
-                    //}
                     ret = _.result(_.first(_.filter($.webgis.data.geojsons, {
                         properties:{
                             start:$.webgis.select.selected_obj.id.properties.start,
@@ -960,6 +952,11 @@ function InitKeyboardEvent(viewer)
                                             theme: 'bubblestylesuccess',
                                             glue:'before'
                                         });
+                                        if($.webgis.config.map_backend === 'cesium')
+                                        {
+                                            RemoveSegmentsBetweenTwoNode(viewer, {id:$.webgis.select.selected_obj.id.properties.start},{id:$.webgis.select.selected_obj.id.properties.end}, 'edge_tower');
+                                            RemoveSegmentsBetweenTwoNode(viewer, {id:$.webgis.select.selected_obj.id.properties.start},{id:$.webgis.select.selected_obj.id.properties.end}, 'edge_dn');
+                                        }
                                         if($.webgis.config.map_backend === 'leaflet')
                                         {
                                             viewer.eachLayer(function(layer){
