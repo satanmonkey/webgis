@@ -5796,7 +5796,7 @@ function ReloadCzmlDataSource(viewer, z_aware, forcereload)
         {
             if(kk.indexOf('point_')>-1 && obj.billboard)
             {
-                if(obj.webgis_type && obj.webgis_type.indexOf('point_')>-1 && obj.webgis_type != 'point_tower')
+                if(obj.webgis_type && _.startsWith(obj.webgis_type, 'point_'))//&& obj.webgis_type != 'point_tower')
                 {
                     if(opt[kk] === true)
                         obj.billboard.show = {'boolean':true};
@@ -10640,6 +10640,7 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
                             }
                         });
                         $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+                        //console.log(netw);
                         if(netw)
                         {
                             $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
@@ -10841,6 +10842,7 @@ function BuildPoiForms()
                 { display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} }
             ];
         }
+
         if(_.startsWith(v, 'point_dn_'))
         {
             var function_list = [];
@@ -10863,7 +10865,7 @@ function BuildPoiForms()
                 { display: "标签颜色", id: "label_fill_color",  defaultvalue:GetDefaultStyleValue(v, 'labelFillColor'), newline: true,  type: "color", group:'样式', width:50, labelwidth:120 },
                 { display: "尺寸", id: "pixel_size", defaultvalue:GetDefaultStyleValue(v, 'pixelSize'), newline: false,  type: "spinner", step:1, min:1,max:50, group:'样式', width:30, labelwidth:120, validate:{number: true, required:true, range:[1, 50]} },
                 { display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} },
-                { display: "所属网络", id: "network", newline: true,  type: "select", editor: {data:[]}, group:'信息', width:250, validate:{required:true,minlength: 1}},
+                { display: "所属网络", id: "network", newline: true,  type: "select", editor: {data:[], filter:true}, group:'信息', width:250, validate:{required:true,minlength: 1}},
             ];
         }
         if(v === "polyline_marker")
@@ -10923,27 +10925,10 @@ function BuildPoiForms()
             ];
         }
         var webgis_type = v;
-        if(_.startsWith(v, 'point_dn_'))
+
+        if(_.startsWith(v, 'point_dn_') )
         {
             webgis_type = 'point_dn';
-            $.ajax({
-                url:'/distribute_network/query/network_names',
-                method:'post',
-                data: JSON.stringify({})
-            })
-            .always(function () {
-                ShowProgressBar(false);
-            })
-            .done(function (data1) {
-                data1 = JSON.parse(data1);
-                $.webgis.data.distribute_network = data1;
-                $('#form_poi_info_point_dn_network').empty();
-                _.forEach(data1, function(item)
-                {
-                    $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
-                });
-                $('#form_poi_info_point_dn_network').multipleSelect('refresh');
-            });
         }
         if(!ret[webgis_type] && fields)
         {
