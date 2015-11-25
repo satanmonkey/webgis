@@ -10613,40 +10613,72 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
         var v = event.target.value;
         webformlist[v].parent().css('display','block');
     });
+    if(_.isUndefined($.webgis.data.distribute_network) || _.isEmpty($.webgis.data.distribute_network))
+    {
+        $.ajax({
+            url:'/distribute_network/query/network_names',
+            method:'post',
+            data: JSON.stringify({})
+        })
+        .always(function () {
+            ShowProgressBar(false);
+        })
+        .done(function (data1) {
+            data1 = JSON.parse(data1);
+            $.webgis.data.distribute_network = data1;
+            $('#form_poi_info_point_dn_network').empty();
+            var netw;
+            _.forEach(data1, function(item)
+            {
+                $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
+                    if(_.includes(item.properties.nodes, id)){
+                        netw = item._id;
+                    }
+                }
+            });
+            $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+            if(netw)
+            {
+                $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
+            }
+        });
+    }
     if(id )
     {
         var g = _.find($.webgis.data.geojsons, {_id:id});
         if(g){
             var data = g.properties;
             var wt = g.properties.webgis_type;
-            //console.log(data);
             $("#form_poi_info_" + wt).webgisform('setdata', data);
-            if(wt === 'point_dn')
-            {
-                var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
-                MongoFind(cond, function(data1){
-                    if(data1.length>0)
-                    {
-                        //console.log(data1);
-                        $('#form_poi_info_point_dn_network').empty();
-                        $('#form_poi_info_point_dn_network').append('<option value="">(请选择)</option>');
-                        var netw;
-                        _.forEach(data1, function(item){
-                            $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
-                            if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
-                                if(_.includes(item.properties.nodes, id)){
-                                    netw = item._id;
-                                }
-                            }
-                        });
-                        $('#form_poi_info_point_dn_network').multipleSelect('refresh');
-                        if(netw)
-                        {
-                            $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
-                        }
-                    }
-                });
-            }
+            //if(wt === 'point_dn')
+            //{
+
+                //var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
+                //MongoFind(cond, function(data1){
+                //    $.webgis.data.distribute_network = data1;
+                //    if(data1.length>0)
+                //    {
+                //        //console.log(data1);
+                //        $('#form_poi_info_point_dn_network').empty();
+                //        $('#form_poi_info_point_dn_network').append('<option value="">(请选择)</option>');
+                //        var netw;
+                //        _.forEach(data1, function(item){
+                //            $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                //            if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
+                //                if(_.includes(item.properties.nodes, id)){
+                //                    netw = item._id;
+                //                }
+                //            }
+                //        });
+                //        $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+                //        if(netw)
+                //        {
+                //            $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
+                //        }
+                //    }
+                //});
+            //}
         }
     }
     
