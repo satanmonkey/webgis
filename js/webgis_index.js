@@ -5796,7 +5796,7 @@ function ReloadCzmlDataSource(viewer, z_aware, forcereload)
         {
             if(kk.indexOf('point_')>-1 && obj.billboard)
             {
-                if(obj.webgis_type && obj.webgis_type.indexOf('point_')>-1 && obj.webgis_type != 'point_tower')
+                if(obj.webgis_type && _.startsWith(obj.webgis_type, 'point_'))//&& obj.webgis_type != 'point_tower')
                 {
                     if(opt[kk] === true)
                         obj.billboard.show = {'boolean':true};
