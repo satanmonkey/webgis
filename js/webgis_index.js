@@ -43,6 +43,21 @@ $(function() {
                             FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
                             LoadSysRole($.webgis.db.db_name, function(){
                                 $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
+
+                                //20151129 for leicao only 10kV州城Ⅴ回线
+                                LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                    LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                        var extent = GetExtentByCzml();
+                                        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                                        if($.webgis.config.map_backend === 'cesium')
+                                        {
+                                            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                                        }
+                                    });
+                                });
+
+
+
                             });
                         });
                         //$.webgis.config.zaware = true;
