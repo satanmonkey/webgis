@@ -9,6 +9,7 @@ $.webgis.toolbar = {};
 $.webgis.form_fields = {};
 $.webgis.geometry = {};
 $.webgis.remote = {};
+$.webgis.flag = {};
 $.webgis.websocket = {};
 $.webgis.websocket.antibird = {};
 $.webgis.data.antibird = {};
@@ -171,4 +172,7 @@ $.webgis.constant.dn = {
     PFITER      : 19,   // the number of iteration in power flow
     OPFITER     : 20   // the number of iteration in reactive optimization
 };
+
+$.webgis.flag.btn_click_to_position = false;
+$.webgis.data.dn_network.idx_id_mapping = [];
 

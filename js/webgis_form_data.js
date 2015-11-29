@@ -434,7 +434,7 @@ $.webgis.form_fields.tower_baseinfo_fields = [
 				if($.webgis.data.gltf_models_mapping[id])
 				{
 					PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
-					var tower = GetTowerInfoByTowerId(id);
+					var tower = GetPOIInfoById(id);
 					if(tower)
 					{
 						RemoveSegmentsTower(viewer, tower);
@@ -488,7 +488,7 @@ $.webgis.form_fields.tower_baseinfo_fields = [
 				if( $.webgis.data.gltf_models_mapping[id])
 				{
 					PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
-					var tower = GetTowerInfoByTowerId(id);
+					var tower = GetPOIInfoById(id);
 					if(tower)
 					{
 						RemoveSegmentsTower(viewer, tower);
@@ -542,7 +542,7 @@ $.webgis.form_fields.tower_baseinfo_fields = [
 				if($.webgis.data.gltf_models_mapping[id])
 				{
 					PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
-					var tower = GetTowerInfoByTowerId(id);
+					var tower = GetPOIInfoById(id);
 					if(tower)
 					{
 						RemoveSegmentsTower(viewer, tower);
@@ -598,7 +598,7 @@ $.webgis.form_fields.tower_baseinfo_fields = [
 				if($.webgis.data.gltf_models_mapping[id])
 				{
 					PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
-					var tower = GetTowerInfoByTowerId(id);
+					var tower = GetPOIInfoById(id);
 					if(tower)
 					{
 						RemoveSegmentsTower(viewer, tower);
