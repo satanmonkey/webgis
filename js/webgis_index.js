@@ -4394,7 +4394,7 @@ function InitSearchBox(viewer)
             $('#text_search_waiting').html('正在查询，请稍候...');
             MongoFind( py_cond, 
                 function(data){
-                    //console.log(data);
+                    console.log(data);
                     $('#text_search_waiting').css('display','none');
                     response(BuildSearchItemList(data));
             });
