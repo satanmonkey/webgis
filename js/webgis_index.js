@@ -3022,7 +3022,7 @@ function InitToolPanel(viewer)
     });
     $('#btn_dn_power_resume_clear').button({label:'清除恢复显示'});
     $('#btn_dn_power_resume_clear').on('click', function(){
-       DrawDNPowerResumeLinePrimitive(viewer, false);
+       DrawDNPowerResumeLineConnectPrimitive(viewer, false);
     });
 
 
@@ -3248,7 +3248,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
                 <div id="dlg_dn_algorithm_option" >\
                     <div id="tabs_dn_algorithm_option" >\
                         <ul>\
-                            <li><a href="#dn_algorithm_option_rset">粗糙集算法</a></li>\
+                            <li><a href="#dn_algorithm_option_rset">简单定位算法</a></li>\
                             <li><a href="#dn_algorithm_option_ants">蚁群优化算法</a></li>\
                             <li><a href="#dn_algorithm_option_bayes">贝叶斯算法</a></li>\
                         </ul>\
@@ -11731,7 +11731,7 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [{value:'rset', label:'简单定位算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -12174,7 +12174,8 @@ function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
         alternatingRow: false,
         onDblClickRow:function(data,rowid,rowdata){
             if(data.switches_data){
-                DrawDNPowerResumeLinePrimitive(viewer, true, line_id, data.switches_data);
+                //DrawDNPowerResumeLineConnectPrimitive(viewer, true, line_id, data.switches_data);
+                DrawDNPowerResumeLineCutOffPrimitive(viewer, true, line_id, data.switches_data);
             }
         }
     });
@@ -12455,7 +12456,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     RebuildAlgorithmOptionForm(viewer, algorithm);
 }
 
-function DrawDNPowerResumeLinePrimitive(viewer, is_draw, line_id, data)
+function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
 {
     var get_feature_id = function(line_id, idx)
     {
@@ -12484,7 +12485,85 @@ function DrawDNPowerResumeLinePrimitive(viewer, is_draw, line_id, data)
             delete $.webgis.geometry.dn_power_resume_line;
         }
     }else{
-        DrawDNPowerResumeLinePrimitive(viewer, false);
+        DrawDNPowerResumeLineCutOffPrimitive(viewer, false);
+        $.webgis.geometry.dn_power_resume_line = [];
+        _.forEach(data, function(item){
+            var pos = [];
+            var g1 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.start)});
+            var g2 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.end)});
+            if(!_.isUndefined(g1.geometry) && !_.isUndefined(g2.geometry))
+            {
+                var z1 = 0, z2 = 0, z_center = 0;
+                if($.webgis.config.zaware){
+                    z1 = g1.geometry.coordinates[2];
+                    z2 = g2.geometry.coordinates[2];
+                    z_center = (z1+z2)/2;
+                }
+                pos.push(g1.geometry.coordinates[0], g1.geometry.coordinates[1], z1);
+                pos.push(g2.geometry.coordinates[0], g2.geometry.coordinates[1], z2);
+                var pos_center = Cesium.Cartesian3.fromDegrees(
+                    (g1.geometry.coordinates[0]+g2.geometry.coordinates[0])/2,
+                    (g1.geometry.coordinates[1]+g2.geometry.coordinates[1])/2,
+                    z_center);
+
+                var entity = new Cesium.Entity({
+                    name: g1.properties.name + '->' + g2.properties.name,
+                    polyline : {
+                        positions : Cesium.Cartesian3.fromDegreesArrayHeights(pos),
+                        width : 20,
+                        followSurface : true,
+                        material : new Cesium.PolylineArrowMaterialProperty(
+                            Cesium.Color.fromCssColorString('rgba(64, 255, 64, 0.7)'))
+                    }
+                });
+                viewer.entities.add(entity);
+                $.webgis.geometry.dn_power_resume_line.push(entity);
+
+                var entity_center = new Cesium.Entity({
+                    name: g1.properties.name + 'X' + g2.properties.name,
+                    position : pos_center,
+                    billboard: new Cesium.BillboardGraphics({
+                        image: '/img/glyphicons_cut_off.png',
+                        scale: 1,
+                        show : true
+                    })
+                });
+                viewer.entities.add(entity_center);
+                $.webgis.geometry.dn_power_resume_line.push(entity_center);
+            }
+        });
+    }
+}
+function DrawDNPowerResumeLineConnectPrimitive(viewer, is_draw, line_id, data)
+{
+    var get_feature_id = function(line_id, idx)
+    {
+        if(_.isArray(idx)){
+            return _.map(idx, function(item){
+                return get_feature_id(line_id, item);
+            });
+        }
+        if(_.isNumber(idx)){
+            var ret;
+            var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
+            if(!_.isUndefined(line)){
+                ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            return ret;
+        }
+    };
+
+    if(!is_draw)
+    {
+        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
+        {
+            _.forEach($.webgis.geometry.dn_power_resume_line, function(item){
+                viewer.entities.remove(item);
+            });
+            delete $.webgis.geometry.dn_power_resume_line;
+        }
+    }else{
+        DrawDNPowerResumeLineConnectPrimitive(viewer, false);
         $.webgis.geometry.dn_power_resume_line = [];
         _.forEach(data, function(item){
             var pos = [];
@@ -12575,7 +12654,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                 var label = {};
                 var point = {};
                 if (algorithm === 'rset') {
-                    text = '粗糙度';
+                    text = '简单定位';
                     color = 'rgba(220, 64, 64, 0.7)';
                     billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                     label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
