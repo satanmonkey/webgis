@@ -43,6 +43,21 @@ $(function() {
                             FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
                             LoadSysRole($.webgis.db.db_name, function(){
                                 $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
+
+                                //20151129 for leicao only 10kV州城Ⅴ回线
+                                LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                    LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                        var extent = GetExtentByCzml();
+                                        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                                        if($.webgis.config.map_backend === 'cesium')
+                                        {
+                                            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                                        }
+                                    });
+                                });
+
+
+
                             });
                         });
                         //$.webgis.config.zaware = true;
@@ -497,30 +512,6 @@ function InitLeafletViewer()
             
         }
     });
-    
-    
-    //markers.on('mouseover', function (e) {
-        //if(e.layer.feature.properties.name && $('#chb_show_label_' + e.layer.feature.properties.webgis_type).is(':checked'))
-        //{
-            //$.webgis.control.drawhelper._tooltip.setVisible(true);
-        //}
-    //});
-    //markers.on('mousemove', function (e) {
-        //if(e.layer.feature.properties.name && $('#chb_show_label_' + e.layer.feature.properties.webgis_type).is(':checked'))
-        //{
-            //if($.webgis.control.drawhelper._tooltip.getVisible())
-            //{
-                //$.webgis.control.drawhelper._tooltip.showAt(e.containerPoint, e.layer.feature.properties.name);
-            //}
-        //}
-    //});
-    //markers.on('mouseout', function (e) {
-        //$.webgis.control.drawhelper._tooltip.setVisible(false);
-    //});
-    //markers.on('click', function (e) {
-        ////console.log(e.layer.feature._id);
-    //});
-    //map.addLayer(markers, false);
     map.addLayer($.webgis.control.leaflet_geojson_layer);
     
     
@@ -820,8 +811,10 @@ function InitKeyboardEvent(viewer)
                     theme: 'bubblestylesuccess',
                     glue:'before',
                     afterOpen:function(){
+                        //console.log('bbb');
                         $('#btn_edge_save').off();
                         $('#btn_edge_save').on('click', function(){
+                            //console.log('aaa');
                             SaveEdge(viewer, null, function(data){
                                 $('#btn_edge_save').attr('disabled','disabled');
                                 if(data.length>0)
@@ -848,18 +841,6 @@ function InitKeyboardEvent(viewer)
                                                 }
                                             }
                                         });
-                                        //{
-                                        //    var g = data[i];
-                                        //    webgis_type = g['properties']['webgis_type'];
-                                        //    if(!$.webgis.data.geojsons[g['_id']])
-                                        //    {
-                                        //        $.webgis.data.geojsons[g['_id']] = g;
-                                        //        if($.webgis.config.map_backend === 'leaflet')
-                                        //        {
-                                        //            change_color(webgis_type, g['_id']);
-                                        //        }
-                                        //    }
-                                        //}
                                         if($.webgis.config.map_backend === 'cesium')
                                         {
                                             change_color();
@@ -3041,7 +3022,7 @@ function InitToolPanel(viewer)
     });
     $('#btn_dn_power_resume_clear').button({label:'清除恢复显示'});
     $('#btn_dn_power_resume_clear').on('click', function(){
-       DrawDNPowerResumeLinePrimitive(viewer, false);
+       DrawDNPowerResumeLineConnectPrimitive(viewer, false);
     });
 
 
@@ -3244,11 +3225,16 @@ function CreateDialogSkeleton(viewer, dlg_id)
                     <div id="tabs_dn_network_power_resume_candidate" >\
                         <ul>\
                             <li><a href="#dn_network_power_resume_candidate_grid_conatiner">供电恢复方案</a></li>\
+                            <li><a href="#dn_network_power_resume_calc_progress_conatiner">方案计算过程</a></li>\
                         </ul>\
                         <div id="dn_network_power_resume_candidate_grid_conatiner">\
                             <div id="dn_network_power_resume_candidate_grid_container1">\
                                 <div id="dn_network_power_resume_candidate_grid">\
                                 </div>\
+                            </div>\
+                        </div>\
+                        <div id="dn_network_power_resume_calc_progress_conatiner">\
+                            <div id="dn_network_power_resume_calc_progress_panel">\
                             </div>\
                         </div>\
                     </div>\
@@ -3262,7 +3248,7 @@ function CreateDialogSkeleton(viewer, dlg_id)
                 <div id="dlg_dn_algorithm_option" >\
                     <div id="tabs_dn_algorithm_option" >\
                         <ul>\
-                            <li><a href="#dn_algorithm_option_rset">粗糙集算法</a></li>\
+                            <li><a href="#dn_algorithm_option_rset">简单定位算法</a></li>\
                             <li><a href="#dn_algorithm_option_ants">蚁群优化算法</a></li>\
                             <li><a href="#dn_algorithm_option_bayes">贝叶斯算法</a></li>\
                         </ul>\
@@ -4408,7 +4394,7 @@ function InitSearchBox(viewer)
             $('#text_search_waiting').html('正在查询，请稍候...');
             MongoFind( py_cond, 
                 function(data){
-                    //console.log(data);
+                    console.log(data);
                     $('#text_search_waiting').css('display','none');
                     response(BuildSearchItemList(data));
             });
@@ -4770,72 +4756,72 @@ function CreatePolygonCzmlFromGeojson(geojson)
     };
     var cz = {};
     var name = '';
-    cz['id'] = geojson['_id'];
-    cz['webgis_type'] = geojson['properties']['webgis_type'];
-    cz['position'] = {};
-    cz['polygon'] = {};
-    cz['polygon']['positions'] = {};
-    name = geojson['properties']['name'];
-    var positions = GetVertexPositionsByGeojsonPolyline(geojson['geometry'], geojson['properties']['height']);
-    cz['polygon']['positions']['cartographicDegrees'] = positions;
+    cz.id = geojson._id;
+    cz.webgis_type = geojson.properties.webgis_type;
+    cz.position = {};
+    cz.polygon = {};
+    cz.polygon.positions = {};
+    name = geojson.properties.name;
+    var positions = GetVertexPositionsByGeojsonPolyline(geojson.geometry, geojson.properties.height);
+    cz.polygon.positions.cartographicDegrees = positions;
     var center = get_center(positions);
-    cz['position']['cartographicDegrees'] = center;
-    cz['name'] = name;
-    cz['polygon']['material'] = {};
-    cz['polygon']['material']['solidColor'] = {};
-    var style = geojson['properties']['style'];
+    cz.position.cartographicDegrees = center;
+    cz.name = name;
+    cz.polygon.material = {};
+    cz.polygon.material.solidColor = {};
+    var style = geojson.properties.style;
     var v;
 
     if(style && style.color) v = style.color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'color')
-    cz['polygon']['material']['solidColor']['color'] = {'rgba':v};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'color');
+    cz.polygon.material.solidColor.color = {'rgba':v};
     //if(style.image)
     //{
-        //cz['polygon']['material']['image'] = {};
-        //cz['polygon']['material']['image']['image'] = {'uri':style.image};
+        //cz.polygon.material.image = {};
+        //cz.polygon.material.image.image = {'uri':style.image};
     //}
-    cz['polygon']['perPositionHeight'] = {'boolean':false};
-    cz['polygon']['height'] = {'number': 0};
-    cz['polygon']['extrudedHeight'] = {'number': 0};
-    if(cz['webgis_type'] === 'polygon_buffer')
+    cz.polygon.perPositionHeight = {'boolean':false};
+    cz.polygon.height = {'number': 0};
+    cz.polygon.extrudedHeight = {'number': 0};
+    if(cz.webgis_type === 'polygon_buffer')
     {
-        cz['polygon']['extrudedHeight'] = {'number': 3000};
+        cz.polygon.extrudedHeight = {'number': 3000};
     }
     else
     {
-        if(geojson['properties']['height'])
+        if(geojson.properties.height)
         {
-            cz['polygon']['extrudedHeight'] = {'number': center[2] + geojson['properties']['height'] * 10};
+            cz.polygon.extrudedHeight = {'number': center[2] + geojson.properties.height * 10};
         }
         else
         {
-            cz['polygon']['extrudedHeight'] = {'number': center[2] * 2};
+            cz.polygon.extrudedHeight = {'number': center[2] * 2};
         }
     }
-    cz['polygon']['fill'] = {'boolean':true};
-    cz['polygon']['outline'] = {'boolean':true};
+    cz.polygon.fill = {'boolean':true};
+    cz.polygon.outline = {'boolean':true};
     if(style && style.outline_color) v = style.outline_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'outlineColor')
-    cz['polygon']['outlineColor'] = {'rgba': v};
-    cz['polygon']['show'] = {'boolean':true};
-    cz['label'] = {};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'outlineColor');
+    cz.polygon.outlineColor = {'rgba': v};
+    cz.polygon.show = {'boolean':true};
+    cz.label = {};
     if(style && style.label_fill_color) v = style.label_fill_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelFillColor')
-    cz['label']['fillColor'] = {'rgba': v};
-    cz['label']['horizontalOrigin'] = 'LEFT';
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelFillColor');
+    cz.label.fillColor = {'rgba': v};
+    cz.label.horizontalOrigin = 'LEFT';
     if(style && style.label_outline_color) v = style.label_outline_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelOutlineColor')
-    cz['label']['outlineColor'] = {'rgba': v};
-    cz['label']['pixelOffset'] = {'cartesian2':[20.0, 0.0]};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelOutlineColor');
+    cz.label.outlineColor = {'rgba': v};
+    cz.label.pixelOffset = {'cartesian2':[20.0, 0.0]};
     if(style && style.label_scale) v = style.label_scale;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelScale')
-    cz['label']['scale'] = {'number': v};
-    cz['label']['show'] = {'boolean':false};
-    cz['label']['style'] = 'FILL';
-    cz['label']['font'] = 'normal normal bold 32px arial';
-    cz['label']['text'] = name;
-    cz['label']['verticalOrigin'] = 'CENTER';
-    cz['description'] = '<!--HTML-->\r\n<p>' + name + '</p>';
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelScale');
+    cz.label.scale = {'number': v};
+    cz.label.show = {'boolean':false};
+    cz.label.style = 'FILL';
+    cz.label.font = 'normal normal bold 32px arial';
+    cz.label.text = name;
+    cz.label.verticalOrigin = 'CENTER';
+    cz.description = '<!--HTML-->\r\n<p>' + name + '</p>';
     return cz;
 }
 
@@ -4858,13 +4844,13 @@ function CreatePolyLineCzmlFromGeojson(geojson)
         }
         var rgba = tinycolor(color).toRgb();
         rgba.a = Math.floor(0.5 * 256);
-        ret['color'] = [ rgba.r , rgba.g , rgba.b , rgba.a ];
-        ret['outline_color'] = [ 0, 0, 0, 255 ];
-        ret['outline_width'] = 1;
-        ret['label_fill_color'] = [255, 128, 0, 255];
-        ret['label_outline_color'] = [0, 0, 0, 255];
-        ret['label_scale'] = 1;
-        ret['pixel_width'] = 5;
+        ret.color = [ rgba.r , rgba.g , rgba.b , rgba.a ];
+        ret.outline_color = [ 0, 0, 0, 255 ];
+        ret.outline_width = 1;
+        ret.label_fill_color = [255, 128, 0, 255];
+        ret.label_outline_color = [0, 0, 0, 255];
+        ret.label_scale = 1;
+        ret.pixel_width = 5;
         return ret;
     };
 
@@ -4875,132 +4861,135 @@ function CreatePolyLineCzmlFromGeojson(geojson)
         return [positions[i0], positions[i1], positions[i2]];
     };
     var cz = {};
-    var name = geojson['properties']['name'];
-    cz['id'] = geojson['_id'];
-    cz['webgis_type'] = geojson['properties']['webgis_type'];
-    cz['position'] = {};
-    cz['polyline'] = {};
-    cz['polyline']['positions'] = {};
+    var name = geojson.properties.name;
+    cz.id = geojson._id;
+    cz.webgis_type = geojson.properties.webgis_type;
+    cz.position = {};
+    cz.polyline = {};
+    cz.polyline.positions = {};
     
     //console.log(geojson);
-    if(cz['webgis_type']==='polyline_line')
+    if(cz.webgis_type === 'polyline_line')
     {
         
-        var positions = GetVertexPositionsByGeojsonPolyline(geojson['geometry']);
-        cz['polyline']['positions']['cartographicDegrees'] = positions;
-        cz['position']['cartographicDegrees'] = get_center(positions);
+        var positions = GetVertexPositionsByGeojsonPolyline(geojson.geometry);
+        cz.polyline.positions.cartographicDegrees = positions;
+        cz.position.cartographicDegrees = get_center(positions);
     }
     else
     {
-        var positions = GetVertexPositionsByGeojsonPolyline(geojson['geometry'], geojson['properties']['height']);
-        cz['polyline']['positions']['cartographicDegrees'] = positions;
-        cz['position']['cartographicDegrees'] = get_center(positions);
+        var positions = GetVertexPositionsByGeojsonPolyline(geojson.geometry, geojson.properties.height);
+        cz.polyline.positions.cartographicDegrees = positions;
+        cz.position.cartographicDegrees = get_center(positions);
     }
-    cz['name'] = name;
-    cz['polyline']['material'] = {};
-    cz['polyline']['material']['solidColor'] = {};
+    cz.name = name;
+    cz.polyline.material = {};
+    cz.polyline.material.solidColor = {};
     var style;
-    if(geojson['properties']['voltage'])
+    if(geojson.properties.voltage)
     {
         style = get_line_style(geojson);
     }else
     {
-        style = geojson['properties']['style'];
+        style = geojson.properties.style;
     }
     var v;
     if(style && style.color) v = style.color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'color')
-    cz['polyline']['material']['solidColor']['color'] = {'rgba':v};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'color');
+    cz.polyline.material.solidColor.color = {'rgba':v};
     if(style && style.pixel_width) v = style.pixel_width;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'pixelWidth')
-    cz['polyline']['width'] = {'number':v};
-    cz['polyline']['material']['polylineOutline'] = {};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'pixelWidth');
+    cz.polyline.width = {'number':v};
+    cz.polyline.material.polylineOutline = {};
     if(style && style.outline_color) v = style.outline_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'outlineColor')
-    cz['polyline']['material']['polylineOutline']['outlineColor'] = {'rgba': v};
-    cz['polyline']['material']['polylineOutline']['outlineWidth'] = {'number': 1};
-    cz['polyline']['show'] = {'boolean':true};
-    cz['label'] = {};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'outlineColor');
+    cz.polyline.material.polylineOutline.outlineColor = {'rgba': v};
+    cz.polyline.material.polylineOutline.outlineWidth = {'number': 1};
+    cz.polyline.show = {'boolean':true};
+    cz.label = {};
     if(style && style.label_fill_color) v = style.label_fill_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelFillColor')
-    cz['label']['fillColor'] = {'rgba': v};
-    cz['label']['horizontalOrigin'] = 'LEFT';
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelFillColor');
+    cz.label.fillColor = {'rgba': v};
+    cz.label.horizontalOrigin = 'LEFT';
     if(style && style.label_outline_color) v = style.label_outline_color;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelOutlineColor')
-    cz['label']['outlineColor'] = {'rgba': v};
-    cz['label']['pixelOffset'] = {'cartesian2':[20.0, 0.0]};
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelOutlineColor');
+    cz.label.outlineColor = {'rgba': v};
+    cz.label.pixelOffset = {'cartesian2':[20.0, 0.0]};
     if(style && style.label_scale) v = style.label_scale;
-    else v = GetDefaultStyleValue(cz['webgis_type'], 'labelScale')
-    cz['label']['scale'] = {'number': v};
-    cz['label']['show'] = {'boolean':false};
-    cz['label']['style'] = 'FILL';
-    cz['label']['font'] = 'normal normal bold 32px arial';
-    cz['label']['text'] = name;
-    cz['label']['verticalOrigin'] = 'CENTER';
-    cz['description'] = '<!--HTML-->\r\n<p>' + name + '</p>';
+    else v = GetDefaultStyleValue(cz.webgis_type, 'labelScale');
+    cz.label.scale = {'number': v};
+    cz.label.show = {'boolean':false};
+    cz.label.style = 'FILL';
+    cz.label.font = 'normal normal bold 32px arial';
+    cz.label.text = name;
+    cz.label.verticalOrigin = 'CENTER';
+    cz.description = '<!--HTML-->\r\n<p>' + name + '</p>';
     return cz;
 }
 
 function CreatePointCzmlFromGeojson(geojson)
 {
     var cz = {};
-    cz['id'] = geojson['_id'];
-    cz['webgis_type'] = geojson['properties']['webgis_type'];
-    cz['billboard'] = {};
-    cz['billboard']['color'] = {'rgba':[255, 255, 255, 255]};
-    cz['billboard']['horizontalOrigin'] = 'CENTER';
-    cz['billboard']['verticalOrigin'] = 'BOTTOM';
-    cz['billboard']['scale'] = {'number':1.0};
-    cz['billboard']['show'] = {'boolean':false};
-    if(geojson['properties']['model'] === undefined)
+    cz.id = geojson._id;
+    cz.webgis_type = geojson.properties.webgis_type;
+    cz.billboard = {};
+    cz.billboard.color = {'rgba':[255, 255, 255, 255]};
+    cz.billboard.horizontalOrigin = 'CENTER';
+    cz.billboard.verticalOrigin = 'BOTTOM';
+    cz.billboard.scale = {'number':1.0};
+    cz.billboard.show = {'boolean':false};
+    if(_.isUndefined(geojson.properties.model))
     {
-        cz['billboard']['show'] = {'boolean':true};
+        cz.billboard.show = {'boolean':true};
     }
-    var name = geojson['properties']['name'];
-    var subtype = cz['webgis_type'];
-    if(geojson['properties']['function_type'] === 'PAE')
-    {
-        subtype = 'point_dn_switch'
+    var name = geojson.properties.name;
+    if(geojson.properties.code_name){
+        name = '(' + geojson.properties.code_name + ')' + name;
     }
-    if(geojson['properties']['function_type'] === 'LAD')
+    var subtype = cz.webgis_type;
+    if(geojson.properties.function_type === 'PAE')
     {
-        subtype = 'point_tower'
+        subtype = 'point_dn_switch';
     }
-    if(geojson['properties']['function_type'] === 'PAB')
+    if(geojson.properties.function_type === 'LAD')
     {
-        subtype = 'point_dn_transform'
+        subtype = 'point_tower';
     }
-    if(geojson['properties']['function_type'] === 'PLM')
+    if(geojson.properties.function_type === 'PAB')
     {
-        subtype = 'point_dn_link'
+        subtype = 'point_dn_transform';
     }
-    if(geojson['properties']['function_type'] === 'T')
+    if(geojson.properties.function_type === 'PLM')
     {
-        subtype = 'point_dn_transformarea'
+        subtype = 'point_dn_link';
     }
-    if(geojson['properties']['function_type'] === 'PAJ')
+    if(geojson.properties.function_type === 'T')
     {
-        subtype = 'point_dn_fuse'
+        subtype = 'point_dn_transformarea';
     }
-    if(geojson['properties']['function_type'] === 'PAD')
+    if(geojson.properties.function_type === 'PAJ')
     {
-        subtype = 'point_dn_load'
+        subtype = 'point_dn_fuse';
     }
-    if(geojson['properties']['function_type'] === 'PAC')
+    if(geojson.properties.function_type === 'PAD')
     {
-        subtype = 'point_dn_cutoff'
+        subtype = 'point_dn_load';
+    }
+    if(geojson.properties.function_type === 'PAC')
+    {
+        subtype = 'point_dn_cutoff';
     }
     var style = $.webgis.mapping.style_mapping[subtype];
     var v;
     var icon_img = 'img/marker30x48.png';
     if(subtype === 'point_tower')
     {
-        icon_img = style['icon_img'];
+        icon_img = style.icon_img;
     }
     else
     {
-        cz['billboard']['show'] = {'boolean':true};
-        style = geojson['properties']['style'];
+        cz.billboard.show = {'boolean':true};
+        style = geojson.properties.style;
         if(style && style.icon && style.icon.uri) 
         {
             icon_img = style.icon.uri;
@@ -5010,40 +4999,40 @@ function CreatePointCzmlFromGeojson(geojson)
             icon_img = GetDefaultStyleValue(subtype, 'icon_img');
         }
     }
-    cz['billboard']['image'] = {'uri':icon_img};
-    cz['name'] = name;
-    cz['position'] = {};
-    cz['position']['cartographicDegrees'] = [geojson['geometry']['coordinates'][0], geojson['geometry']['coordinates'][1], geojson['geometry']['coordinates'][2]];
-    cz['point'] = {};
+    cz.billboard.image = {'uri':icon_img};
+    cz.name = name;
+    cz.position = {};
+    cz.position.cartographicDegrees = [geojson.geometry.coordinates[0], geojson.geometry.coordinates[1], geojson.geometry.coordinates[2]];
+    cz.point = {};
     if(style && style.color) v = style.color;
-    else v = GetDefaultStyleValue(subtype, 'color')
-    cz['point']['color'] = {'rgba':v};
+    else v = GetDefaultStyleValue(subtype, 'color');
+    cz.point.color = {'rgba':v};
     if(style && style.outline_color) v = style.outline_color;
-    else v = GetDefaultStyleValue(subtype, 'outlineColor')
-    cz['point']['outlineColor'] = {'rgba': v};
+    else v = GetDefaultStyleValue(subtype, 'outlineColor');
+    cz.point.outlineColor = {'rgba': v};
     if(style && style.outline_width) v = style.outline_width;
-    else v = GetDefaultStyleValue(subtype, 'outlineWidth')
-    cz['point']['outlineWidth'] = {'number': v};
+    else v = GetDefaultStyleValue(subtype, 'outlineWidth');
+    cz.point.outlineWidth = {'number': v};
     if(style && style.pixel_size) v = style.pixel_size;
-    else v = GetDefaultStyleValue(subtype, 'pixelSize')
-    cz['point']['pixelSize'] = {'number': v};
-    cz['point']['show'] = {'boolean':true};
-    cz['label'] = {};
+    else v = GetDefaultStyleValue(subtype, 'pixelSize');
+    cz.point.pixelSize = {'number': v};
+    cz.point.show = {'boolean':true};
+    cz.label = {};
     if(style && style.label_fill_color) v = style.label_fill_color;
-    else v = GetDefaultStyleValue(subtype, 'labelFillColor')
-    cz['label']['fillColor'] = {'rgba': v};
-    cz['label']['horizontalOrigin'] = 'LEFT';
-    cz['label']['verticalOrigin'] = 'BOTTOM';
-    cz['label']['outlineColor'] = {'rgba': 1};
-    cz['label']['pixelOffset'] = {'cartesian2':[20.0, 0.0]};
+    else v = GetDefaultStyleValue(subtype, 'labelFillColor');
+    cz.label.fillColor = {'rgba': v};
+    cz.label.horizontalOrigin = 'LEFT';
+    cz.label.verticalOrigin = 'BOTTOM';
+    cz.label.outlineColor = {'rgba': 1};
+    cz.label.pixelOffset = {'cartesian2':[20.0, 0.0]};
     if(style && style.label_scale) v = style.label_scale;
-    else v = GetDefaultStyleValue(subtype, 'labelScale')
-    cz['label']['scale'] = {'number': v};
-    cz['label']['show'] = {'boolean':false};
-    cz['label']['style'] = 'FILL';
-    cz['label']['font'] = 'normal normal bold 32px arial';
-    cz['label']['text'] = name;
-    cz['description'] = '<!--HTML-->\r\n<p>' + name + '</p>';
+    else v = GetDefaultStyleValue(subtype, 'labelScale');
+    cz.label.scale = {'number': v};
+    cz.label.show = {'boolean':false};
+    cz.label.style = 'FILL';
+    cz.label.font = 'normal normal bold 32px arial';
+    cz.label.text = name;
+    cz.description = '<!--HTML-->\r\n<p>' + name + '</p>';
     return cz;
 }
 
@@ -5077,20 +5066,20 @@ function FilterModelList(str)
             if(url.length>0)
             {
                 var obj = {};
-                obj['url'] = '/' + url;
+                obj.url = '/' + url;
                 if($.webgis.mapping.models_mapping[model_code_height])
                 {
-                    obj['data'] = $.webgis.mapping.models_mapping[model_code_height];
+                    obj.data = $.webgis.mapping.models_mapping[model_code_height];
                 }else
                 {
-                    obj['data'] = {};
-                    obj['data']['contact_points'] = [];
-                    obj['data']['model_code'] = GetMCByModelCode(model_code_height);
-                    obj['data']['model_code_height'] = model_code_height;
+                    obj.data = {};
+                    obj.data.contact_points = [];
+                    obj.data.model_code = GetMCByModelCode(model_code_height);
+                    obj.data.model_code_height = model_code_height;
                 }
                 if($.webgis.select.selected_obj && $.webgis.select.selected_obj.id)
                 {
-                    obj['tower_id'] = $.webgis.select.selected_obj.id;
+                    obj.tower_id = $.webgis.select.selected_obj.id;
                 }
                 if($.webgis.config.map_backend === 'cesium')
                 {
@@ -5978,7 +5967,7 @@ function FlyToExtent(viewer, west, south, east, north)
     }
 }
 
-function GetTowerInfoByTowerId(id)
+function GetPOIInfoById(id)
 {
     var ret ;
     //if($.webgis.data.geojsons[id])
@@ -6063,7 +6052,7 @@ function GetNextTowerModelData(ids)
     var ret = [];
     _.forEach(ids, function(id)
     {
-        var tower = GetTowerInfoByTowerId(id);
+        var tower = GetPOIInfoById(id);
         if(tower)
         {
             ret.push(tower.properties.model);
@@ -6076,7 +6065,7 @@ function GetNextModelUrl(ids)
     var ret = [];
     _.forEach(ids, function(id)
     {
-        var tower = GetTowerInfoByTowerId(id);
+        var tower = GetPOIInfoById(id);
         if(tower && tower.properties.model )
         {
             var url = GetModelUrl(tower.properties.model.model_code_height, true);
@@ -6345,19 +6334,25 @@ function TowerInfoMixin(viewer)
         var picked;
         try{
             picked = viewer.scene.pick(e.endPosition);
-        }catch(e){}
+        }catch(ex){}
         if (Cesium.defined(picked) && Cesium.defined($.webgis.select.selected_obj) && Cesium.defined(picked.id) && picked.id === $.webgis.select.selected_obj) 
         {
             var id = $.webgis.select.selected_obj.id;
             var g = _.find($.webgis.data.geojsons, {_id:id});
-            if(g && g.properties.name)
+            if(g && g.properties.name )
             {
-                ShowGeoTip(id, e.endPosition, g.properties.name);
-            }else 
+
+                var name = g.properties.name;
+                if(g.properties.code_name){
+                    name = '(' + g.properties.code_name + ')' + name;
+                }
+                ShowGeoTip(id, e.endPosition, name);
+            }else
             {
                 ShowGeoTip(false);
             }
-        }else 
+        }
+        else
         {
             ShowGeoTip(false);
         } 
@@ -6610,7 +6605,7 @@ function ReloadModelPosition(viewer)
         var k = item.id;
         if($.webgis.data.gltf_models_mapping[k])
         {
-            var t = GetTowerInfoByTowerId(k);
+            var t = GetPOIInfoById(k);
             if(t)
             {
                 RemoveSegmentsTower(viewer, t);
@@ -7541,7 +7536,7 @@ function CheckTowerInfoModified()
         return false;
     }
     var id = idobj.val();
-    var tower = GetTowerInfoByTowerId(id);
+    var tower = GetPOIInfoById(id);
     if(tower)
     {
         var lng = parseFloat($('#form_tower_info_base').webgisform('get','lng').val()),
@@ -7761,8 +7756,6 @@ function SaveTower(viewer)
                 $.webgis.select.selected_geojson.properties.metals[idx] = formdata;
             }
         }
-        //console.log($.webgis.select.selected_geojson);
-        //if(true) return;
         SavePoi($.webgis.select.selected_geojson, function(data1){
             //console.log(data1);
             if(data1 && data1.length>0)
@@ -7868,7 +7861,7 @@ function SavePoi(data, callback)
 
 function ShowTowerInfo(viewer, id)
 {
-    var tower = GetTowerInfoByTowerId(id);
+    var tower = GetPOIInfoById(id);
     if(tower)
     {
         $.webgis.select.selected_geojson = $.extend(true, {}, tower);
@@ -10268,7 +10261,9 @@ function GetPropertiesByTwoNodes(viewer, id0, id1)
 
 function SaveEdge(viewer, id, callback)
 {
-    
+    //console.log($.webgis.select.selected_obj);
+    //console.log($.webgis.select.prev_selected_obj);
+
     if($.webgis.config.map_backend === 'cesium')
     {
         var cz, czprev;
@@ -10279,11 +10274,12 @@ function SaveEdge(viewer, id, callback)
         if($.webgis.config.node_connect_mode
         && cz
         && czprev
-        && cz.webgis_type === czprev.webgis_type
+        && (cz.webgis_type === czprev.webgis_type
+            || (_.startsWith(cz.webgis_type, 'point_') && _.startsWith(czprev.webgis_type, 'point_')
+            ))
         )
         {
             var geojson = {};
-            //var webgis_type = cz.webgis_type;
             geojson._id = id;
             geojson.type = 'Feature';
             geojson.properties = GetPropertiesByTwoNodes(viewer, $.webgis.select.prev_selected_obj.id, $.webgis.select.selected_obj.id);
@@ -10307,7 +10303,9 @@ function SaveEdge(viewer, id, callback)
         && gprev
         && g.properties
         && gprev.properties
-        && g.properties.webgis_type === gprev.properties.webgis_type
+        && (g.properties.webgis_type === gprev.properties.webgis_type
+            || (_.startsWith(g.properties.webgis_type, 'point_') && _.startsWith(gprev.properties.webgis_type, 'point_')
+            ))
         )
         {
             var geojson = {};
@@ -10373,7 +10371,7 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
         ellipsoid = viewer.scene.globe.ellipsoid;
     }
     $('#dlg_poi_info').dialog({
-        width: 540,
+        width: 630,
         height: 680,
         minWidth:200,
         minHeight: 200,
@@ -10479,6 +10477,7 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
                                 data._id = id;
                                 if(!data._id || data._id.length == 0) data._id = null;
                                 var properties =  $('#form_poi_info_' + v).webgisform('getdata');
+
                                 delete properties.id;
 
                                 data.properties = properties;
@@ -10502,9 +10501,17 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
                                 if(_.isUndefined(id))
                                 {
                                     data.geometry = {type:t, coordinates:GetGeojsonFromPosition(ellipsoid, position, t)};
+                                }else{
+                                    if(!_.isUndefined(data.properties.lng) && !_.isUndefined(data.properties.lat)){
+                                        data.geometry = {type:t, coordinates:[parseFloat(data.properties.lng), parseFloat(data.properties.lat)]};
+                                    }
                                 }
+                                delete data.properties.lng;
+                                delete data.properties.lat;
+                                delete data.properties.alt;
+                                //console.log($.webgis.select.selected_geojson);
                                 //console.log(data);
-                                //return;
+                                //if(true) return;
                                 SavePoi(data, function(data1){
                                     ClearSelectEntity();
                                     that.dialog( "close" );
@@ -10613,41 +10620,48 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
         var v = event.target.value;
         webformlist[v].parent().css('display','block');
     });
+    if(_.isUndefined($.webgis.data.distribute_network) || _.isEmpty($.webgis.data.distribute_network))
+    {
+        $.ajax({
+            url:'/distribute_network/query/network_names',
+            method:'post',
+            data: JSON.stringify({})
+        })
+        .always(function () {
+            ShowProgressBar(false);
+        })
+        .done(function (data1) {
+            data1 = JSON.parse(data1);
+            $.webgis.data.distribute_network = data1;
+            $('#form_poi_info_point_dn_network').empty();
+            var netw;
+            _.forEach(data1, function(item)
+            {
+                $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
+                    if(_.includes(item.properties.nodes, id)){
+                        netw = item._id;
+                    }
+                }
+            });
+            $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+            if(netw)
+            {
+                $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
+            }
+        });
+    }
     if(id )
     {
         var g = _.find($.webgis.data.geojsons, {_id:id});
         if(g){
             var data = g.properties;
             var wt = g.properties.webgis_type;
-            //console.log(data);
+            data.id = id;
+            data.lng = g.geometry.coordinates[0];
+            data.lat = g.geometry.coordinates[1];
+            data.alt = g.geometry.coordinates[2];
             $("#form_poi_info_" + wt).webgisform('setdata', data);
-            if(wt === 'point_dn')
-            {
-                var cond = {'db':$.webgis.db.db_name, 'collection':'network', 'properties.webgis_type':'polyline_dn'};
-                MongoFind(cond, function(data1){
-                    if(data1.length>0)
-                    {
-                        //console.log(data1);
-                        $('#form_poi_info_point_dn_network').empty();
-                        $('#form_poi_info_point_dn_network').append('<option value="">(请选择)</option>');
-                        var netw;
-                        _.forEach(data1, function(item){
-                            $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
-                            if(!_.isUndefined(item.properties.nodes) && !_.isEmpty(item.properties.nodes)){
-                                if(_.includes(item.properties.nodes, id)){
-                                    netw = item._id;
-                                }
-                            }
-                        });
-                        $('#form_poi_info_point_dn_network').multipleSelect('refresh');
-                        //console.log(netw);
-                        if(netw)
-                        {
-                            $('#form_poi_info_point_dn_network').multipleSelect('setSelects', [netw]);
-                        }
-                    }
-                });
-            }
         }
     }
     
@@ -10784,6 +10798,185 @@ function BuildPoiForms()
 {
     var ret = {};
     var vlist = ['point_marker', 'point_hazard', 'point_tower', 'point_dn_switch','point_dn_link','point_dn_transform','point_dn_transformarea', 'polyline_marker', 'polyline_hazard', 'polygon_marker', 'polygon_hazard'];
+    var fields_geo = [
+        { id: "id", type: "hidden" },
+        { display: "经度", id: "lng", newline: false,  type: "geographic", group:'地理信息', width:110 , validate:{required:true, number: true},
+            change:function( event, ui ) {
+                //var fid = $(event.target).attr('id');
+                var formjq = $(event.target).closest('form');
+                var id = $(formjq).webgisform('get', 'id').val();
+                var viewer = $.webgis.viewer;
+                var ellipsoid = viewer.scene.globe.ellipsoid;
+                var lng = $(formjq).webgisform('get','lng').val(),
+                    lat = $(formjq).webgisform('get','lat').val(),
+                    height = $(formjq).webgisform('get','alt').val(),
+                    rotate = 0;//$(formjq).webgisform('get','rotate').val();
+                if(event.currentTarget )
+                {
+                    if(!$.webgis.config.zaware) height = 0;
+                    lng = event.currentTarget.value;
+                    if($.webgis.data.gltf_models_mapping[id])
+                    {
+                        PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                        var poi = GetPOIInfoById(id);
+                        //if(poi)
+                        //{
+                        //    RemoveSegmentsTower(viewer, poi);
+                        //    DrawSegmentsByTower(viewer, poi);
+                        //}
+                    }
+                    RePositionPoint(viewer, id, lng, lat, height, rotate);
+                    if($.webgis.selected_geojson)
+                    {
+                        $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                    }
+                }
+                event.preventDefault();
+            },
+            spin:function( event, ui ) {
+                var formjq = $(event.target).closest('form');
+                var viewer = $.webgis.viewer;
+                var ellipsoid = viewer.scene.globe.ellipsoid;
+                //var fid = $(event.target).attr('id');
+                var id = $(formjq).webgisform('get','id').val();
+                var lng = $(formjq).webgisform('get','lng').val(),
+                    lat = $(formjq).webgisform('get','lat').val(),
+                    height = $(formjq).webgisform('get','alt').val(),
+                    rotate = 0;//$(formjq).webgisform('get','rotate').val();
+                if(!$.webgis.config.zaware) height = 0;
+                lng = ui.value;
+                if($.webgis.data.gltf_models_mapping[id])
+                {
+                    PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                }
+                RePositionPoint(viewer, id, lng, lat, height, rotate);
+                if($.webgis.selected_geojson)
+                {
+                    $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                }
+            }
+        },
+        { display: "纬度", id: "lat", newline: false, type: "geographic",  group:'地理信息', width:110 , validate:{required:true, number: true},
+            change:function( event, ui ) {
+                var formjq = $(event.target).closest('form');
+                var viewer = $.webgis.viewer;
+                var ellipsoid = viewer.scene.globe.ellipsoid;
+                //var fid = $(event.target).attr('id');
+                var id = $(formjq).webgisform('get','id').val();
+                var lng = $(formjq).webgisform('get','lng').val(),
+                    lat = $(formjq).webgisform('get','lat').val(),
+                    height = $(formjq).webgisform('get','alt').val(),
+                    rotate = $(formjq).webgisform('get','rotate').val();
+                if(event.currentTarget)
+                {
+                    if(!$.webgis.config.zaware) height = 0;
+                    lat = event.currentTarget.value;
+                    if( $.webgis.data.gltf_models_mapping[id])
+                    {
+                        PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                        //var poi = GetPOIInfoById(id);
+                        //if(poi)
+                        //{
+                        //    RemoveSegmentsTower(viewer, poi);
+                        //    DrawSegmentsByTower(viewer, poi);
+                        //}
+                    }
+                    RePositionPoint(viewer, id, lng, lat, height, rotate);
+                    if($.webgis.selected_geojson)
+                    {
+                        $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                    }
+                }
+                event.preventDefault();
+            },
+            spin:function( event, ui ) {
+                var formjq = $(event.target).closest('form');
+                var viewer = $.webgis.viewer;
+                var ellipsoid = viewer.scene.globe.ellipsoid;
+                var fid = $(event.target).attr('id');
+                var id = $(formjq).webgisform('get','id').val();
+                var lng = $(formjq).webgisform('get','lng').val(),
+                    lat = $(formjq).webgisform('get','lat').val(),
+                    height = $(formjq).webgisform('get','alt').val(),
+                    rotate = 0;//$(formjq).webgisform('get','rotate').val();
+                if(!$.webgis.config.zaware) height = 0;
+                lat = ui.value;
+                if($.webgis.data.gltf_models_mapping[id])
+                {
+                    PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                }
+                RePositionPoint(viewer, id, lng, lat, height, rotate);
+                if($.webgis.selected_geojson)
+                {
+                    $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                }
+            }
+        },
+        { display: "海拔(米)", id: "alt", newline: false, type: "spinner", step:0.5, min:0,max:9999, group:'地理信息', width:110 , validate:{required:true, number: true, range:[0, 9999]},
+            change:function( event, ui ) {
+                if(event.currentTarget)
+                {
+                    var formjq = $(event.target).closest('form');
+                    var viewer = $.webgis.viewer;
+                    var ellipsoid = viewer.scene.globe.ellipsoid;
+                    //var fid = $(event.target).attr('id');
+                    var id = $(formjq).webgisform('get','id').val();
+                    var lng = $(formjq).webgisform('get','lng').val(),
+                        lat = $(formjq).webgisform('get','lat').val(),
+                        height = $(formjq).webgisform('get','alt').val(),
+                        rotate = 0;//$(formjq).webgisform('get','rotate').val();
+                    height = event.currentTarget.value;
+                    if(!$.webgis.config.zaware) height = 0;
+                    if($.webgis.data.gltf_models_mapping[id])
+                    {
+                        PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                        var tower = GetPOIInfoById(id);
+                        if(tower)
+                        {
+                            RemoveSegmentsTower(viewer, tower);
+                            DrawSegmentsByTower(viewer, tower);
+                        }
+                    }
+                    RePositionPoint(viewer, id, lng, lat, height, rotate);
+                    if($.webgis.selected_geojson)
+                    {
+                        $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                    }
+                }
+                event.preventDefault();
+            },
+            spin:function( event, ui ) {
+                var formjq = $(event.target).closest('form');
+                var viewer = $.webgis.viewer;
+                var ellipsoid = viewer.scene.globe.ellipsoid;
+                //var fid = $(event.target).attr('id');
+                var id = $(formjq).webgisform('get','id').val();
+                var lng = $(formjq).webgisform('get','lng').val(),
+                    lat = $(formjq).webgisform('get','lat').val(),
+                    height = $(formjq).webgisform('get','alt').val(),
+                    rotate = 0;//$(formjq).webgisform('get','rotate').val();
+                height = ui.value;
+                if(!$.webgis.config.zaware) height = 0;
+                if($.webgis.data.gltf_models_mapping[id])
+                {
+                    PositionModel(ellipsoid, $.webgis.data.gltf_models_mapping[id], lng, lat, height, rotate);
+                }
+                RePositionPoint(viewer, id, lng, lat, height, rotate);
+                if($.webgis.selected_geojson)
+                {
+                    $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, rotate);
+                }
+            },
+            attach:'<img src=""/>',
+            attachclick:null
+        },
+        { display: "定位", id: "btn_click_pos", newline: false, type: "button", defaultvalue:'点击定位', group:'地理信息', width:110 ,
+            click:function(){
+                $.webgis.flag.btn_click_to_position = true;
+            }
+        }
+
+    ];
     _.forEach(vlist, function(v)
     {
         var fields;
@@ -10842,7 +11035,6 @@ function BuildPoiForms()
                 { display: "标签尺寸", id: "label_scale", defaultvalue:GetDefaultStyleValue(v, 'labelScale'), newline: false,  type: "spinner", step:0.1, min:0.1,max:10, group:'样式', width:30, labelwidth:90, validate:{number: true, required:true, range:[0.1, 10]} }
             ];
         }
-
         if(_.startsWith(v, 'point_dn_'))
         {
             var function_list = [];
@@ -10925,11 +11117,37 @@ function BuildPoiForms()
             ];
         }
         var webgis_type = v;
-
-        if(_.startsWith(v, 'point_dn_') )
+        if(_.startsWith(v, 'point_dn_'))
         {
             webgis_type = 'point_dn';
+            $.ajax({
+                url:'/distribute_network/query/network_names',
+                method:'post',
+                data: JSON.stringify({})
+            })
+            .always(function () {
+                ShowProgressBar(false);
+            })
+            .done(function (data1) {
+                data1 = JSON.parse(data1);
+                $.webgis.data.distribute_network = data1;
+                $('#form_poi_info_point_dn_network').empty();
+                _.forEach(data1, function(item)
+                {
+                    $('#form_poi_info_point_dn_network').append('<option value="' + item._id + '">' + item.properties.name + '</option>');
+                });
+                $('#form_poi_info_point_dn_network').multipleSelect('refresh');
+            });
         }
+        if(_.startsWith(v, 'point_') && fields)
+        {
+            var idx = fields_geo.length - 1;
+            while(idx > -1){
+                fields.unshift(fields_geo[idx]);
+                idx -= 1;
+            }
+        }
+
         if(!ret[webgis_type] && fields)
         {
             ret[webgis_type] = $("#form_poi_info_" + webgis_type).webgisform(fields, {
@@ -11176,7 +11394,37 @@ function OnSelect(viewer, e, selectedEntity)
     if($.webgis.config.map_backend === 'cesium')
     {
         $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] + '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;' + PickLngLatFromScreen(viewer, e.position));
-        //if (Cesium.defined(viewer.selectedEntity)) 
+        if ($.webgis.flag.btn_click_to_position)
+        {
+            $.webgis.flag.btn_click_to_position = false;
+            var ellipsoid = viewer.scene.globe.ellipsoid;
+            var scene = viewer.scene;
+            var ray = scene.camera.getPickRay(e.position);
+            var cartesian = scene.globe.pick(ray, scene);
+            var cartographic = ellipsoid.cartesianToCartographic(cartesian);
+            if(cartographic.longitude &&  cartographic.latitude)
+            {
+                var height = 0;
+                var lng = Cesium.Math.toDegrees(cartographic.longitude).toFixed(7);
+                var lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(7);
+                _.forEach(['point_tower', 'point_dn', 'point_marker', 'point_hazard'],function(item){
+                    $('#form_poi_info_' + item).webgisform('set', 'lng', lng);
+                    $('#form_poi_info_' + item).webgisform('set', 'lat', lat);
+                    $('#form_poi_info_' + item).webgisform('set', 'alt', 0);
+                });
+                var sel = $.webgis.select.selected_obj;
+                //console.log(sel);
+                if(sel && sel.id){
+                    var id = sel.id;
+                    RePositionPoint(viewer, id, lng, lat, height, 0);
+                    if($.webgis.selected_geojson)
+                    {
+                        $.webgis.selected_geojson = UpdateGeojsonPos($.webgis.selected_geojson, lng, lat, height, 0);
+                    }
+                }
+
+            }
+        }
         if (Cesium.defined(selectedEntity)) 
         {
             $.webgis.select.prev_selected_obj = $.webgis.select.selected_obj;
@@ -11298,7 +11546,10 @@ function OnSelect(viewer, e, selectedEntity)
                 if($.webgis.select.prev_selected_obj){
                     czprev = _.find($.webgis.data.czmls, {id:$.webgis.select.prev_selected_obj.id});
                 }
-                if(cz  &&  czprev && czprev.webgis_type === cz.webgis_type)
+                if(cz  &&  czprev && (
+                    czprev.webgis_type === cz.webgis_type
+                    || (_.startsWith(czprev.webgis_type, 'point_') && _.startsWith(cz.webgis_type, 'point_') )
+                    ))
                 {
                     var edgeexist = CheckSegmentsExist($.webgis.select.prev_selected_obj, $.webgis.select.selected_obj, cz.webgis_type);
                     if(edgeexist)
@@ -11377,7 +11628,8 @@ function OnSelect(viewer, e, selectedEntity)
                         }
                     }
                 }
-                if(g && g.properties && g.properties.webgis_type.indexOf('point_')>-1 && g.properties.webgis_type != 'point_tower')
+                if(g && g.properties && _.startsWith(g.properties.webgis_type,'point_'))// &&
+                // g.properties.webgis_type != 'point_tower')
                 {
                     try{
                         $('#dlg_tower_info').dialog("close");
@@ -11389,7 +11641,10 @@ function OnSelect(viewer, e, selectedEntity)
                         ShowPoiInfoDialog(viewer, '编辑', 'point', [], id);
                     }
                 }
-                if(g  && gprev && gprev.properties.webgis_type === g.properties.webgis_type)
+                if(g  && gprev &&
+                    (gprev.properties.webgis_type === g.properties.webgis_type
+                      || (_.startsWith(gprev.properties.webgis_type, 'point_') && _.startsWith(g.properties.webgis_type, 'point_'))
+                ))//gprev.properties.webgis_type === g.properties.webgis_type)
                 {
                     var edgeexist = CheckSegmentsExist($.webgis.select.prev_selected_obj, $.webgis.select.selected_obj);
                     if(edgeexist)
@@ -11476,7 +11731,7 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [{value:'rset', label:'简单定位算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -11523,20 +11778,61 @@ function ShowDNFaultDetectDialog(viewer)
                 });
             });
         }},
-        { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
-            click:function(){
-                var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
-                if(formdata.algorithm && formdata.algorithm.length){
-                    ShowDNAlgorithmOptionDialog(viewer, formdata.algorithm);
-                }
-            }
-        },
+        //{ display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
+        //    click:function(){
+        //        var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
+        //        if(formdata.algorithm && formdata.algorithm.length){
+        //            ShowDNAlgorithmOptionDialog(viewer, formdata.algorithm);
+        //        }
+        //    }
+        //},
         { display: "恢复计算", id: "btn_power_resume", newline: true, type: "button", defaultvalue:'计算',  group: '操作', width: 200, labelwidth: 140,
             click:function(){
-                //var data = [['56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'], ['56443d78d8b95a19185b7350', '56443d25d8b95a19185b734e'], ['56443e09d8b95a19185b7354', '5643edc6d8b95a164008f4a4']];
-                var data = [['5643edc6d8b95a164008f4a4', '56443d4ed8b95a19185b734f'], ['56443d4ed8b95a19185b734f', '56441ba1d8b95a19185b734c'], ['56441ba1d8b95a19185b734c', '56443df4d8b95a19185b7353']];
-                DrawDNPowerResumeLinePrimitive(viewer, true, data);
-                DrawDNPowerResumeCandidateTable(viewer, data);
+                var formdata1 = $('#form_dn_network_power_resume').webgisform('getdata');
+                if(formdata1.name && formdata1.name.length){
+
+                    ShowConfirm(null, 500, 200,
+                        '提交确认',
+                        '确认提交吗? ',
+                        function () {
+
+                            var formdata = {};
+                            formdata.algorithm = 'power_resume';
+                            ShowProgressBar(true, 670, 200, '计算中', '正在计算，请稍候...');
+                            $.ajax({
+                                url: '/distribute_network/fault_position/position',
+                                method: 'post',
+                                data: JSON.stringify(formdata)
+                            })
+                                .always(function () {
+                                    ShowProgressBar(false);
+                                })
+                                .done(function (data1) {
+                                    $('#dlg_dn_network_fault_detect').dialog("close");
+                                    $.jGrowl("计算成功", {
+                                        life: 2000,
+                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        theme: 'bubblestylesuccess',
+                                        glue: 'before'
+                                    });
+                                    data1 = JSON.parse(data1);
+                                    //console.log(data1);
+                                    //var data = [['5643edc6d8b95a164008f4a4', '56443d4ed8b95a19185b734f'], ['56443d4ed8b95a19185b734f', '56441ba1d8b95a19185b734c'], ['56441ba1d8b95a19185b734c', '56443df4d8b95a19185b7353']];
+
+                                    DrawDNPowerResumeCandidateTable(viewer, formdata1.name, data1);
+
+                                })
+                                .fail(function (jqxhr, textStatus, e) {
+                                    $('#dlg_dn_network_fault_detect').dialog("close");
+                                    $.jGrowl("提交失败:" + e, {
+                                        life: 2000,
+                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                        theme: 'bubblestylefail',
+                                        glue: 'before'
+                                    });
+                                });
+                        });
+                }
             }
         }
     ];
@@ -11583,9 +11879,24 @@ function ShowDNFaultDetectDialog(viewer)
 		});
 		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
 		$('#form_dn_network_power_resume_name').multipleSelect('refresh');
+
+        $.ajax({
+            url:'/dn_idx_id_mapping.json',
+            method:'get',
+            dateType:'text'
+        })
+        .always(function () {
+            ShowProgressBar(false);
+        })
+        .done(function (data1) {
+            //console.log(data1);
+            $.webgis.data.dn_network.idx_id_mapping = data1;
+        })
+        .fail(function (jqxhr, textStatus, e) {
+        });
 	});
 }
-function DrawDNPowerResumeCandidateTable(viewer, data)
+function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
 {
     CreateDialogSkeleton(viewer, 'dlg_dn_network_power_resume_candidate_grid');
     $('#dn_network_power_resume_candidate_grid_conatiner').empty();
@@ -11634,155 +11945,188 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
             //var id = ui.newTab.context.hash;
         }
     });
-    data = [
+    var msgarr = data.msg.split('\n');
+    var msg = msgarr.join('<br/>');
+    $('#dn_network_power_resume_calc_progress_panel').html(msg);
+    var ctdata = [];
+    _.forEach(data.data, function(item){
+        if(item.data.length)
         {
-            type_name:'整区供电',
-            data:[
-                {
-                    solution_index: 1,
-                    switches: [],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.09930,
-                            load_transfer:{real:2.38518, j:1.94750}
-                        }
-                    ],
-                }
-            ]
-        },
-        {
-            type_name:'馈线两分区',
-            data:[
-                {
-                    solution_index:1,
-                    switches:[{start:'S8', end:'S7'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.028,
-                            load_transfer: {real:0.610, j:0.552}
-                        },
-                        {
-                            line:'line1',
-                            voltage_quality:0.044,
-                            load_transfer: {real:1.775, j:1.396}
-                        },
-                    ],
-                },
-                {
-                    solution_index:2,
-                    switches:[{start:'S2', end:'S3'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.086,
-                            load_transfer: {real:1.943, j:1.517}
-                        },
-                        {
-                            line:'line2',
-                            voltage_quality:0.034,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                    ],
-                },
-                {
-                    solution_index:3,
-                    switches:[{start:'S2', end:'S3'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.086,
-                            load_transfer: {real:1.943, j:1.517}
-                        },
-                        {
-                            line:'line4',
-                            voltage_quality:0.050,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                    ],
-                }
-            ]
-        },
-        {
-            type_name:'馈线三分区',
-            data:[
-                {
-                    solution_index:1,
-                    switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.007,
-                            load_transfer: {real:0.168, j:0.121}
-                        },
-                        {
-                            line:'line1',
-                            voltage_quality: 0.044,
-                            load_transfer: {real:1.775, j:1.396}
-                        },
-                        {
-                            line:'line2',
-                            voltage_quality:0.034,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                    ],
-                },
-                {
-                    solution_index:2,
-                    switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.007,
-                            load_transfer: {real:0.168, j:0.121}
-                        },
-                        {
-                            line:'line1',
-                            voltage_quality: 0.044,
-                            load_transfer: {real:1.775, j:1.396}
-                        },
-                        {
-                            line:'line4',
-                            voltage_quality:0.050,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                    ],
-                },
-            ]
-        },
-        {
-            type_name:'馈线四分区',
-            data:[
-                {
-                    solution_index:1,
-                    switches:[{start:'S2', end:'S3'},{start:'S8', end:'S7'},{start:'S5', end:'S3'}],
-                    line_parameters: [
-                        {
-                            line:'line3',
-                            voltage_quality:0.007,
-                            load_transfer: {real:0.168, j:0.121}
-                        },
-                        {
-                            line:'line2',
-                            voltage_quality: 0.034,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                        {
-                            line:'line1',
-                            voltage_quality:0.034,
-                            load_transfer: {real:0.442, j:0.431}
-                        },
-                        {
-                            line:'line4',
-                            voltage_quality:0.044,
-                            load_transfer: {real:0.336, j:0.241}
-                        },
-                    ],
-                },
-            ]
-        },
-    ];
+            var idx = 0;
+            o = {};
+            o.type_name = item.name ;
+            o.data = [];
+            var idx1 = 1;
+            _.forEach(item.data, function(item1){
+                var o1 = {};
+                o1.solution_index = idx1;
+                o1.switches = item1._003_ssA;
+                o1.line_parameters = [];
+                arr = _.zip(item1._002_ConLnbr, item1._004_voltage_quality, item1._005_load_transfer);
+                _.forEach(arr, function(item2){
+                    var o2 = {};
+                    o2.line = item2[0];
+                    o2.voltage_quality = item2[1];
+                    o2.load_transfer = item2[2];
+                    o1.line_parameters.push(o2);
+                });
+                o.data.push(o1);
+                idx1 += 1;
+            });
+            ctdata.push(o);
+            idx += 1;
+        }
+    });
+    //console.log(ctdata);
+    //data = [
+    //    {
+    //        type_name:'整区供电',
+    //        data:[
+    //            {
+    //                solution_index: 1,
+    //                switches: [],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.09930,
+    //                        load_transfer:{real:2.38518, j:1.94750}
+    //                    }
+    //                ],
+    //            }
+    //        ]
+    //    },
+    //    {
+    //        type_name:'馈线两分区',
+    //        data:[
+    //            {
+    //                solution_index:1,
+    //                switches:[{start:'S8', end:'S7'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.028,
+    //                        load_transfer: {real:0.610, j:0.552}
+    //                    },
+    //                    {
+    //                        line:'line1',
+    //                        voltage_quality:0.044,
+    //                        load_transfer: {real:1.775, j:1.396}
+    //                    },
+    //                ],
+    //            },
+    //            {
+    //                solution_index:2,
+    //                switches:[{start:'S2', end:'S3'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.086,
+    //                        load_transfer: {real:1.943, j:1.517}
+    //                    },
+    //                    {
+    //                        line:'line2',
+    //                        voltage_quality:0.034,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                ],
+    //            },
+    //            {
+    //                solution_index:3,
+    //                switches:[{start:'S2', end:'S3'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.086,
+    //                        load_transfer: {real:1.943, j:1.517}
+    //                    },
+    //                    {
+    //                        line:'line4',
+    //                        voltage_quality:0.050,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                ],
+    //            }
+    //        ]
+    //    },
+    //    {
+    //        type_name:'馈线三分区',
+    //        data:[
+    //            {
+    //                solution_index:1,
+    //                switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.007,
+    //                        load_transfer: {real:0.168, j:0.121}
+    //                    },
+    //                    {
+    //                        line:'line1',
+    //                        voltage_quality: 0.044,
+    //                        load_transfer: {real:1.775, j:1.396}
+    //                    },
+    //                    {
+    //                        line:'line2',
+    //                        voltage_quality:0.034,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                ],
+    //            },
+    //            {
+    //                solution_index:2,
+    //                switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.007,
+    //                        load_transfer: {real:0.168, j:0.121}
+    //                    },
+    //                    {
+    //                        line:'line1',
+    //                        voltage_quality: 0.044,
+    //                        load_transfer: {real:1.775, j:1.396}
+    //                    },
+    //                    {
+    //                        line:'line4',
+    //                        voltage_quality:0.050,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                ],
+    //            },
+    //        ]
+    //    },
+    //    {
+    //        type_name:'馈线四分区',
+    //        data:[
+    //            {
+    //                solution_index:1,
+    //                switches:[{start:'S2', end:'S3'},{start:'S8', end:'S7'},{start:'S5', end:'S3'}],
+    //                line_parameters: [
+    //                    {
+    //                        line:'line3',
+    //                        voltage_quality:0.007,
+    //                        load_transfer: {real:0.168, j:0.121}
+    //                    },
+    //                    {
+    //                        line:'line2',
+    //                        voltage_quality: 0.034,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                    {
+    //                        line:'line1',
+    //                        voltage_quality:0.034,
+    //                        load_transfer: {real:0.442, j:0.431}
+    //                    },
+    //                    {
+    //                        line:'line4',
+    //                        voltage_quality:0.044,
+    //                        load_transfer: {real:0.336, j:0.241}
+    //                    },
+    //                ],
+    //            },
+    //        ]
+    //    },
+    //];
     var tabledata = {Rows:[]};
 
     var columns = [
@@ -11793,7 +12137,7 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
         { display: '电压质量指标', name: 'voltage_quality', align: 'center',  width:160 },
         { display: '转移负荷总量', name: 'load_transfer', align: 'center',  width:160 },
     ];
-    _.forEach(data, function(item){
+    _.forEach(ctdata, function(item){
         var o = {};
         o.type_name = item.type_name;
         o.children = [];
@@ -11802,15 +12146,17 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
             o1.solution_index = item1.solution_index;
             var switches = [];
             _.forEach(item1.switches, function(item2){
-                switches.push(item2.start + '<->' + item2.start);
+                switches.push(item2.start + '<->' + item2.end);
             });
             o1.switches = switches.join(',');
+            o1.switches_data = item1.switches;
             o1.children = [];
             _.forEach(item1.line_parameters, function(item2){
                 var o2 = {};
                 o2.line = item2.line;
                 o2.voltage_quality = item2.voltage_quality;
-                o2.load_transfer = item2.load_transfer.real + '+ j' + item2.load_transfer.j ;
+                //o2.load_transfer = item2.load_transfer.real + '+ j' + item2.load_transfer.j ;
+                o2.load_transfer = item2.load_transfer;
                 o1.children.push(o2);
             });
             o.children.push(o1);
@@ -11818,14 +12164,20 @@ function DrawDNPowerResumeCandidateTable(viewer, data)
         tabledata.Rows.push(o);
     });
     var g = $('#dn_network_power_resume_candidate_grid').ligerGrid({
-            columns: columns,
-            width: '100%',
-            height: '90%',
-            data: tabledata,
-            usePager: false,
-            tree: { columnId: 'type_name' },
-            pageSize: 20,
-            alternatingRow: false
+        columns: columns,
+        width: '100%',
+        height: '90%',
+        data: tabledata,
+        usePager: false,
+        tree: { columnId: 'type_name' },
+        pageSize: 20,
+        alternatingRow: false,
+        onDblClickRow:function(data,rowid,rowdata){
+            if(data.switches_data){
+                //DrawDNPowerResumeLineConnectPrimitive(viewer, true, line_id, data.switches_data);
+                DrawDNPowerResumeLineCutOffPrimitive(viewer, true, line_id, data.switches_data);
+            }
+        }
     });
     //g.collapseAll();
 }
@@ -11837,24 +12189,24 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         ret.algorithm = algorithm;
         if(algorithm === 'rset')
         {
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.rset.G_state) || $.webgis.data.dn_network.import_excel_data.rset.G_state.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
-                ret = {};
-            }else{
-                ret.G_state = $.webgis.data.dn_network.import_excel_data.rset.G_state;
-            }
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.rset.G_state) || $.webgis.data.dn_network.import_excel_data.rset.G_state.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
+            //    ret = {};
+            //}else{
+            //    ret.G_state = $.webgis.data.dn_network.import_excel_data.rset.G_state;
+            //}
         }
         if(algorithm === 'ants')
         {
             var formdata1 = $('#form_dn_algorithm_option_ants').webgisform('getdata');
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.ants.init_vector) || $.webgis.data.dn_network.import_excel_data.ants.init_vector.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
-                ret = {};
-            }else{
-                ret.init_vector = $.webgis.data.dn_network.import_excel_data.ants.init_vector;
-            }
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.ants.init_vector) || $.webgis.data.dn_network.import_excel_data.ants.init_vector.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入原始决策表数据.');
+            //    ret = {};
+            //}else{
+            //    ret.init_vector = $.webgis.data.dn_network.import_excel_data.ants.init_vector;
+            //}
 
             if(_.isNumber(formdata1.ants_NC_max)){
                 ret.ants_NC_max = formdata1.ants_NC_max;
@@ -11912,36 +12264,52 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         }
         if(algorithm === 'ants' || algorithm === 'bayes')
         {
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_bus) || $.webgis.data.dn_network.import_excel_data.data_bus.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入bus数据.');
-                ret = {};
-            }else{
-                ret.init_vector = $.webgis.data.dn_network.import_excel_data.data_bus;
-            }
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_gen) || $.webgis.data.dn_network.import_excel_data.data_gen.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入gen数据.');
-                ret = {};
-            }else{
-                ret.data_gen = $.webgis.data.dn_network.import_excel_data.data_gen;
-            }
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_Lnbr) || $.webgis.data.dn_network.import_excel_data.data_Lnbr.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入Lnbr数据.');
-                ret = {};
-            }else{
-                ret.data_Lnbr = $.webgis.data.dn_network.import_excel_data.data_Lnbr;
-            }
-            if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_ConLnbr) || $.webgis.data.dn_network.import_excel_data.data_ConLnbr.length===0)
-            {
-                ShowMessage(null, 400, 250, '错误', '请载入ConLnbr数据.');
-                ret = {};
-            }else{
-                ret.data_ConLnbr = $.webgis.data.dn_network.import_excel_data.data_ConLnbr;
-            }
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_bus) || $.webgis.data.dn_network.import_excel_data.data_bus.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入bus数据.');
+            //    ret = {};
+            //}else{
+            //    ret.init_vector = $.webgis.data.dn_network.import_excel_data.data_bus;
+            //}
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_gen) || $.webgis.data.dn_network.import_excel_data.data_gen.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入gen数据.');
+            //    ret = {};
+            //}else{
+            //    ret.data_gen = $.webgis.data.dn_network.import_excel_data.data_gen;
+            //}
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_Lnbr) || $.webgis.data.dn_network.import_excel_data.data_Lnbr.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入Lnbr数据.');
+            //    ret = {};
+            //}else{
+            //    ret.data_Lnbr = $.webgis.data.dn_network.import_excel_data.data_Lnbr;
+            //}
+            //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.data_ConLnbr) || $.webgis.data.dn_network.import_excel_data.data_ConLnbr.length===0)
+            //{
+            //    ShowMessage(null, 400, 250, '错误', '请载入ConLnbr数据.');
+            //    ret = {};
+            //}else{
+            //    ret.data_ConLnbr = $.webgis.data.dn_network.import_excel_data.data_ConLnbr;
+            //}
         }
         return ret;
+    };
+    var get_feature_id = function(line_id, idx)
+    {
+        if(_.isArray(idx)){
+            return _.map(idx, function(item){
+                return get_feature_id(line_id, item);
+            });
+        }
+        if(_.isNumber(idx)){
+            var ret;
+            var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
+            if(!_.isUndefined(line)){
+                ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            return ret;
+        }
     };
     CreateDialogSkeleton(viewer, 'dlg_dn_algorithm_option');
     $('#dlg_dn_algorithm_option').dialog({
@@ -11970,6 +12338,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
             {
                 text: "定位",
                 click: function () {
+                    var that = this;
                     var formdata1 = $('#form_dn_network_fault_detect').webgisform('getdata');
                     if(formdata1.name && formdata1.name.length)
                     {
@@ -11980,7 +12349,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                 '提交确认',
                                 '确认提交吗? ',
                                 function () {
-                                    ShowProgressBar(true, 670, 200, '保存中', '正在保存，请稍候...');
+                                    ShowProgressBar(true, 670, 200, '计算中', '正在计算，请稍候...');
                                     $.ajax({
                                         url: '/distribute_network/fault_position/position',
                                         method: 'post',
@@ -11990,18 +12359,52 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                         ShowProgressBar(false);
                                     })
                                     .done(function (data1) {
-                                        //$.jGrowl("保存成功", {
-                                        //    life: 2000,
-                                        //    position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                                        //    theme: 'bubblestylesuccess',
-                                        //    glue:'before'
-                                        //});
+                                        $(that).dialog("close");
+                                        $.jGrowl("计算成功", {
+                                            life: 2000,
+                                            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                            theme: 'bubblestylesuccess',
+                                            glue:'before'
+                                        });
                                         data1 = JSON.parse(data1);
-                                        data1 = ['56441ba1d8b95a19185b734c', '56443d4ed8b95a19185b734f', '5643edc6d8b95a164008f4a4'];
-                                        data1 = ['56443df4d8b95a19185b7353', '56443e09d8b95a19185b7354'];
-                                        DrawDNFaultPointPrimitive(viewer, true, algorithm, data1);
+                                        ids = [];
+                                        if(algorithm === 'ants')
+                                        {
+                                            if(data1.R_best)
+                                            {
+                                                data1.R_best = get_feature_id(formdata.dn_id, data1.R_best);
+                                                ids = data1.R_best;
+                                            }
+                                        }
+                                        if(algorithm === 'bayes')
+                                        {
+                                            if(data1.pos_between)
+                                            {
+                                                data1.pos_between = get_feature_id(formdata.dn_id, data1.pos_between);
+                                                ids = data1.pos_between;
+                                            }
+                                        }
+                                        if(algorithm === 'rset')
+                                        {
+                                            if(data1.pos_between)
+                                            {
+                                                data1.pos_between = _.filter(data1.pos_between, function(item){
+                                                    return item > 1;
+                                                });
+                                                data1.pos_between = _.map(data1.pos_between, function(item){
+                                                    return item + 1;
+                                                });
+
+                                                data1.pos_between = get_feature_id(formdata.dn_id, data1.pos_between);
+                                                ids = data1.pos_between;
+                                            }
+                                        }
+                                        //console.log(ids);
+                                        //data1 = ['56443df4d8b95a19185b7353', '56443e09d8b95a19185b7354'];
+                                        DrawDNFaultPointPrimitive(viewer, true, algorithm, ids);
                                     })
                                     .fail(function (jqxhr, textStatus, e) {
+                                        $(that).dialog("close");
                                         $.jGrowl("提交失败:" + e, {
                                             life: 2000,
                                             position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
@@ -12053,8 +12456,25 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     RebuildAlgorithmOptionForm(viewer, algorithm);
 }
 
-function DrawDNPowerResumeLinePrimitive(viewer, is_draw, data)
+function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
 {
+    var get_feature_id = function(line_id, idx)
+    {
+        if(_.isArray(idx)){
+            return _.map(idx, function(item){
+                return get_feature_id(line_id, item);
+            });
+        }
+        if(_.isNumber(idx)){
+            var ret;
+            var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
+            if(!_.isUndefined(line)){
+                ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            return ret;
+        }
+    };
+
     if(!is_draw)
     {
         if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
@@ -12065,11 +12485,90 @@ function DrawDNPowerResumeLinePrimitive(viewer, is_draw, data)
             delete $.webgis.geometry.dn_power_resume_line;
         }
     }else{
+        DrawDNPowerResumeLineCutOffPrimitive(viewer, false);
         $.webgis.geometry.dn_power_resume_line = [];
         _.forEach(data, function(item){
-            var pos = []
-            var g1 = _.find($.webgis.data.geojsons, {_id:item[0]});
-            var g2 = _.find($.webgis.data.geojsons, {_id:item[1]});
+            var pos = [];
+            var g1 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.start)});
+            var g2 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.end)});
+            if(!_.isUndefined(g1.geometry) && !_.isUndefined(g2.geometry))
+            {
+                var z1 = 0, z2 = 0, z_center = 0;
+                if($.webgis.config.zaware){
+                    z1 = g1.geometry.coordinates[2];
+                    z2 = g2.geometry.coordinates[2];
+                    z_center = (z1+z2)/2;
+                }
+                pos.push(g1.geometry.coordinates[0], g1.geometry.coordinates[1], z1);
+                pos.push(g2.geometry.coordinates[0], g2.geometry.coordinates[1], z2);
+                var pos_center = Cesium.Cartesian3.fromDegrees(
+                    (g1.geometry.coordinates[0]+g2.geometry.coordinates[0])/2,
+                    (g1.geometry.coordinates[1]+g2.geometry.coordinates[1])/2,
+                    z_center);
+
+                var entity = new Cesium.Entity({
+                    name: g1.properties.name + '->' + g2.properties.name,
+                    polyline : {
+                        positions : Cesium.Cartesian3.fromDegreesArrayHeights(pos),
+                        width : 20,
+                        followSurface : true,
+                        material : new Cesium.PolylineArrowMaterialProperty(
+                            Cesium.Color.fromCssColorString('rgba(64, 255, 64, 0.7)'))
+                    }
+                });
+                viewer.entities.add(entity);
+                $.webgis.geometry.dn_power_resume_line.push(entity);
+
+                var entity_center = new Cesium.Entity({
+                    name: g1.properties.name + 'X' + g2.properties.name,
+                    position : pos_center,
+                    billboard: new Cesium.BillboardGraphics({
+                        image: '/img/glyphicons_cut_off.png',
+                        scale: 1,
+                        show : true
+                    })
+                });
+                viewer.entities.add(entity_center);
+                $.webgis.geometry.dn_power_resume_line.push(entity_center);
+            }
+        });
+    }
+}
+function DrawDNPowerResumeLineConnectPrimitive(viewer, is_draw, line_id, data)
+{
+    var get_feature_id = function(line_id, idx)
+    {
+        if(_.isArray(idx)){
+            return _.map(idx, function(item){
+                return get_feature_id(line_id, item);
+            });
+        }
+        if(_.isNumber(idx)){
+            var ret;
+            var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
+            if(!_.isUndefined(line)){
+                ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            return ret;
+        }
+    };
+
+    if(!is_draw)
+    {
+        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
+        {
+            _.forEach($.webgis.geometry.dn_power_resume_line, function(item){
+                viewer.entities.remove(item);
+            });
+            delete $.webgis.geometry.dn_power_resume_line;
+        }
+    }else{
+        DrawDNPowerResumeLineConnectPrimitive(viewer, false);
+        $.webgis.geometry.dn_power_resume_line = [];
+        _.forEach(data, function(item){
+            var pos = [];
+            var g1 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.start)});
+            var g2 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.end)});
             if(!_.isUndefined(g1.geometry) && !_.isUndefined(g2.geometry))
             {
                 var z1 = 0, z2 = 0;
@@ -12106,12 +12605,20 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
         {
             //viewer.scene.primitives.remove($.webgis.geometry.dn_fault_points);
             _.forEach($.webgis.geometry.dn_fault_points, function(item){
-                viewer.entities.remove(item);
+                if(_.isUndefined(algorithm)){
+                    viewer.entities.remove(item);
+                }
+                else{
+                    if(item.algorithm === algorithm){
+                        viewer.entities.remove(item);
+                    }
+                }
             });
             delete $.webgis.geometry.dn_fault_points;
         }
+    }
 
-    }else{
+    if(is_draw) {
         //$.webgis.geometry.dn_fault_points = viewer.scene.primitives.add(new Cesium.PointPrimitiveCollection());
         //_.forEach(data, function(_id){
         //    var g = _.find($.webgis.data.geojsons, {_id:_id});
@@ -12129,39 +12636,64 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
         //        });
         //    }
         //});
+        if (data.length === 0) {
+            return;
+        }
         var pinBuilder = new Cesium.PinBuilder();
         $.webgis.geometry.dn_fault_points = [];
-        _.forEach(data, function(_id){
-            var g = _.find($.webgis.data.geojsons, {_id:_id});
-            if(!_.isUndefined(g.geometry))
-            {
+        _.forEach(data, function (_id) {
+            var g = _.find($.webgis.data.geojsons, {_id: _id});
+            if (!_.isUndefined(g.geometry)) {
                 //console.log(g);
                 var z = 0;
-                if($.webgis.config.zaware){
+                if ($.webgis.config.zaware) {
                     z = g.geometry.coordinates[2];
                 }
                 var color, text;
-                if(algorithm === 'rset'){
-                    text = '粗糙度';
+                var billboard = {};
+                var label = {};
+                var point = {};
+                if (algorithm === 'rset') {
+                    text = '简单定位';
                     color = 'rgba(220, 64, 64, 0.7)';
+                    billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    label.pixelOffset = new Cesium.Cartesian2(0, -50);
+                    point.pixelSize = 20;
                 }
-                if(algorithm === 'bayes'){
+                if (algorithm === 'bayes') {
                     text = '贝叶斯';
-                    color = 'rgba(220, 0, 64, 0.7)';
+                    color = 'rgba(192, 0, 64, 0.7)';
+                    billboard.verticalOrigin = Cesium.VerticalOrigin.TOP;
+                    label.verticalOrigin = Cesium.VerticalOrigin.TOP;
+                    label.pixelOffset = new Cesium.Cartesian2(0, 25);
+                    point.pixelSize = 30;
+                    //point.outlineColor = Cesium.Color.WHITE;
+                    //point.outlineWidth = 4;
                 }
-                if(algorithm === 'ants'){
+                if (algorithm === 'ants') {
                     text = '蚁群';
-                    color = 'rgba(220, 64, 0, 0.7)';
+                    color = 'rgba(220, 128, 0, 0.5)';
+                    billboard.horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
+                    label.horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
+                    label.pixelOffset = new Cesium.Cartesian2(-40, 0);
+                    point.pixelSize = 40;
                 }
+                label.text = text;
+                label.style = Cesium.LabelStyle.FILL_AND_OUTLINE
+                label.fillColor = Cesium.Color.fromCssColorString(color);
+                label.scale = 1;
+                point.color = Cesium.Color.fromCssColorString(color);
+                //billboard.image = pinBuilder.fromText(text, Cesium.Color.fromCssColorString(color), 128).toDataURL();
 
                 var entity = new Cesium.Entity({
                     name: g.properties.name,
-                    position : Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
-                    billboard : {
-                        image : pinBuilder.fromText(text, Cesium.Color.fromCssColorString(color), 128).toDataURL(),
-                        verticalOrigin : Cesium.VerticalOrigin.BOTTOM
-                    }
+                    position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+                    //billboard: billboard
+                    label:new Cesium.LabelGraphics(label),
+                    point:new Cesium.PointGraphics(point)
                 });
+                entity.algorithm = algorithm;
                 viewer.entities.add(entity);
                 $.webgis.geometry.dn_fault_points.push(entity);
             }
@@ -12527,21 +13059,21 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
 
                 }
             },
-            { display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_ants_init_vector
-            },
-            { display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_bus
-            },
-            { display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_gen
-            },
-            { display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_Lnbr
-            },
-            { display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
-                handleFile:handleFile_data_ConLnbr
-            },
+            //{ display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_ants_init_vector
+            //},
+            //{ display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_bus
+            //},
+            //{ display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_gen
+            //},
+            //{ display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_Lnbr
+            //},
+            //{ display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
+            //    handleFile:handleFile_data_ConLnbr
+            //},
         ];
         $('#form_dn_algorithm_option_ants').webgisform(flds, {
             prefix: "form_dn_algorithm_option_ants_",
@@ -12556,21 +13088,21 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
 
                 }
             },
-            { display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_bayes_init_vector
-            },
-            { display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_bus
-            },
-            { display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_gen
-            },
-            { display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_data_Lnbr
-            },
-            { display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
-                handleFile:handleFile_data_ConLnbr
-            },
+            //{ display: "故障信息向量", id: "init_vector", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_bayes_init_vector
+            //},
+            //{ display: "bus信息矩阵", id: "data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_bus
+            //},
+            //{ display: "gen信息向量", id: "data_gen", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_gen
+            //},
+            //{ display: "Lnbr信息矩阵", id: "data_Lnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            //    handleFile:handleFile_data_Lnbr
+            //},
+            //{ display: "ConLnbr信息矩阵", id: "data_ConLnbr", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 190, labelwidth: 180,
+            //    handleFile:handleFile_data_ConLnbr
+            //},
         ];
         $('#form_dn_algorithm_option_bayes').webgisform(flds, {
             prefix: "form_dn_algorithm_option_bayes_",

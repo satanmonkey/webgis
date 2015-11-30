@@ -899,7 +899,7 @@ input[type="button"].btn-block {
 #btn_edge_save:active
 {
 	background: #009900;
-	border:2px #00FF00 solid;
+	border:1px #00FF00 solid;
 }
 #btn_edge_save:disabled
 {
@@ -1101,4 +1101,8 @@ input[type="button"].btn-block {
 	overflow:auto;
 	margin:2px;
 }
-
+#dn_network_power_resume_calc_progress_conatiner{
+	max-height:420px;
+	overflow:auto;
+	margin:2px;
+}
