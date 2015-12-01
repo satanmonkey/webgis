@@ -3366,10 +3366,10 @@ function ShowStateExaminationBBNDialog(viewer)
     $('#btn_state_examination_bbn_assume_predict_export').on('click', function(){
         PredictExport();
     });
-    $('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起/展开'});
-    $('#btn_state_examination_bbn_assume_predict_collapse').on('click', function(){
-        PredictCollapseExpand();
-    });
+    //$('#btn_state_examination_bbn_assume_predict_collapse').button({label:'收起/展开'});
+    //$('#btn_state_examination_bbn_assume_predict_collapse').on('click', function(){
+    //    PredictCollapseExpand();
+    //});
     //$('#btn_state_examination_bbn_assume_predict_summary').button({label:'查看结论'});
     //$('#btn_state_examination_bbn_assume_predict_summary').on('click', function(){
     //    PredictSummaryDialog(viewer);
