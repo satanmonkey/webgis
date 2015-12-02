@@ -575,5 +575,206 @@
         "idx": "S106"
       }
     ]
+  },
+  {
+    "line_id": "565e87f9d8b95a1cec89cd01",
+    "name": "测试配网3",
+    "mapping": [
+      {
+        "_id": "565e8f7bd8b95a1cec89cd08",
+        "name": "a1",
+        "idx": "a1"
+      },
+      {
+        "_id": "565e8faed8b95a1cec89cd09",
+        "name": "a2",
+        "idx": "a2"
+      },
+      {
+        "_id": "565e8fecd8b95a1cec89cd0a",
+        "name": "a3",
+        "idx": "a3"
+      },
+      {
+        "_id": "565e9025d8b95a1cec89cd0b",
+        "name": "a4",
+        "idx": "a4"
+      },
+      {
+        "_id": "565e906ed8b95a1cec89cd0c",
+        "name": "a5",
+        "idx": "a5"
+      },
+      {
+        "_id": "565e9098d8b95a1cec89cd0d",
+        "name": "a6",
+        "idx": "a6"
+      },
+      {
+        "_id": "565e90cdd8b95a1cec89cd0e",
+        "name": "a7",
+        "idx": "a7"
+      },
+      {
+        "_id": "565e9101d8b95a1cec89cd0f",
+        "name": "b1",
+        "idx": "b1"
+      },
+      {
+        "_id": "565e912dd8b95a1cec89cd10",
+        "name": "b2",
+        "idx": "b2"
+      },
+      {
+        "_id": "565e9153d8b95a1cec89cd11",
+        "name": "b3",
+        "idx": "b3"
+      },
+      {
+        "_id": "565e9179d8b95a1cec89cd12",
+        "name": "b6",
+        "idx": "b6"
+      },
+      {
+        "_id": "565e91a1d8b95a1cec89cd13",
+        "name": "b4",
+        "idx": "b4"
+      },
+      {
+        "_id": "565e91c7d8b95a1cec89cd14",
+        "name": "b5",
+        "idx": "b5"
+      },
+      {
+        "_id": "565e91f0d8b95a1cec89cd15",
+        "name": "b7",
+        "idx": "b7"
+      },
+      {
+        "_id": "565e9218d8b95a1cec89cd16",
+        "name": "b8",
+        "idx": "b8"
+      },
+      {
+        "_id": "565e923dd8b95a1cec89cd17",
+        "name": "b9",
+        "idx": "b9"
+      },
+      {
+        "_id": "565e9265d8b95a1cec89cd18",
+        "name": "b10",
+        "idx": "b10"
+      },
+      {
+        "_id": "565e928dd8b95a1cec89cd19",
+        "name": "c1",
+        "idx": "c1"
+      },
+      {
+        "_id": "565e92b2d8b95a1cec89cd1a",
+        "name": "c2",
+        "idx": "c2"
+      },
+      {
+        "_id": "565e92dad8b95a1cec89cd1b",
+        "name": "c3",
+        "idx": "c3"
+      },
+      {
+        "_id": "565e9301d8b95a1cec89cd1c",
+        "name": "c5",
+        "idx": "c5"
+      },
+      {
+        "_id": "565e9329d8b95a1cec89cd1d",
+        "name": "c4",
+        "idx": "c4"
+      },
+      {
+        "_id": "565e9351d8b95a1cec89cd1e",
+        "name": "c6",
+        "idx": "c6"
+      },
+      {
+        "_id": "565e9376d8b95a1cec89cd1f",
+        "name": "c7",
+        "idx": "c7"
+      },
+      {
+        "_id": "565e939fd8b95a1cec89cd20",
+        "name": "c8",
+        "idx": "c8"
+      },
+      {
+        "_id": "565e93cad8b95a1cec89cd21",
+        "name": "c10",
+        "idx": "c10"
+      },
+      {
+        "_id": "565e93f4d8b95a1cec89cd22",
+        "name": "c9",
+        "idx": "c9"
+      },
+      {
+        "_id": "565e941ad8b95a1cec89cd23",
+        "name": "c11",
+        "idx": "c11"
+      },
+      {
+        "_id": "565e9461d8b95a1cec89cd24",
+        "name": "c12",
+        "idx": "c12"
+      },
+      {
+        "_id": "565e948dd8b95a1cec89cd25",
+        "name": "d1",
+        "idx": "d1"
+      },
+      {
+        "_id": "565e94b2d8b95a1cec89cd26",
+        "name": "d2",
+        "idx": "d2"
+      },
+      {
+        "_id": "565e94dcd8b95a1cec89cd27",
+        "name": "d3",
+        "idx": "d3"
+      },
+      {
+        "_id": "565e9504d8b95a1cec89cd28",
+        "name": "d4",
+        "idx": "d4"
+      },
+      {
+        "_id": "565e952ad8b95a1cec89cd29",
+        "name": "d5",
+        "idx": "d5"
+      },
+      {
+        "_id": "565e9558d8b95a1cec89cd2a",
+        "name": "e1",
+        "idx": "e1"
+      },
+      {
+        "_id": "565e957cd8b95a1cec89cd2b",
+        "name": "e2",
+        "idx": "e2"
+      },
+      {
+        "_id": "565e95a1d8b95a1cec89cd2c",
+        "name": "e3",
+        "idx": "e3"
+      },
+      {
+        "_id": "565e95d2d8b95a1cec89cd2d",
+        "name": "e4",
+        "idx": "e4"
+      },
+      {
+        "_id": "565e95fad8b95a1cec89cd2e",
+        "name": "e5",
+        "idx": "e5"
+      }
+    ]
   }
 ]
