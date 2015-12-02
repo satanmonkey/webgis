@@ -45,16 +45,16 @@ $(function() {
                                 $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
 
                                 //20151129 for leicao only 10kV州城Ⅴ回线
-                                LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
-                                    LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
-                                        var extent = GetExtentByCzml();
-                                        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
-                                        if($.webgis.config.map_backend === 'cesium')
-                                        {
-                                            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
-                                        }
-                                    });
-                                });
+                                //LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                //    LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '564ea4cad8b95a08ece92582', function(){
+                                //        var extent = GetExtentByCzml();
+                                //        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                                //        if($.webgis.config.map_backend === 'cesium')
+                                //        {
+                                //            ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                                //        }
+                                //    });
+                                //});
 
 
 
@@ -4394,7 +4394,7 @@ function InitSearchBox(viewer)
             $('#text_search_waiting').html('正在查询，请稍候...');
             MongoFind( py_cond, 
                 function(data){
-                    console.log(data);
+                    //console.log(data);
                     $('#text_search_waiting').css('display','none');
                     response(BuildSearchItemList(data));
             });
@@ -10663,6 +10663,17 @@ function ShowPoiInfoDialog(viewer, title, type, position, id)
             data.alt = g.geometry.coordinates[2];
             $("#form_poi_info_" + wt).webgisform('setdata', data);
         }
+    }else
+    {
+        //console.log(position);
+        var cartographic = ellipsoid.cartesianToCartographic(position);
+        var data = {};
+        data.lng = Cesium.Math.toDegrees(cartographic.longitude).toFixed(6);
+        data.lat = Cesium.Math.toDegrees(cartographic.latitude).toFixed(6);
+        data.alt = 0;
+        $('form[id^=form_poi_info_]').each(function(i, form){
+            $(form).webgisform('setdata', data);
+        });
     }
     
     $('#tabs_poi_info').tabs({ 
