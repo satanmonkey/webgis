@@ -3023,6 +3023,7 @@ function InitToolPanel(viewer)
     $('#btn_dn_power_resume_clear').button({label:'清除恢复显示'});
     $('#btn_dn_power_resume_clear').on('click', function(){
        DrawDNPowerResumeLineConnectPrimitive(viewer, false);
+       DrawDNPowerResumeLineCutOffPrimitive(viewer, false);
     });
 
 
@@ -11742,7 +11743,7 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'rset', label:'简单定位算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [{value:'gis', label:'简单定位算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -11758,7 +11759,19 @@ function ShowDNFaultDetectDialog(viewer)
                     }
                 });
             });
+            if(_id === '564ea4cad8b95a08ece92582'){//10kV州城Ⅴ回线
+                $('#form_dn_network_fault_detect_line_type').empty();
+                $('#form_dn_network_fault_detect_line_type').append('<option value="ftu5">5FTU</option><option' +
+                    ' value="ftu10_1">10FTU均匀分布</option><option value="ftu10_2">10FTU重要程度分布</option>');
+                $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
+                $('#form_dn_network_fault_detect_line_type').multipleSelect('setSelects', ['ftu5']);
+            }
+            else{
+                $('#form_dn_network_fault_detect_line_type').empty();
+                $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
+            }
         }},
+        { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
         { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
             click:function(){
@@ -11801,7 +11814,6 @@ function ShowDNFaultDetectDialog(viewer)
             click:function(){
                 var formdata1 = $('#form_dn_network_power_resume').webgisform('getdata');
                 if(formdata1.name && formdata1.name.length){
-
                     ShowConfirm(null, 500, 200,
                         '提交确认',
                         '确认提交吗? ',
@@ -11809,6 +11821,7 @@ function ShowDNFaultDetectDialog(viewer)
 
                             var formdata = {};
                             formdata.algorithm = 'power_resume';
+                            formdata.dn_id = formdata1.name;
                             ShowProgressBar(true, 670, 200, '计算中', '正在计算，请稍候...');
                             $.ajax({
                                 url: '/distribute_network/fault_position/position',
@@ -11820,18 +11833,19 @@ function ShowDNFaultDetectDialog(viewer)
                                 })
                                 .done(function (data1) {
                                     $('#dlg_dn_network_fault_detect').dialog("close");
-                                    $.jGrowl("计算成功", {
-                                        life: 2000,
-                                        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                                        theme: 'bubblestylesuccess',
-                                        glue: 'before'
-                                    });
                                     data1 = JSON.parse(data1);
                                     //console.log(data1);
-                                    //var data = [['5643edc6d8b95a164008f4a4', '56443d4ed8b95a19185b734f'], ['56443d4ed8b95a19185b734f', '56441ba1d8b95a19185b734c'], ['56441ba1d8b95a19185b734c', '56443df4d8b95a19185b7353']];
-
-                                    DrawDNPowerResumeCandidateTable(viewer, formdata1.name, data1);
-
+                                    if(_.isUndefined(data1.result)){
+                                        $.jGrowl("计算成功", {
+                                            life: 2000,
+                                            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                            theme: 'bubblestylesuccess',
+                                            glue: 'before'
+                                        });
+                                        DrawDNPowerResumeCandidateTable(viewer, formdata1.name, data1);
+                                    }else{
+                                        ShowMessage(null, 400, 250, '错误', data1.result);
+                                    }
                                 })
                                 .fail(function (jqxhr, textStatus, e) {
                                     $('#dlg_dn_network_fault_detect').dialog("close");
@@ -11971,14 +11985,15 @@ function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
             _.forEach(item.data, function(item1){
                 var o1 = {};
                 o1.solution_index = idx1;
-                o1.switches = item1._003_ssA;
+                o1.switches_cutoff = item1._003_ssA;
+                o1.switches_connect = item1._002_ConLnbr;
                 o1.line_parameters = [];
-                arr = _.zip(item1._002_ConLnbr, item1._004_voltage_quality, item1._005_load_transfer);
+                arr = _.zip(item1._004_voltage_quality, item1._005_load_transfer);
                 _.forEach(arr, function(item2){
                     var o2 = {};
-                    o2.line = item2[0];
-                    o2.voltage_quality = item2[1];
-                    o2.load_transfer = item2[2];
+                    //o2.line = item2[0];
+                    o2.voltage_quality = item2[0];
+                    o2.load_transfer = item2[1];
                     o1.line_parameters.push(o2);
                 });
                 o.data.push(o1);
@@ -11988,163 +12003,14 @@ function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
             idx += 1;
         }
     });
-    //console.log(ctdata);
-    //data = [
-    //    {
-    //        type_name:'整区供电',
-    //        data:[
-    //            {
-    //                solution_index: 1,
-    //                switches: [],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.09930,
-    //                        load_transfer:{real:2.38518, j:1.94750}
-    //                    }
-    //                ],
-    //            }
-    //        ]
-    //    },
-    //    {
-    //        type_name:'馈线两分区',
-    //        data:[
-    //            {
-    //                solution_index:1,
-    //                switches:[{start:'S8', end:'S7'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.028,
-    //                        load_transfer: {real:0.610, j:0.552}
-    //                    },
-    //                    {
-    //                        line:'line1',
-    //                        voltage_quality:0.044,
-    //                        load_transfer: {real:1.775, j:1.396}
-    //                    },
-    //                ],
-    //            },
-    //            {
-    //                solution_index:2,
-    //                switches:[{start:'S2', end:'S3'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.086,
-    //                        load_transfer: {real:1.943, j:1.517}
-    //                    },
-    //                    {
-    //                        line:'line2',
-    //                        voltage_quality:0.034,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                ],
-    //            },
-    //            {
-    //                solution_index:3,
-    //                switches:[{start:'S2', end:'S3'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.086,
-    //                        load_transfer: {real:1.943, j:1.517}
-    //                    },
-    //                    {
-    //                        line:'line4',
-    //                        voltage_quality:0.050,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                ],
-    //            }
-    //        ]
-    //    },
-    //    {
-    //        type_name:'馈线三分区',
-    //        data:[
-    //            {
-    //                solution_index:1,
-    //                switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.007,
-    //                        load_transfer: {real:0.168, j:0.121}
-    //                    },
-    //                    {
-    //                        line:'line1',
-    //                        voltage_quality: 0.044,
-    //                        load_transfer: {real:1.775, j:1.396}
-    //                    },
-    //                    {
-    //                        line:'line2',
-    //                        voltage_quality:0.034,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                ],
-    //            },
-    //            {
-    //                solution_index:2,
-    //                switches:[{start:'S8', end:'S7'},{start:'S2', end:'S3'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.007,
-    //                        load_transfer: {real:0.168, j:0.121}
-    //                    },
-    //                    {
-    //                        line:'line1',
-    //                        voltage_quality: 0.044,
-    //                        load_transfer: {real:1.775, j:1.396}
-    //                    },
-    //                    {
-    //                        line:'line4',
-    //                        voltage_quality:0.050,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                ],
-    //            },
-    //        ]
-    //    },
-    //    {
-    //        type_name:'馈线四分区',
-    //        data:[
-    //            {
-    //                solution_index:1,
-    //                switches:[{start:'S2', end:'S3'},{start:'S8', end:'S7'},{start:'S5', end:'S3'}],
-    //                line_parameters: [
-    //                    {
-    //                        line:'line3',
-    //                        voltage_quality:0.007,
-    //                        load_transfer: {real:0.168, j:0.121}
-    //                    },
-    //                    {
-    //                        line:'line2',
-    //                        voltage_quality: 0.034,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                    {
-    //                        line:'line1',
-    //                        voltage_quality:0.034,
-    //                        load_transfer: {real:0.442, j:0.431}
-    //                    },
-    //                    {
-    //                        line:'line4',
-    //                        voltage_quality:0.044,
-    //                        load_transfer: {real:0.336, j:0.241}
-    //                    },
-    //                ],
-    //            },
-    //        ]
-    //    },
-    //];
     var tabledata = {Rows:[]};
 
     var columns = [
         { display: '方案类型', name: 'type_name', align: 'center',  width:160 },
         { display: '方案编号', name: 'solution_index', align: 'center',  width:160 },
-        { display: '分段开关(起节点<->末节点)', name: 'switches', align: 'center',  width:320 },
-        { display: '线路编号', name: 'line', align: 'center',  width:160 },
+        { display: '分闸开关(起节点<->末节点)', name: 'switches_cutoff', align: 'center',  width:320 },
+        { display: '合闸开关(起节点<->末节点)', name: 'switches_connect', align: 'center',  width:320 },
+        //{ display: '线路编号', name: 'line', align: 'center',  width:160 },
         { display: '电压质量指标', name: 'voltage_quality', align: 'center',  width:160 },
         { display: '转移负荷总量', name: 'load_transfer', align: 'center',  width:160 },
     ];
@@ -12155,16 +12021,25 @@ function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
         _.forEach(item.data, function(item1){
             var o1 = {};
             o1.solution_index = item1.solution_index;
-            var switches = [];
-            _.forEach(item1.switches, function(item2){
-                switches.push(item2.start + '<->' + item2.end);
+            var switches_cutoff = [];
+            _.forEach(item1.switches_cutoff, function(item2){
+                switches_cutoff.push(item2.start + '<->' + item2.end);
             });
-            o1.switches = switches.join(',');
-            o1.switches_data = item1.switches;
+            o1.switches_cutoff = switches_cutoff.join(',');
+            o1.switches_cutoff_data = item1.switches_cutoff;
+
+            var switches_connect = [];
+            _.forEach(item1.switches_connect, function(item2){
+                switches_connect.push(item2.start + '<->' + item2.end);
+            });
+            o1.switches_connect = switches_connect.join(',');
+            o1.switches_connect_data = item1.switches_connect;
+
+
             o1.children = [];
             _.forEach(item1.line_parameters, function(item2){
                 var o2 = {};
-                o2.line = item2.line;
+                //o2.line = item2.line;
                 o2.voltage_quality = item2.voltage_quality;
                 //o2.load_transfer = item2.load_transfer.real + '+ j' + item2.load_transfer.j ;
                 o2.load_transfer = item2.load_transfer;
@@ -12184,9 +12059,11 @@ function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
         pageSize: 20,
         alternatingRow: false,
         onDblClickRow:function(data,rowid,rowdata){
-            if(data.switches_data){
-                //DrawDNPowerResumeLineConnectPrimitive(viewer, true, line_id, data.switches_data);
-                DrawDNPowerResumeLineCutOffPrimitive(viewer, true, line_id, data.switches_data);
+            if(data.switches_connect_data){
+                DrawDNPowerResumeLineConnectPrimitive(viewer, true, line_id, data.switches_connect_data);
+            }
+            if(data.switches_cutoff_data){
+                DrawDNPowerResumeLineCutOffPrimitive(viewer, true, line_id, data.switches_cutoff_data);
             }
         }
     });
@@ -12198,7 +12075,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         var ret = {};
         //var formdata = $('#form_dn_network_fault_detect').webgisform('getdata');
         ret.algorithm = algorithm;
-        if(algorithm === 'rset')
+        if(algorithm === 'gis')
         {
             //if(_.isUndefined($.webgis.data.dn_network.import_excel_data.rset.G_state) || $.webgis.data.dn_network.import_excel_data.rset.G_state.length===0)
             //{
@@ -12313,11 +12190,14 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                 return get_feature_id(line_id, item);
             });
         }
-        if(_.isNumber(idx)){
+        if(_.isNumber(idx) || _.isString(idx)){
             var ret;
             var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
             if(!_.isUndefined(line)){
                 ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            if(_.isUndefined(ret)){
+                ret = _.result(_.find(line.mapping, {'idx':'S' + idx}), '_id');
             }
             return ret;
         }
@@ -12353,9 +12233,10 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                     var formdata1 = $('#form_dn_network_fault_detect').webgisform('getdata');
                     if(formdata1.name && formdata1.name.length)
                     {
-                        var formdata = get_form_data(algorithm)
+                        var formdata = get_form_data(algorithm);
                         if(!_.isEmpty(formdata)){
                             formdata.dn_id = formdata1.name;
+                            formdata.line_type = formdata1.line_type;
                             ShowConfirm(null, 500, 200,
                                 '提交确认',
                                 '确认提交吗? ',
@@ -12370,49 +12251,62 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                         ShowProgressBar(false);
                                     })
                                     .done(function (data1) {
-                                        $(that).dialog("close");
-                                        $.jGrowl("计算成功", {
-                                            life: 2000,
-                                            position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
-                                            theme: 'bubblestylesuccess',
-                                            glue:'before'
-                                        });
+                                        console.log(data1);
                                         data1 = JSON.parse(data1);
-                                        ids = [];
-                                        if(algorithm === 'ants')
-                                        {
-                                            if(data1.R_best)
+                                        $(that).dialog("close");
+                                        if(_.isUndefined(data1.result)){
+                                            $.jGrowl("计算成功", {
+                                                life: 2000,
+                                                position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+                                                theme: 'bubblestylesuccess',
+                                                glue:'before'
+                                            });
+                                            ids = [];
+                                            if(algorithm === 'ants')
                                             {
-                                                data1.R_best = get_feature_id(formdata.dn_id, data1.R_best);
-                                                ids = data1.R_best;
+                                                if(data1.pos_fault)
+                                                {
+                                                    data1.pos_fault = get_feature_id(formdata.dn_id, data1.pos_fault);
+                                                    ids = data1.pos_fault;
+                                                }
                                             }
-                                        }
-                                        if(algorithm === 'bayes')
-                                        {
-                                            if(data1.pos_between)
+                                            if(algorithm === 'bayes')
                                             {
-                                                data1.pos_between = get_feature_id(formdata.dn_id, data1.pos_between);
-                                                ids = data1.pos_between;
+                                                if(data1.pos_fault)
+                                                {
+                                                    data1.pos_fault = get_feature_id(formdata.dn_id, data1.pos_fault);
+                                                    ids = data1.pos_fault;
+                                                }
                                             }
-                                        }
-                                        if(algorithm === 'rset')
-                                        {
-                                            if(data1.pos_between)
+                                            if(algorithm === 'gis')
                                             {
-                                                data1.pos_between = _.filter(data1.pos_between, function(item){
-                                                    return item > 1;
-                                                });
-                                                data1.pos_between = _.map(data1.pos_between, function(item){
-                                                    return item + 1;
-                                                });
+                                                if(data1.pos_fault)
+                                                {
+                                                    data1.pos_fault = _.filter(data1.pos_fault, function(item){
+                                                        if(_.isNumber(item)){
+                                                            return item > 1;
+                                                        }else{
+                                                            return true;
+                                                        }
 
-                                                data1.pos_between = get_feature_id(formdata.dn_id, data1.pos_between);
-                                                ids = data1.pos_between;
+                                                    });
+                                                    //data1.pos_fault = _.map(data1.pos_fault, function(item){
+                                                    //    if(_.isNumber(item)){
+                                                    //        return item + 1;
+                                                    //    }else{
+                                                    //        return item;
+                                                    //    }
+                                                    //});
+
+                                                    data1.pos_fault = get_feature_id(formdata.dn_id, data1.pos_fault);
+                                                    ids = data1.pos_fault;
+                                                }
+                                                //console.log(data1.pos_fault);
                                             }
+                                            DrawDNFaultPointPrimitive(viewer, true, algorithm, ids);
+                                        }else{
+                                            ShowMessage(null, 400, 250, '错误', data1.result);
                                         }
-                                        //console.log(ids);
-                                        //data1 = ['56443df4d8b95a19185b7353', '56443e09d8b95a19185b7354'];
-                                        DrawDNFaultPointPrimitive(viewer, true, algorithm, ids);
                                     })
                                     .fail(function (jqxhr, textStatus, e) {
                                         $(that).dialog("close");
@@ -12452,7 +12346,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     $('#tabs_dn_algorithm_option').tabs('disable', 0 );
     $('#tabs_dn_algorithm_option').tabs('disable', 1 );
     $('#tabs_dn_algorithm_option').tabs('disable', 2 );
-    if(algorithm === 'rset'){
+    if(algorithm === 'gis'){
         $('#tabs_dn_algorithm_option').tabs('enable', 0 );
         $('#tabs_dn_algorithm_option').tabs('option', 'active', 0 );
     }
@@ -12476,11 +12370,14 @@ function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
                 return get_feature_id(line_id, item);
             });
         }
-        if(_.isNumber(idx)){
+        if(_.isNumber(idx) || _.isString(idx)){
             var ret;
             var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
             if(!_.isUndefined(line)){
                 ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            if(_.isUndefined(ret)){
+                ret = _.result(_.find(line.mapping, {'idx':'S' + idx}), '_id');
             }
             return ret;
         }
@@ -12488,16 +12385,15 @@ function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
 
     if(!is_draw)
     {
-        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
+        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line_cutoff) && $.webgis.geometry.dn_power_resume_line_cutoff.length)
         {
-            _.forEach($.webgis.geometry.dn_power_resume_line, function(item){
+            _.forEach($.webgis.geometry.dn_power_resume_line_cutoff, function(item){
                 viewer.entities.remove(item);
             });
-            delete $.webgis.geometry.dn_power_resume_line;
+            delete $.webgis.geometry.dn_power_resume_line_cutoff;
         }
     }else{
         DrawDNPowerResumeLineCutOffPrimitive(viewer, false);
-        $.webgis.geometry.dn_power_resume_line = [];
         _.forEach(data, function(item){
             var pos = [];
             var g1 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.start)});
@@ -12524,11 +12420,14 @@ function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
                         width : 20,
                         followSurface : true,
                         material : new Cesium.PolylineArrowMaterialProperty(
-                            Cesium.Color.fromCssColorString('rgba(64, 255, 64, 0.7)'))
+                            Cesium.Color.fromCssColorString('rgba(64, 64, 255, 0.7)'))
                     }
                 });
                 viewer.entities.add(entity);
-                $.webgis.geometry.dn_power_resume_line.push(entity);
+                if(_.isUndefined($.webgis.geometry.dn_power_resume_line_cutoff)){
+                    $.webgis.geometry.dn_power_resume_line_cutoff = [];
+                }
+                $.webgis.geometry.dn_power_resume_line_cutoff.push(entity);
 
                 var entity_center = new Cesium.Entity({
                     name: g1.properties.name + 'X' + g2.properties.name,
@@ -12540,7 +12439,7 @@ function DrawDNPowerResumeLineCutOffPrimitive(viewer, is_draw, line_id, data)
                     })
                 });
                 viewer.entities.add(entity_center);
-                $.webgis.geometry.dn_power_resume_line.push(entity_center);
+                $.webgis.geometry.dn_power_resume_line_cutoff.push(entity_center);
             }
         });
     }
@@ -12554,11 +12453,14 @@ function DrawDNPowerResumeLineConnectPrimitive(viewer, is_draw, line_id, data)
                 return get_feature_id(line_id, item);
             });
         }
-        if(_.isNumber(idx)){
+        if(_.isNumber(idx) || _.isString(idx)){
             var ret;
             var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
             if(!_.isUndefined(line)){
                 ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+            }
+            if(_.isUndefined(ret)){
+                ret = _.result(_.find(line.mapping, {'idx':'S' + idx}), '_id');
             }
             return ret;
         }
@@ -12566,16 +12468,16 @@ function DrawDNPowerResumeLineConnectPrimitive(viewer, is_draw, line_id, data)
 
     if(!is_draw)
     {
-        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line) && $.webgis.geometry.dn_power_resume_line.length)
+        if(!_.isUndefined($.webgis.geometry.dn_power_resume_line_connect) && $.webgis.geometry.dn_power_resume_line_connect.length)
         {
-            _.forEach($.webgis.geometry.dn_power_resume_line, function(item){
+            _.forEach($.webgis.geometry.dn_power_resume_line_connect, function(item){
                 viewer.entities.remove(item);
             });
-            delete $.webgis.geometry.dn_power_resume_line;
+            delete $.webgis.geometry.dn_power_resume_line_connect;
         }
     }else{
         DrawDNPowerResumeLineConnectPrimitive(viewer, false);
-        $.webgis.geometry.dn_power_resume_line = [];
+        //console.log(data);
         _.forEach(data, function(item){
             var pos = [];
             var g1 = _.find($.webgis.data.geojsons, {_id:get_feature_id(line_id, item.start)});
@@ -12602,7 +12504,10 @@ function DrawDNPowerResumeLineConnectPrimitive(viewer, is_draw, line_id, data)
                     }
                 });
                 viewer.entities.add(entity);
-                $.webgis.geometry.dn_power_resume_line.push(entity);
+                if(_.isUndefined($.webgis.geometry.dn_power_resume_line_connect)){
+                    $.webgis.geometry.dn_power_resume_line_connect = [];
+                }
+                $.webgis.geometry.dn_power_resume_line_connect.push(entity);
             }
         });
     }
@@ -12615,6 +12520,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
         if(!_.isUndefined($.webgis.geometry.dn_fault_points) && $.webgis.geometry.dn_fault_points.length)
         {
             //viewer.scene.primitives.remove($.webgis.geometry.dn_fault_points);
+            //console.log($.webgis.geometry.dn_fault_points.length);
             _.forEach($.webgis.geometry.dn_fault_points, function(item){
                 if(_.isUndefined(algorithm)){
                     viewer.entities.remove(item);
@@ -12650,11 +12556,11 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
         if (data.length === 0) {
             return;
         }
-        var pinBuilder = new Cesium.PinBuilder();
-        $.webgis.geometry.dn_fault_points = [];
+        //var pinBuilder = new Cesium.PinBuilder();
+
         _.forEach(data, function (_id) {
             var g = _.find($.webgis.data.geojsons, {_id: _id});
-            if (!_.isUndefined(g.geometry)) {
+            if (g && g.geometry) {
                 //console.log(g);
                 var z = 0;
                 if ($.webgis.config.zaware) {
@@ -12664,7 +12570,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                 var billboard = {};
                 var label = {};
                 var point = {};
-                if (algorithm === 'rset') {
+                if (algorithm === 'gis') {
                     text = '简单定位';
                     color = 'rgba(220, 64, 64, 0.7)';
                     billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
@@ -12706,6 +12612,9 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                 });
                 entity.algorithm = algorithm;
                 viewer.entities.add(entity);
+                if(_.isUndefined($.webgis.geometry.dn_fault_points)){
+                    $.webgis.geometry.dn_fault_points = [];
+                }
                 $.webgis.geometry.dn_fault_points.push(entity);
             }
         });
@@ -13025,7 +12934,7 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
         }
     };
 
-    if(algorithm === 'rset'){
+    if(algorithm === 'gis'){
         $('#form_dn_algorithm_option_rset').empty();
         var flds = [
             { display: "原始决策表", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
