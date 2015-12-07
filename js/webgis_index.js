@@ -12937,7 +12937,7 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     if(algorithm === 'gis'){
         $('#form_dn_algorithm_option_rset').empty();
         var flds = [
-            { display: "原始决策表", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+            { display: "线路运行数据", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
                 handleFile:handleFile_rset_G_state
             },
         ];
