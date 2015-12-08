@@ -3020,6 +3020,11 @@ function InitToolPanel(viewer)
     $('#btn_dn_fault_position_clear').on('click', function(){
        DrawDNFaultPointPrimitive(viewer, false);
     });
+    $('#btn_dn_power_area').button({label:'供电区域显示'});
+    $('#btn_dn_power_area').on('click', function(){
+       DrawDNPowerAreaDisplayDlg(viewer);
+    });
+
     $('#btn_dn_power_resume_clear').button({label:'清除恢复显示'});
     $('#btn_dn_power_resume_clear').on('click', function(){
        DrawDNPowerResumeLineConnectPrimitive(viewer, false);
@@ -3219,6 +3224,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
 {
     if($('#' + dlg_id).length === 0)
     {
+        if (dlg_id === 'dlg_dn_network_power_area')
+        {
+            $(document.body).append('\
+                <div id="dlg_dn_network_power_area" >\
+                    <form id="form_dn_network_power_area"></form>\
+                </div>\
+            ');
+        }
         if (dlg_id === 'dlg_dn_network_power_resume_candidate_grid')
         {
             $(document.body).append('\
@@ -6342,13 +6355,16 @@ function TowerInfoMixin(viewer)
             var g = _.find($.webgis.data.geojsons, {_id:id});
             if(g && g.properties.name )
             {
-
                 var name = g.properties.name;
                 if(g.properties.code_name){
                     name = '(' + g.properties.code_name + ')' + name;
                 }
                 ShowGeoTip(id, e.endPosition, name);
-            }else
+            }else if(picked.id && picked.id.id && picked.id.name)
+            {
+                ShowGeoTip(picked.id.id, e.endPosition, picked.id.name);
+            }
+            else
             {
                 ShowGeoTip(false);
             }
@@ -12571,7 +12587,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                 var label = {};
                 var point = {};
                 if (algorithm === 'gis') {
-                    text = '简单定位';
+                    text = '简单算法';
                     color = 'rgba(220, 64, 64, 0.7)';
                     billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                     label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
@@ -12579,7 +12595,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                     point.pixelSize = 20;
                 }
                 if (algorithm === 'bayes') {
-                    text = '贝叶斯';
+                    text = '贝叶斯算法';
                     color = 'rgba(192, 0, 64, 0.7)';
                     billboard.verticalOrigin = Cesium.VerticalOrigin.TOP;
                     label.verticalOrigin = Cesium.VerticalOrigin.TOP;
@@ -12589,7 +12605,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                     //point.outlineWidth = 4;
                 }
                 if (algorithm === 'ants') {
-                    text = '蚁群';
+                    text = '蚁群算法';
                     color = 'rgba(220, 128, 0, 0.5)';
                     billboard.horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
                     label.horizontalOrigin = Cesium.HorizontalOrigin.RIGHT;
@@ -13561,4 +13577,122 @@ function CheckPermission(funcname)
         ShowMessage(null, 400, 200, '权限检查', '当前登录用户[' + $.webgis.current_userinfo['displayname'] + ']无此操作权限:[' + s + ']');
     }
     return ret;
+}
+
+function DrawDNPowerAreaDisplayDlg(viewer)
+{
+    var clear_geojson = function(viewer){
+        //if(!_.isUndefined($.webgis.data.GeoJsonDataSource) && $.webgis.data.GeoJsonDataSource.length){
+        //    _.forEach($.webgis.data.GeoJsonDataSource, function(item){
+        //        viewer.dataSources.remove(item, true);
+        //    });
+        //    delete $.webgis.data.GeoJsonDataSource;
+        //}
+        viewer.dataSources.removeAll(true);
+        delete $.webgis.data.GeoJsonDataSource;
+    };
+    var load_geojson = function(viewer, filepath)
+    {
+        //ShowProgressBar(true, 670, 200, '载入中', '正在载入，请稍候...');
+        //$.ajax({
+        //    url:'/' + filepath,
+        //    method:'get'
+        //})
+        //.always(function () {
+        //    ShowProgressBar(false);
+        //})
+        //.done(function (data1) {
+        //    console.log(data1);
+        //})
+        //.fail(function (jqxhr, textStatus, e) {
+        //    $.jGrowl("数据获取失败:" + e, {
+        //        life: 2000,
+        //        position: 'bottom-right', //top-left, top-right, bottom-left, bottom-right, center
+        //        theme: 'bubblestylefail',
+        //        glue:'before'
+        //    });
+        //});
+        if(_.isUndefined($.webgis.data.GeoJsonDataSource)){
+            $.webgis.data.GeoJsonDataSource = [];
+        }
+        var fillcolor;
+        if(_.endsWith(filepath, '_b.json')){
+            fillcolor = Cesium.Color.GREEN.withAlpha(0.5);
+        }
+        else if(_.endsWith(filepath, '_c.json')){
+            fillcolor = Cesium.Color.BLUE.withAlpha(0.5);
+        }
+        else if(_.endsWith(filepath, '_d.json')){
+            fillcolor = Cesium.Color.YELLOW.withAlpha(0.5);
+        }
+        var ds = Cesium.GeoJsonDataSource.load('/' + filepath,{
+            fill: fillcolor
+        });
+        if(!_.includes($.webgis.data.GeoJsonDataSource, ds)){
+            $.webgis.data.GeoJsonDataSource.push(ds);
+            viewer.dataSources.add(ds);
+        }
+    };
+    CreateDialogSkeleton(viewer, 'dlg_dn_network_power_area');
+    $('#dlg_dn_network_power_area').dialog({
+        width: 540,
+        height: 300,
+        minWidth:200,
+        minHeight: 200,
+        draggable: true,
+        resizable: true,
+        modal: false,
+        position:{at: "right center"},
+        title:'供电区域',
+        close:function(event, ui){
+        },
+        show: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        hide: {
+            effect: "slide",
+            direction: "right",
+            duration: 400
+        },
+        buttons: [
+            {
+                text: "确定",
+                click: function () {
+                    var formdata = $('#form_dn_network_power_area').webgisform('getdata');
+                    //console.log(formdata.area);
+                    clear_geojson(viewer);
+                    _.forEach(formdata.area, function(item){
+                        load_geojson(viewer, item);
+                    });
+                    $(this).dialog("close");
+                }
+            },
+            {
+                text: "清空",
+                click: function () {
+                    clear_geojson(viewer);
+                }
+            },
+            {
+                text: "关闭",
+                click: function () {
+                    $(this).dialog("close");
+                }
+            }
+        ]
+    });
+    var alist = [
+        {label:'玉溪供电局本部B类供电区',value:'yx_power_area_b.json'},
+        {label:'玉溪供电局本部C类供电区',value:'yx_power_area_c.json'},
+        {label:'玉溪供电局本部D类供电区',value:'yx_power_area_d.json'}
+    ];
+    var flds = [
+        { display: "供电区域选择", id: "area", newline: true, type: "multiselect", editor: { data: alist }, defaultvalue: 'yx_power_area_a.json', group: '供电区域', width: 260, labelwidth: 140}
+    ];
+    $('#form_dn_network_power_area').webgisform(flds,{
+        prefix: "form_dn_network_power_area_",
+        maxwidth: 450
+    });
 }

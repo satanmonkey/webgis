@@ -1001,10 +1001,12 @@ function ReadTable(url, success, failed)
 
 function ShowProgressBar(show, width, height, title, msg, interval)
 {
+    if(show && $('#dlg_progress_bar').length) {
+        return;
+    }
     if(_.isUndefined(interval)){
         interval = 100;
     }
-    //console.log(interval);
     $('#dlg_progress_bar').remove();
     if(show)
     {
