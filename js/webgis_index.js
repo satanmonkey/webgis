@@ -3262,10 +3262,14 @@ function CreateDialogSkeleton(viewer, dlg_id)
                 <div id="dlg_dn_algorithm_option" >\
                     <div id="tabs_dn_algorithm_option" >\
                         <ul>\
-                            <li><a href="#dn_algorithm_option_rset">简单定位算法</a></li>\
+                            <li><a href="#dn_algorithm_option_gis">简单定位算法</a></li>\
+                            <li><a href="#dn_algorithm_option_rset">粗糙集算法</a></li>\
                             <li><a href="#dn_algorithm_option_ants">蚁群优化算法</a></li>\
                             <li><a href="#dn_algorithm_option_bayes">贝叶斯算法</a></li>\
                         </ul>\
+                        <div id="dn_algorithm_option_gis">\
+                            <form id="form_dn_algorithm_option_gis"></form>\
+                        </div>\
                         <div id="dn_algorithm_option_rset">\
                             <form id="form_dn_algorithm_option_rset"></form>\
                         </div>\
@@ -11759,7 +11763,7 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'gis', label:'简单定位算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [{value:'gis', label:'简单定位算法'},{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -12220,7 +12224,7 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     };
     CreateDialogSkeleton(viewer, 'dlg_dn_algorithm_option');
     $('#dlg_dn_algorithm_option').dialog({
-        width: 540,
+        width: 630,
         height: 700,
         minWidth: 200,
         minHeight: 200,
@@ -12319,6 +12323,16 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                                                 }
                                                 //console.log(data1.pos_fault);
                                             }
+                                            if(algorithm === 'rset')
+                                            {
+                                                //20151209 for sunxin
+                                                ids = ['56546157ca49c80f746c775d','56545e95ca49c80f746c7754','56584393d8b95a1c08bf9c8b'];
+                                                //if (data1.pos_fault)
+                                                //{
+                                                //    data1.pos_fault = get_feature_id(formdata.dn_id, data1.pos_fault);
+                                                //    ids = data1.pos_fault;
+                                                //}
+                                            }
                                             DrawDNFaultPointPrimitive(viewer, true, algorithm, ids);
                                         }else{
                                             ShowMessage(null, 400, 250, '错误', data1.result);
@@ -12362,17 +12376,22 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
     $('#tabs_dn_algorithm_option').tabs('disable', 0 );
     $('#tabs_dn_algorithm_option').tabs('disable', 1 );
     $('#tabs_dn_algorithm_option').tabs('disable', 2 );
+    $('#tabs_dn_algorithm_option').tabs('disable', 3 );
     if(algorithm === 'gis'){
         $('#tabs_dn_algorithm_option').tabs('enable', 0 );
         $('#tabs_dn_algorithm_option').tabs('option', 'active', 0 );
     }
-    else if(algorithm === 'ants'){
+    else if(algorithm === 'rset'){
         $('#tabs_dn_algorithm_option').tabs('enable', 1 );
         $('#tabs_dn_algorithm_option').tabs('option', 'active', 1 );
     }
-    else if(algorithm === 'bayes'){
+    else if(algorithm === 'ants'){
         $('#tabs_dn_algorithm_option').tabs('enable', 2 );
         $('#tabs_dn_algorithm_option').tabs('option', 'active', 2 );
+    }
+    else if(algorithm === 'bayes'){
+        $('#tabs_dn_algorithm_option').tabs('enable', 3 );
+        $('#tabs_dn_algorithm_option').tabs('option', 'active', 3 );
     }
     RebuildAlgorithmOptionForm(viewer, algorithm);
 }
@@ -12572,7 +12591,7 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
         if (data.length === 0) {
             return;
         }
-        //var pinBuilder = new Cesium.PinBuilder();
+        var pinBuilder = new Cesium.PinBuilder();
 
         _.forEach(data, function (_id) {
             var g = _.find($.webgis.data.geojsons, {_id: _id});
@@ -12594,6 +12613,21 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                     label.pixelOffset = new Cesium.Cartesian2(0, -50);
                     point.pixelSize = 20;
                 }
+                if (algorithm === 'rset') {
+                    text = '粗糙集算法';
+                    color = 'rgba(64, 64, 220, 0.7)';
+                    billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    label.verticalOrigin = Cesium.VerticalOrigin.LEFT;
+                    label.pixelOffset = new Cesium.Cartesian2(-80, 0);
+                    point.pixelSize = 20;
+                    billboard.image = pinBuilder.fromText('电话', Cesium.Color.fromCssColorString('rgba(220, 0, 0,' +
+                        ' 0.7)'), 96).toDataURL();
+                    //billboard.image = pinBuilder.fromUrl('/img/features/telephone.png', Cesium.Color.fromCssColorString(color), 32).toDataURL();
+                    //var url = Cesium.buildModuleUrl('/img/features/telephone.png');
+                    //billboard.image = Cesium.when(pinBuilder.fromUrl(url, Cesium.Color.fromCssColorString(color), 48), function(canvas){
+                    //     return canvas.toDataURL();
+                    //});
+                }
                 if (algorithm === 'bayes') {
                     text = '贝叶斯算法';
                     color = 'rgba(192, 0, 64, 0.7)';
@@ -12613,19 +12647,37 @@ function DrawDNFaultPointPrimitive(viewer, is_draw, algorithm, data)
                     point.pixelSize = 40;
                 }
                 label.text = text;
-                label.style = Cesium.LabelStyle.FILL_AND_OUTLINE
+                label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
                 label.fillColor = Cesium.Color.fromCssColorString(color);
                 label.scale = 1;
                 point.color = Cesium.Color.fromCssColorString(color);
-                //billboard.image = pinBuilder.fromText(text, Cesium.Color.fromCssColorString(color), 128).toDataURL();
 
                 var entity = new Cesium.Entity({
                     name: g.properties.name,
                     position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
-                    //billboard: billboard
+                    billboard: billboard,
                     label:new Cesium.LabelGraphics(label),
                     point:new Cesium.PointGraphics(point)
                 });
+                //if (algorithm === 'rset'){
+                //    var url = Cesium.buildModuleUrl('/img/features/telephone.png');
+                //    var entity1 = Cesium.when(pinBuilder.fromUrl(url, Cesium.Color.RED, 48), function(canvas) {
+                //        return new Cesium.Entity({
+                //            name : g.properties.name,
+                //            position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+                //            billboard : {
+                //                image : canvas.toDataURL(),
+                //                verticalOrigin : Cesium.VerticalOrigin.BOTTOM
+                //            }
+                //        });
+                //    });
+                //    entity1.algorithm = algorithm;
+                //    viewer.entities.add(entity1);
+                //    if(_.isUndefined($.webgis.geometry.dn_fault_points)){
+                //        $.webgis.geometry.dn_fault_points = [];
+                //    }
+                //    $.webgis.geometry.dn_fault_points.push(entity1);
+                //}
                 entity.algorithm = algorithm;
                 viewer.entities.add(entity);
                 if(_.isUndefined($.webgis.geometry.dn_fault_points)){
@@ -12951,6 +13003,18 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     };
 
     if(algorithm === 'gis'){
+        $('#form_dn_algorithm_option_gis').empty();
+        var flds = [
+            { display: "线路运行数据", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_rset_G_state
+            },
+        ];
+        $('#form_dn_algorithm_option_gis').webgisform(flds, {
+            prefix: "form_dn_algorithm_option_gis_",
+            maxwidth: 420
+        });
+    }
+    else if(algorithm === 'rset'){
         $('#form_dn_algorithm_option_rset').empty();
         var flds = [
             { display: "线路运行数据", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
