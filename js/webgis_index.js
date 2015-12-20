@@ -339,9 +339,13 @@ function InitLeafletViewer()
     var layers = [];
     var url_temlate, lyr;
     var baseMaps = {};
-    
-    url_temlate = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
-    
+    url_temlate = '';
+    if($.webgis.remote.tiles_host.length){
+        url_temlate = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
+    }else{
+        url_temlate = '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
+    }
+
     
     lyr = L.tileLayer(url_temlate, {
         image_type:'arcgis_sat', 
@@ -531,6 +535,14 @@ function InitCesiumViewer()
     {
         prefix = 'ztgdgis/';
     }
+    var url = '', terrain_url = '';
+    if($.webgis.remote.tiles_host.length){
+        url = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles';
+        terrain_url = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/terrain';
+    }else{
+        url = '/tiles';
+        terrain_url =  '/terrain';
+    }
     providerViewModels.push(new Cesium.ProviderViewModel({
         name : 'Esri卫星图',
         iconUrl : 'img/esri-sat.png',
@@ -540,7 +552,7 @@ function InitCesiumViewer()
                 //url : 'http://dev.virtualearth.net',
                 //mapStyle : Cesium.BingMapsStyle.AERIAL
                 ////proxy : proxyIfNeeded
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+                url :  url,
                 imageType: 'arcgis_sat',
                 queryType: 'server'
             });
@@ -567,7 +579,7 @@ function InitCesiumViewer()
                 //url : 'http://dev.virtualearth.net',
                 //mapStyle : Cesium.BingMapsStyle.AERIAL
                 ////proxy : proxyIfNeeded
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+                url : url,
                 imageType: 'bing_sat',
                 queryType: 'server'
             });
@@ -579,7 +591,7 @@ function InitCesiumViewer()
         tooltip : '高德地图',
         creationFunction : function() {
             return new AMapTileImageryProvider({
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
+                url :  url,
                 imageType: 'amap_map',
                 queryType: 'server'
             });
@@ -618,7 +630,7 @@ function InitCesiumViewer()
         creationFunction : function() {
             return new HeightmapAndQuantizedMeshTerrainProvider({
                 //url : "terrain",
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/terrain',
+                url :  terrain_url,
                 terrain_type : 'quantized_mesh',
                 credit : ''
             });
@@ -11781,8 +11793,16 @@ function ShowDNFaultDetectDialog(viewer)
             });
             if(_id === '564ea4cad8b95a08ece92582'){//10kV州城Ⅴ回线
                 $('#form_dn_network_fault_detect_line_type').empty();
-                $('#form_dn_network_fault_detect_line_type').append('<option value="ftu5">5FTU</option><option' +
-                    ' value="ftu10_1">10FTU均匀分布</option><option value="ftu10_2">10FTU重要程度分布</option>');
+                //$('#form_dn_network_fault_detect_line_type').append('<option value="ftu5">5FTU</option><option' +
+                //    ' value="ftu10_1">10FTU均匀分布</option><option value="ftu10_2">10FTU重要程度分布</option>');
+                $('#form_dn_network_fault_detect_line_type').append(
+                    '<option value="ftu5_5">5分钟</option>' +
+                    '<option value="ftu5_10">10分钟</option>' +
+                    '<option value="ftu5_15">15分钟</option>' +
+                    '<option value="ftu5_20">20分钟</option>' +
+                    '<option value="ftu5_25">25分钟</option>' +
+                    '<option value="ftu5_30">30分钟</option>' +
+                '');
                 $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
                 $('#form_dn_network_fault_detect_line_type').multipleSelect('setSelects', ['ftu5']);
             }
@@ -11791,7 +11811,8 @@ function ShowDNFaultDetectDialog(viewer)
                 $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
             }
         }},
-        { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        //{ display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        { display: "数据发送间隔", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
         { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
             click:function(){
