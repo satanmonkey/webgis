@@ -11793,9 +11793,12 @@ function ShowDNFaultDetectDialog(viewer)
             });
             if(_id === '564ea4cad8b95a08ece92582'){//10kV州城Ⅴ回线
                 $('#form_dn_network_fault_detect_line_type').empty();
-                //$('#form_dn_network_fault_detect_line_type').append('<option value="ftu5">5FTU</option><option' +
-                //    ' value="ftu10_1">10FTU均匀分布</option><option value="ftu10_2">10FTU重要程度分布</option>');
-                $('#form_dn_network_fault_detect_line_type').append(
+                $('#form_dn_network_fault_detect_line_type').append('<option value="ftu5">5FTU</option><option' +
+                    ' value="ftu10_1">10FTU均匀分布</option><option value="ftu10_2">10FTU重要程度分布</option>');
+                $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
+                $('#form_dn_network_fault_detect_line_type').multipleSelect('setSelects', ['ftu5']);
+                $('#form_dn_network_fault_detect_interval').empty();
+                $('#form_dn_network_fault_detect_interval').append(
                     '<option value="ftu5_5">5分钟</option>' +
                     '<option value="ftu5_10">10分钟</option>' +
                     '<option value="ftu5_15">15分钟</option>' +
@@ -11803,16 +11806,18 @@ function ShowDNFaultDetectDialog(viewer)
                     '<option value="ftu5_25">25分钟</option>' +
                     '<option value="ftu5_30">30分钟</option>' +
                 '');
-                $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
-                $('#form_dn_network_fault_detect_line_type').multipleSelect('setSelects', ['ftu5']);
+                $('#form_dn_network_fault_detect_interval').multipleSelect('refresh');
+                //$('#form_dn_network_fault_detect_interval').multipleSelect('setSelects', ['ftu5_5']);
             }
             else{
                 $('#form_dn_network_fault_detect_line_type').empty();
                 $('#form_dn_network_fault_detect_line_type').multipleSelect('refresh');
+                $('#form_dn_network_fault_detect_interval').empty();
+                $('#form_dn_network_fault_detect_interval').multipleSelect('refresh');
             }
         }},
-        //{ display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
-        { display: "数据发送间隔", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        { display: "数据发送间隔", id: "interval", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
         { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
             click:function(){
