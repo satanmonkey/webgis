@@ -56,6 +56,24 @@ $(function() {
                                 //    });
                                 //});
 
+                                //20160413 for pu'er only 酒房丫口线、坪掌寨线(570ce0c1ca49c8085832061a)
+                                LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c80858320619', function(){
+                                   LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c80858320619', function(){
+
+                                        LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c8085832061a', function(){
+                                           LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c8085832061a', function(){
+
+                                               var extent = GetExtentByCzml();
+                                               FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
+                                               if($.webgis.config.map_backend === 'cesium')
+                                               {
+                                                   ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
+                                               }
+
+                                           });
+                                        });
+                                   });
+                                });
 
 
                             });
@@ -2802,11 +2820,15 @@ function InitToolPanel(viewer)
         {
             if($(this).is(':checked'))
             {
-                //console.log('turn on edge:' + webgis_type);
+                console.log('turn on edge:' + webgis_type);
                 if($.webgis.config.map_backend === 'cesium')
                 {
-                    //console.log($.webgis.data.czmls);
-                    _.forEach($.webgis.data.geojsons,function(item)
+                    // console.log($.webgis.data.czmls);
+                    var edges = _.filter($.webgis.data.geojsons, function (item) {
+                        return _.startsWith(item.properties.webgis_type, 'edge_');
+                    })
+                    // console.log(edges);
+                    _.forEach(edges,function(item)
                     {
                         DrawEdgeBetweenTwoNode(viewer, 'edge_tower', item.properties.start, item.properties.end, false);
                         DrawEdgeBetweenTwoNode(viewer, 'edge_dn', item.properties.start, item.properties.end, false);
