@@ -51,7 +51,7 @@ $(function() {
             '570ce0b7ca49c8085832021f',
             '570ce0b7ca49c80858320200',
         ]
-        _.forEach(data, function (_id) {
+        _.forEach(puerdata, function (_id) {
             var g = _.find($.webgis.data.geojsons, {_id: _id});
             if (g && g.geometry)
             {
