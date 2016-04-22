@@ -64,14 +64,14 @@ $(function() {
                 var billboard = {};
                 var label = {};
                 var point = {};
-                if (algorithm === 'gis') {
-                    text = g.properties.name;
-                    color = 'rgba(0, 255, 0, 0.7)';
-                    billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
-                    label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
-                    // label.pixelOffset = new Cesium.Cartesian2(0, -50);
-                    point.pixelSize = 20;
-                }
+
+                text = g.properties.name;
+                color = 'rgba(0, 255, 0, 0.7)';
+                billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                // label.pixelOffset = new Cesium.Cartesian2(0, -50);
+                point.pixelSize = 20;
+
                 label.text = text;
                 label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
                 label.fillColor = Cesium.Color.fromCssColorString(color);
