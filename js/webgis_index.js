@@ -15,6 +15,90 @@
 
 
 $(function() {
+
+    function LoadPUERFTU() {
+        var puerdata = [
+            '570ce0c1ca49c80858320412',
+            '570ce0c1ca49c80858320436',
+            '570ce0c1ca49c8085832031b',
+            '570ce0c1ca49c80858320409',
+            '570ce0c1ca49c80858320321',
+            '570ce0c1ca49c80858320424',
+            '570ce0c1ca49c80858320325',
+            '570ce0c1ca49c8085832032a',
+            '570ce0c1ca49c80858320339',
+            '570ce0c1ca49c80858320349',
+            '570ce0c1ca49c80858320417',
+            '570ce0c1ca49c80858320353',
+            '570ce0c1ca49c80858320367',
+            '570ce0c1ca49c80858320367',
+            '570ce0b7ca49c808583202ad',
+            '570ce0b7ca49c808583202a2',
+            '570ce0b7ca49c80858320234',
+            '570ce0b7ca49c8085832023b',
+            '570ce0b7ca49c8085832024e',
+            '570ce0b7ca49c80858320240',
+            '570ce0b7ca49c8085832018f',
+            '570ce0b7ca49c80858320199',
+            '570ce0b7ca49c808583201e2',
+            '570ce0b7ca49c808583201ad',
+            '570ce0b7ca49c808583201b6',
+            '570ce0b7ca49c808583201c2',
+            '570ce0b7ca49c808583201c2',
+            '570ce0b7ca49c808583201d3',
+            '570ce0b7ca49c808583201de',
+            '570ce0b7ca49c808583201e9',
+            '570ce0b7ca49c8085832021f',
+            '570ce0b7ca49c80858320200',
+        ]
+        _.forEach(data, function (_id) {
+            var g = _.find($.webgis.data.geojsons, {_id: _id});
+            if (g && g.geometry)
+            {
+                //console.log(g);
+                var z = 0;
+                if ($.webgis.config.zaware) {
+                    z = g.geometry.coordinates[2];
+                }
+                var color, text;
+                var billboard = {};
+                var label = {};
+                var point = {};
+                if (algorithm === 'gis') {
+                    text = g.properties.name;
+                    color = 'rgba(0, 255, 0, 0.7)';
+                    billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    // label.pixelOffset = new Cesium.Cartesian2(0, -50);
+                    point.pixelSize = 20;
+                }
+                label.text = text;
+                label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
+                label.fillColor = Cesium.Color.fromCssColorString(color);
+                label.scale = 1;
+                point.color = Cesium.Color.fromCssColorString(color);
+
+                var entity = new Cesium.Entity({
+                    name: g.properties.name,
+                    position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+                    billboard: billboard,
+                    label:new Cesium.LabelGraphics(label),
+                    point:new Cesium.PointGraphics(point)
+                });
+                viewer.entities.add(entity);
+                if(_.isUndefined($.webgis.geometry.pure_ftu_points)){
+                    $.webgis.geometry.pure_ftu_points = [];
+                }
+                $.webgis.geometry.pure_ftu_points.push(entity);
+            }
+        });
+
+
+    }
+
+
+
+
     var session_data = Cookies.get('session_data');
     if(session_data){
         var session_data_string = session_data.replace(/\\054/g, ',').replace(/\\"/g, '"').replace(/\\\\u/g, '\\u');
@@ -25,6 +109,8 @@ $(function() {
     $.jGrowl.defaults.closerTemplate = '<div class="bubblestylesuccess">关闭所有提示信息</div>';
     
     var viewer;
+
+
 
     var load_init_data = function()
     {
@@ -69,6 +155,8 @@ $(function() {
                                                {
                                                    ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
                                                }
+                                               //20160422 pu'er only
+                                               LoadPUERFTU();
 
                                            });
                                         });
