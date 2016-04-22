@@ -66,11 +66,11 @@ $(function() {
                 var point = {};
 
                 text = g.properties.name;
-                color = 'rgba(0, 255, 0, 0.7)';
+                color = 'rgba(0, 255, 255, 0.7)';
                 billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                 label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                 // label.pixelOffset = new Cesium.Cartesian2(0, -50);
-                point.pixelSize = 20;
+                point.pixelSize = 40;
 
                 label.text = text;
                 label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
