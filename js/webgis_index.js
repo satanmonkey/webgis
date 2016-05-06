@@ -12331,24 +12331,29 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
         //     }
         //     return ret;
         // }
+        if(_.isString(idx))
+        {
+            idx = _.toNumber(idx);
+        }
         if(_.isNumber(idx))
         {
             var ret;
 
-            // console.log(line_id);
-            // console.log($.webgis.data.distribute_network);
+
             var lineobj = _.find($.webgis.data.distribute_network, {_id:line_id});
-            // console.log(lineobj);
-            var ids = _.result(lineobj, 'properties.nodes');
-            // console.log(ids);
+            var ids = lineobj.properties.nodes;
             var nodes = _.filter($.webgis.data.geojsons, function (item) {
-                return !_.isUndefined(item.properties.devices);
+                return item.properties.devices && _.indexOf(ids, item._id)>-1;
+            });
+            nodes = _.map(nodes, function (item) {
+                return {
+                    _id:item._id,
+                    alias:_.get(item, 'properties.devices[0].switch_alias')
+                };
             });
             // console.log(nodes);
-            var nodesids = _.pluck(nodes, '_id');
-            // console.log(nodesids);
-            var aaa = _.xor(nodesids, ids);
-            // console.log(aaa);
+            ret = _.result(_.find(nodes, {alias:idx}), '_id');
+            // console.log(ret);
             return ret;
         }
     };
