@@ -16,84 +16,58 @@
 
 $(function() {
 
-    function LoadPUERFTU() {
-        var puerdata = [
-            '570ce0c1ca49c80858320412',
-            '570ce0c1ca49c80858320436',
-            '570ce0c1ca49c8085832031b',
-            '570ce0c1ca49c80858320409',
-            '570ce0c1ca49c80858320321',
-            '570ce0c1ca49c80858320424',
-            '570ce0c1ca49c80858320325',
-            '570ce0c1ca49c8085832032a',
-            '570ce0c1ca49c80858320339',
-            '570ce0c1ca49c80858320349',
-            '570ce0c1ca49c80858320417',
-            '570ce0c1ca49c80858320353',
-            '570ce0c1ca49c80858320367',
-            '570ce0c1ca49c80858320367',
-            '570ce0b7ca49c808583202ad',
-            '570ce0b7ca49c808583202a2',
-            '570ce0b7ca49c80858320234',
-            '570ce0b7ca49c8085832023b',
-            '570ce0b7ca49c8085832024e',
-            '570ce0b7ca49c80858320240',
-            '570ce0b7ca49c8085832018f',
-            '570ce0b7ca49c80858320199',
-            '570ce0b7ca49c808583201e2',
-            '570ce0b7ca49c808583201ad',
-            '570ce0b7ca49c808583201b6',
-            '570ce0b7ca49c808583201c2',
-            '570ce0b7ca49c808583201c2',
-            '570ce0b7ca49c808583201d3',
-            '570ce0b7ca49c808583201de',
-            '570ce0b7ca49c808583201e9',
-            '570ce0b7ca49c8085832021f',
-            '570ce0b7ca49c80858320200',
-        ]
-        _.forEach(puerdata, function (_id) {
-            var g = _.find($.webgis.data.geojsons, {_id: _id});
-            if (g && g.geometry)
-            {
-                //console.log(g);
-                var z = 0;
-                if ($.webgis.config.zaware) {
-                    z = g.geometry.coordinates[2];
+    function LoadPUERFTU()
+    {
+        var loaddata = function (data) {
+            _.forEach(data, function (_id) {
+                var g = _.find($.webgis.data.geojsons, {_id: _id});
+                if (g && g.geometry)
+                {
+                    //console.log(g);
+                    var z = 0;
+                    if ($.webgis.config.zaware) {
+                        z = g.geometry.coordinates[2];
+                    }
+                    var color, text;
+                    var billboard = {};
+                    var label = {};
+                    var point = {};
+
+                    text = g.properties.name;
+                    color = 'rgba(0, 255, 255, 0.7)';
+                    billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
+                    // label.pixelOffset = new Cesium.Cartesian2(0, -50);
+                    point.pixelSize = 40;
+
+                    label.text = text;
+                    label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
+                    label.fillColor = Cesium.Color.fromCssColorString(color);
+                    label.scale = 1;
+                    point.color = Cesium.Color.fromCssColorString(color);
+
+                    var entity = new Cesium.Entity({
+                        name: g.properties.name,
+                        position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
+                        billboard: billboard,
+                        label:new Cesium.LabelGraphics(label),
+                        point:new Cesium.PointGraphics(point)
+                    });
+                    viewer.entities.add(entity);
+                    if(_.isUndefined($.webgis.geometry.pure_ftu_points)){
+                        $.webgis.geometry.pure_ftu_points = [];
+                    }
+                    $.webgis.geometry.pure_ftu_points.push(entity);
                 }
-                var color, text;
-                var billboard = {};
-                var label = {};
-                var point = {};
+            });
+        };
 
-                text = g.properties.name;
-                color = 'rgba(0, 255, 255, 0.7)';
-                billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
-                label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
-                // label.pixelOffset = new Cesium.Cartesian2(0, -50);
-                point.pixelSize = 40;
 
-                label.text = text;
-                label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
-                label.fillColor = Cesium.Color.fromCssColorString(color);
-                label.scale = 1;
-                point.color = Cesium.Color.fromCssColorString(color);
-
-                var entity = new Cesium.Entity({
-                    name: g.properties.name,
-                    position: Cesium.Cartesian3.fromDegrees(g.geometry.coordinates[0], g.geometry.coordinates[1], z),
-                    billboard: billboard,
-                    label:new Cesium.LabelGraphics(label),
-                    point:new Cesium.PointGraphics(point)
-                });
-                viewer.entities.add(entity);
-                if(_.isUndefined($.webgis.geometry.pure_ftu_points)){
-                    $.webgis.geometry.pure_ftu_points = [];
-                }
-                $.webgis.geometry.pure_ftu_points.push(entity);
-            }
+        var puerdata = _.filter($.webgis.data.geojsons, function (item) {
+            return !_.isUndefined(item.properties.devices);
         });
-
-
+        puerdata = _.map(puerdata, '_id');
+        // loaddata(puerdata);
     }
 
 
@@ -142,7 +116,7 @@ $(function() {
                                 //    });
                                 //});
 
-                                //20160413 for pu'er only 酒房丫口线、坪掌寨线(570ce0c1ca49c8085832061a)
+                                //20160413 for pu'er only 酒房丫口线(570ce0c1ca49c80858320619)、坪掌寨线(570ce0c1ca49c8085832061a)
                                 LoadDNNodesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c80858320619', function(){
                                    LoadDNEdgesByDNId(viewer, $.webgis.db.db_name, '570ce0c1ca49c80858320619', function(){
 
@@ -11926,8 +11900,8 @@ function ShowDNFaultDetectDialog(viewer)
                 $('#form_dn_network_fault_detect_interval').multipleSelect('refresh');
             }
         }},
-        { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
-        { display: "数据发送间隔", id: "interval", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        // { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
+        // { display: "数据发送间隔", id: "interval", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
         { display: "算法选项", id: "btn_algorithm_option", newline: true, type: "button", defaultvalue:'编辑算法参数...',  group: '算法列表', width: 200, labelwidth: 140,
             click:function(){
@@ -12043,7 +12017,7 @@ function ShowDNFaultDetectDialog(viewer)
 	$.ajax({
 		url:'/distribute_network/query/network_names',
 		method:'post',
-		data: JSON.stringify({})
+		data: JSON.stringify({_id:['570ce0c1ca49c80858320619','570ce0c1ca49c8085832061a']})
 	})
 	.always(function () {
 		ShowProgressBar(false);
@@ -12061,20 +12035,20 @@ function ShowDNFaultDetectDialog(viewer)
 		$('#form_dn_network_fault_detect_name').multipleSelect('refresh');
 		$('#form_dn_network_power_resume_name').multipleSelect('refresh');
 
-        $.ajax({
-            url:'/dn_idx_id_mapping.json',
-            method:'get',
-            dateType:'text'
-        })
-        .always(function () {
-            ShowProgressBar(false);
-        })
-        .done(function (data1) {
-            //console.log(data1);
-            $.webgis.data.dn_network.idx_id_mapping = data1;
-        })
-        .fail(function (jqxhr, textStatus, e) {
-        });
+        // $.ajax({
+        //     url:'/dn_idx_id_mapping.json',
+        //     method:'get',
+        //     dateType:'text'
+        // })
+        // .always(function () {
+        //     ShowProgressBar(false);
+        // })
+        // .done(function (data1) {
+        //     //console.log(data1);
+        //     $.webgis.data.dn_network.idx_id_mapping = data1;
+        // })
+        // .fail(function (jqxhr, textStatus, e) {
+        // });
 	});
 }
 function DrawDNPowerResumeCandidateTable(viewer, line_id, data)
@@ -12346,15 +12320,35 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                 return get_feature_id(line_id, item);
             });
         }
-        if(_.isNumber(idx) || _.isString(idx)){
+        // if(_.isNumber(idx) || _.isString(idx)){
+        //     var ret;
+        //     var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
+        //     if(!_.isUndefined(line)){
+        //         ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
+        //     }
+        //     if(_.isUndefined(ret)){
+        //         ret = _.result(_.find(line.mapping, {'idx':'S' + idx}), '_id');
+        //     }
+        //     return ret;
+        // }
+        if(_.isNumber(idx))
+        {
             var ret;
-            var line = _.find($.webgis.data.dn_network.idx_id_mapping, {'line_id':line_id});
-            if(!_.isUndefined(line)){
-                ret = _.result(_.find(line.mapping, {'idx':idx}), '_id');
-            }
-            if(_.isUndefined(ret)){
-                ret = _.result(_.find(line.mapping, {'idx':'S' + idx}), '_id');
-            }
+
+            // console.log(line_id);
+            // console.log($.webgis.data.distribute_network);
+            var lineobj = _.find($.webgis.data.distribute_network, {_id:line_id});
+            // console.log(lineobj);
+            var ids = _.result(lineobj, 'properties.nodes');
+            // console.log(ids);
+            var nodes = _.filter($.webgis.data.geojsons, function (item) {
+                return !_.isUndefined(item.properties.devices);
+            });
+            // console.log(nodes);
+            var nodesids = _.pluck(nodes, '_id');
+            // console.log(nodesids);
+            var aaa = _.xor(nodesids, ids);
+            // console.log(aaa);
             return ret;
         }
     };
