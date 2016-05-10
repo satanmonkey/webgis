@@ -623,73 +623,84 @@ function InitCesiumViewer()
         url = '/tiles';
         terrain_url =  '/terrain';
     }
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'Esri卫星图',
+    //     iconUrl : 'img/esri-sat.png',
+    //     tooltip : 'Esri卫星图',
+    //     creationFunction : function() {
+    //         return new ESRIImageryFromServerProvider({
+    //             //url : 'http://dev.virtualearth.net',
+    //             //mapStyle : Cesium.BingMapsStyle.AERIAL
+    //             ////proxy : proxyIfNeeded
+    //             url :  url,
+    //             imageType: 'arcgis_sat',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
     providerViewModels.push(new Cesium.ProviderViewModel({
-        name : 'Esri卫星图',
-        iconUrl : 'img/esri-sat.png',
-        tooltip : 'Esri卫星图',
-        creationFunction : function() {
-            return new ESRIImageryFromServerProvider({
-                //url : 'http://dev.virtualearth.net',
-                //mapStyle : Cesium.BingMapsStyle.AERIAL
-                ////proxy : proxyIfNeeded
-                url :  url,
-                imageType: 'arcgis_sat',
-                queryType: 'server'
-            });
-        }
+            name : 'Esri卫星图',
+            iconUrl : '/img/esri-sat.png',
+            tooltip : 'Esri卫星图',
+            creationFunction : function() {
+                return new ESRIImageryFromServerProvider({
+                    url : '/tileproxy_tile_esri_sat'
+                });
+            }
     }));
-    providerViewModels.push(new Cesium.ProviderViewModel({
-        name : 'YN_SAT',
-        iconUrl : 'img/wmts-sat.png',
-        tooltip : 'YN_SAT',
-        creationFunction : function() {
-            return new ArcGisMapServerImageryProvider({
-                url : 'http://' + $.webgis.remote.arcserver_host + ':6080/arcgis/rest/services/' + prefix + 'YN_SAT/ImageServer',
-                name: 'YN_SAT'
-                //usePreCachedTilesIfAvailable:false
-            });
-        }
-    }));
-    providerViewModels.push(new Cesium.ProviderViewModel({
-        name : 'Bing卫星图',
-        iconUrl : 'img/bingAerial.png',
-        tooltip : 'Bing卫星图',
-        creationFunction : function() {
-            return new BingImageryFromServerProvider({
-                //url : 'http://dev.virtualearth.net',
-                //mapStyle : Cesium.BingMapsStyle.AERIAL
-                ////proxy : proxyIfNeeded
-                url : url,
-                imageType: 'bing_sat',
-                queryType: 'server'
-            });
-        }
-    }));
-    providerViewModels.push(new Cesium.ProviderViewModel({
-        name : '高德地图',
-        iconUrl : 'img/wmts-map.png',
-        tooltip : '高德地图',
-        creationFunction : function() {
-            return new AMapTileImageryProvider({
-                url :  url,
-                imageType: 'amap_map',
-                queryType: 'server'
-            });
-        }
-    }));
+
+
+
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'YN_SAT',
+    //     iconUrl : 'img/wmts-sat.png',
+    //     tooltip : 'YN_SAT',
+    //     creationFunction : function() {
+    //         return new ArcGisMapServerImageryProvider({
+    //             url : 'http://' + $.webgis.remote.arcserver_host + ':6080/arcgis/rest/services/' + prefix + 'YN_SAT/ImageServer',
+    //             name: 'YN_SAT'
+    //             //usePreCachedTilesIfAvailable:false
+    //         });
+    //     }
+    // }));
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'Bing卫星图',
+    //     iconUrl : 'img/bingAerial.png',
+    //     tooltip : 'Bing卫星图',
+    //     creationFunction : function() {
+    //         return new BingImageryFromServerProvider({
+    //             //url : 'http://dev.virtualearth.net',
+    //             //mapStyle : Cesium.BingMapsStyle.AERIAL
+    //             ////proxy : proxyIfNeeded
+    //             url : url,
+    //             imageType: 'bing_sat',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : '高德地图',
+    //     iconUrl : 'img/wmts-map.png',
+    //     tooltip : '高德地图',
+    //     creationFunction : function() {
+    //         return new AMapTileImageryProvider({
+    //             url :  url,
+    //             imageType: 'amap_map',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
     
-    //providerViewModels.push(new Cesium.ProviderViewModel({
-        //name : 'Bing Maps Aerial with Labels',
-        //iconUrl : 'img/bingAerialLabels.png',
-        //tooltip : 'Bing Maps aerial imagery with label overlays \nhttp://www.bing.com/maps',
-        //creationFunction : function() {
-            //return new Cesium.BingMapsImageryProvider({
-                //url : 'http://dev.virtualearth.net',
-                //mapStyle : Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-                ////proxy : proxyIfNeeded
-            //});
-        //}
-    //}));
+    providerViewModels.push(new Cesium.ProviderViewModel({
+            name : '高德地图',
+            iconUrl : '/img/wmts-map.png',
+            tooltip : '高德地图',
+            creationFunction : function() {
+                return new AMapTileImageryProvider({
+                    url :  '/tileproxy_tile_amap_map'
+                });
+            }
+    }));
     
     
     var terrainProviderViewModels = [];
@@ -702,20 +713,31 @@ function InitCesiumViewer()
         }
     }));
 
-
     terrainProviderViewModels.push(new Cesium.ProviderViewModel({
-        name : 'quantized-mesh中国云南',
-        iconUrl : Cesium.buildModuleUrl('/img/aster-gdem.png'),
-        tooltip : 'quantized-mesh中国云南',
-        creationFunction : function() {
-            return new HeightmapAndQuantizedMeshTerrainProvider({
-                //url : "terrain",
-                url :  terrain_url,
-                terrain_type : 'quantized_mesh',
-                credit : ''
-            });
-        }
+            name : 'STK World Terrain w/ Water Lighting',
+            iconUrl : '/img/aster-gdem.png',
+            creationFunction : function() {
+                return new Cesium.CesiumTerrainProvider({
+                    url : '/tileproxy_terrain_quantized_mesh',
+                    requestVertexNormals : true,
+                    requestWaterMask : true
+                });
+            }
     }));
+
+    // terrainProviderViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'quantized-mesh中国云南',
+    //     iconUrl : Cesium.buildModuleUrl('/img/aster-gdem.png'),
+    //     tooltip : 'quantized-mesh中国云南',
+    //     creationFunction : function() {
+    //         return new HeightmapAndQuantizedMeshTerrainProvider({
+    //             //url : "terrain",
+    //             url :  terrain_url,
+    //             terrain_type : 'quantized_mesh',
+    //             credit : ''
+    //         });
+    //     }
+    // }));
     //terrainProviderViewModels.push(new Cesium.ProviderViewModel({
         //name : 'Small Terrain heightmaps with water',
         //iconUrl : Cesium.buildModuleUrl('Widgets/Images/TerrainProviders/STK.png'),
