@@ -412,10 +412,30 @@ $.webgis.form_fields.base_flds_6 = [ //超声波驱鸟装置 多功能驱鸟装�
 		}
 	}
 ];
-$.webgis.form_fields.base_flds_7 = [ //超声波驱鸟装置 多功能驱鸟装置
-	{display: "类型", id: "type", newline: true,  type: "text", editor:{readonly:true}, group:'驱鸟装置',  width:350, defaultvalue:'多功能驱鸟装置'},
-	{display: "型号", id: "model", newline: true,  type: "text", group:'驱鸟装置', width:350, defaultvalue:'CFT-ANTIBIRD', editor:{readonly:true}},
-	{display: "IMEI编号", id: "imei", newline: true,  type: "select", editor:{data:[], filter:true}, group:'驱鸟装置', width:350, validate:{required:true}},
+
+// o.status = '已上线';
+//             o.device_no = '';
+//             o.switch_alias = 0;
+//             o.installation_date = '';
+//             o.phase_no_a = '';
+//             o.phase_no_b = '';
+//             o.phase_no_c = '';
+//             o.rf_addr = '';
+//             o.type = 'ftu';
+//             o.type_name = e.text;
+//             o.sim = '';
+$.webgis.form_fields.base_flds_7 = [ //数据采集装置(DTU/RTU/FTU)
+	{display: '类型', id: 'type_name', newline: true,  type: 'text', group:'数据采集装置',  width:350, defaultvalue:'数据采集装置(DTU/RTU/FTU)', editor:{readonly:true}},
+	{display: '设备类型', id: 'type', newline: true,  type: 'text', group:'数据采集装置', width:350, defaultvalue:'ftu', editor:{readonly:true}},
+	{display: 'SIM卡号', id: 'sim', newline: true,  type: 'text',  group:'数据采集装置', width:350, validate:{required:true}},
+	{display: '开关编号', id: 'switch_alias', newline: true,  type: 'text',  group:'数据采集装置', width:350, validate:{required:true}},
+	{display: '安装时间', id: 'installation_date', newline: true,  type: 'text',  group:'数据采集装置', width:350},
+	{display: '设备A相位编号', id: 'phase_no_a', newline: true,  type: 'text',  group:'数据采集装置', labelwidth: 140, width:300},
+	{display: '设备B相位编号', id: 'phase_no_b', newline: true,  type: 'text',  group:'数据采集装置', labelwidth: 140, width:300},
+	{display: '设备C相位编号', id: 'phase_no_c', newline: true,  type: 'text',  group:'数据采集装置', labelwidth: 140, width:300},
+    {display: '射频地址', id: 'rf_addr', newline: true,  type: 'text',  group:'数据采集装置', width:300},
+    {display: '当前状态', id: 'status', newline: true,  type: 'text',  group:'数据采集装置', defaultvalue:'已上线',width:300},
+    {display: '安装工程师', id: 'engineer', newline: true,  type: 'text',  group:'数据采集装置', width:300},
 ];
 
 $.webgis.form_fields.tower_baseinfo_fields = [

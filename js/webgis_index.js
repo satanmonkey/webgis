@@ -7889,12 +7889,40 @@ function SaveTower(viewer)
             //{
             //    $.webgis.select.selected_geojson.properties.metals[idx] = formdata;
             //}
-            var m = _.find($.webgis.select.selected_geojson.properties.metals, {imei:formdata.imei});
-            var idx = _.indexOf($.webgis.select.selected_geojson.properties.metals, m);
-            if(m && idx>-1){
-                $.webgis.select.selected_geojson.properties.metals[idx] = formdata;
+            if($.webgis.select.selected_geojson.properties.metals)
+            {
+                var m = _.find($.webgis.select.selected_geojson.properties.metals, {imei:formdata.imei});
+                var idx = _.indexOf($.webgis.select.selected_geojson.properties.metals, m);
+                if(m && idx>-1){
+                    $.webgis.select.selected_geojson.properties.metals[idx] = formdata;
+                }
             }
+            if($.webgis.select.selected_geojson.properties.devices)
+            {
+                var m = _.find($.webgis.select.selected_geojson.properties.devices, {sim:formdata.sim});
+                var idx = _.indexOf($.webgis.select.selected_geojson.properties.devices, m);
+                if(m && idx>-1){
+                    if(!_.isUndefined(formdata.switch_alias)){
+                        formdata.switch_alias = parseInt(formdata.switch_alias);
+                        formdata.phase = {
+                            a:formdata.phase_no_a,
+                            b:formdata.phase_no_b,
+                            c:formdata.phase_no_c,
+                        };
+                        delete formdata.phase_no_a;
+                        delete formdata.phase_no_b;
+                        delete formdata.phase_no_c;
+                        delete formdata.type_name;
+                        // formdata.status = '已上线';
+                        // formdata.engineer = '';
+                    }
+                    $.webgis.select.selected_geojson.properties.devices[idx] = formdata;
+                }
+            }
+
         }
+        // console.log($.webgis.select.selected_geojson);
+        // return;
         SavePoi($.webgis.select.selected_geojson, function(data1){
             //console.log(data1);
             if(data1 && data1.length>0)
@@ -9700,16 +9728,28 @@ function ShowTowerInfoDialog(viewer, tower)
     {
         var data = [];
         var idx = 1;
-        _.forEach( tower.properties.metals, function(item)
-        {
-            data.push({
-                'idx': idx,
-                'type': item.type,
-                'model': item.model,
-                'imei':item.imei
+        if(!_.isUndefined(tower.properties.metals)) {
+            _.forEach(tower.properties.metals, function (item) {
+                data.push({
+                    'idx': idx,
+                    'type': item.type,
+                    'model': item.model,
+                    'imei': item.imei
+                });
+                idx += 1;
             });
-            idx += 1;
-        });
+        }
+        if(!_.isUndefined(tower.properties.devices)) {
+            _.forEach(tower.properties.devices, function (item) {
+                data.push({
+                    'idx': idx,
+                    'type': '数据采集装置(DTU/RTU/FTU)',
+                    'model':item.type,
+                    'imei': item.sim
+                });
+                idx += 1;
+            });
+        }
     }
     
     
@@ -9729,7 +9769,7 @@ function ShowTowerInfoDialog(viewer, tower)
             },
             { text: '增加附件', icon:'add',
                 children:[
-                    { text:'数据采集装置(DTU/RTU/FTU)',click: AddxTUDevice},
+                    { text:'数据采集装置',click: AddxTUDevice},
                     // { text:'在线监测装置',click: AddMetal},
                     { text:'雷电计数器',click: AddMetal},
                     { text:'超声波驱鸟装置',click: AddMetal}
@@ -9782,55 +9822,49 @@ function ShowTowerInfoDialog(viewer, tower)
                 {
                     flds = $.webgis.form_fields.insulator_flds;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type === '防振锤')
                 {
                     flds = $.webgis.form_fields.damper_flds;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type === '接地装置')
                 {
                     flds = $.webgis.form_fields.grd_flds;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type === '基础')
                 {
                     flds = $.webgis.form_fields.base_flds_1;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type === '拉线' || o.type === '防鸟刺' || o.type === '在线监测装置' )
                 {
                     flds = $.webgis.form_fields.base_flds_2_3_4;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type === '雷电计数器' )
                 {
                     flds = $.webgis.form_fields.base_flds_5;
                     var metal = tower.properties.metals[o.idx-1];
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                 }
                 if(o.type.indexOf('驱鸟装置') > -1)
                 {
@@ -9849,35 +9883,39 @@ function ShowTowerInfoDialog(viewer, tower)
                         $.webgis.select.selected_imei = metal.imei;
                     }
                     flds = UpdateBaseFields6(enable_imei_select);
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
+                    _.forIn(metal, function (v, k) {
+                        formdata[k] = v;
+                    });
                     formdata.type = o.type;
                 }
 
-                if(o.type.indexOf('数据采集装置(DTU/RTU/FTU)') > -1 )
+                if(o.type.indexOf('数据采集装置') > -1 )
                 {
-                    var metal;
+                    var dev;
                     if(tower.properties.devices === undefined || tower.properties.devices.length === 0)
                     {
                     }else
                     {
-                        metal = _.find(tower.properties.devices, {imei: o.imei});
-                        //metal = tower.properties.metals[o.idx-1];
+                        dev = _.find(tower.properties.devices, {sim: o.imei});
                     }
                     var enable_imei_select = true;
-                    if(metal && metal.imei && metal.imei.length>0)
+                    if(dev && dev.sim && dev.sim.length>0)
                     {
                         enable_imei_select = false;
-                        $.webgis.select.selected_imei = metal.imei;
+                        $.webgis.select.selected_imei = dev.sim;
                     }
-                    flds = UpdateBaseFields7(enable_imei_select);
-                    for(var k in metal)
-                    {
-                        formdata[k] = metal[k];
-                    }
-                    formdata.type = o.type;
+                    flds = $.webgis.form_fields.base_flds_7;
+                    _.forIn(dev, function (v, k) {
+                        if(k === 'phase'){
+                            formdata['phase_no_a'] = v.a;
+                            formdata['phase_no_b'] = v.b;
+                            formdata['phase_no_c'] = v.c;
+                        }else{
+                            formdata[k] = v;
+                        }
+                    });
+
+                    formdata.type_name = o.type;
                 }
                 $('#form_tower_info_metal').webgisform(flds, {
                     prefix:'tower_metal_',
@@ -9949,63 +9987,7 @@ function UpdateBaseFields6(enable_imei_select)
     });
     return ret;
 }
-function UpdateBaseFields7(enable_imei_select)
-{
-    var ret = $.extend(true, [], $.webgis.form_fields.base_flds_7);
-    
-    var get_flds7_default = function(){
-        var o = {};
-        // o.type = '数据采集装置(DTU/RTU/FTU)';
 
-        // _.forEach($.webgis.form_fields.base_flds_7, function(item)
-        // {
-        //
-        // });
-        o.status = '已上线';
-        o.device_no = '';
-        o.switch_alias = 0;
-        o.installation_date = '';
-        o.phase_no_a = '';
-        o.phase_no_b = '';
-        o.phase_no_c = '';
-        o.rf_addr = '';
-        o.type = 'ftu';
-        o.sim = '';
-        return o;
-    };
-    
-    _.forEach( $.webgis.form_fields.base_flds_7, function(fld)
-    {
-        var i = _.indexOf($.webgis.form_fields.base_flds_7, fld);
-        if(fld.id === 'sim')
-        {
-            var filter = false;
-            if(fld.editor && fld.editor.filter === true) filter = true;
-            if(enable_imei_select)
-            {
-                // ret[i].editor.data = $.webgis.data.antibird.anti_bird_equip_list;
-                ret[i].change = function(selval){
-                    var idx = $.webgis.select.selected_metal_item.idx - 1;
-                    if($.webgis.select.selected_geojson.properties.devices === undefined)
-                    {
-                        $.webgis.select.selected_geojson.properties.devices = [];
-                        $.webgis.select.selected_geojson.properties.devices.push(get_flds7_default());
-                    }
-                    if($.webgis.select.selected_geojson.properties.devices.length>idx)
-                    {
-                        $.webgis.select.selected_geojson.properties.devices[idx]['sim'] = selval;
-                    }
-                };
-            }else
-            {
-                ret[i].type = 'text';
-                ret[i].editor = {readonly:true};
-                delete ret[i].validate;
-            }
-        }
-    });
-    return ret;
-}
 
 
 function CreateFileBrowserAdditionalButton(div_id, collection, id)
@@ -11478,17 +11460,18 @@ function AddxTUDevice(e)
         var o = {};
 
 
-        if(e.text.indexOf('数据采集装置(DTU/RTU/FTU)') > -1 )
+        if(e.text.indexOf('数据采集装置') > -1 )
         {
-            // o.status = '已上线';
+            o.status = '已上线';
             o.device_no = '';
             o.switch_alias = 0;
-            // o.installation_date =
+            o.installation_date = '';
             o.phase_no_a = '';
             o.phase_no_b = '';
             o.phase_no_c = '';
             o.rf_addr = '';
             o.type = 'ftu';
+            o.type_name = e.text;
             o.sim = '';
 
         }
@@ -11512,7 +11495,7 @@ function AddxTUDevice(e)
             });
         }
         $.webgis.select.selected_metal_item = undefined;
-        $("#listbox_tower_info_metal").ligerListBox().setData(data);
+        $('#listbox_tower_info_metal').ligerListBox().setData(data);
         $('#form_tower_info_metal').empty();
     }
 
@@ -11597,7 +11580,10 @@ function DeleteMetal()
 {
     if($.webgis.select.selected_geojson)
     {
-        if($.webgis.select.selected_geojson['properties']['metals'] && $.webgis.select.selected_geojson['properties']['metals'].length>0)
+        if(
+            ($.webgis.select.selected_geojson.properties.metals && $.webgis.select.selected_geojson.properties.metals.length>0)
+        || ($.webgis.select.selected_geojson.properties.devices && $.webgis.select.selected_geojson.properties.devices.length>0)
+        )
         {
             ShowConfirm(null, 500, 200,
                 '删除确认',
@@ -11616,7 +11602,6 @@ function DeleteMetal()
                             $.webgis.select.selected_geojson.properties.devices.splice(o.idx-1, 1);
                         }
 
-                        //console.log($.webgis.select.selected_geojson['properties']['metals']);
                     }
                     var data = [];
                     var idx = 1;
@@ -11637,7 +11622,7 @@ function DeleteMetal()
                                 idx: idx,
                                 type: '数据采集装置(DTU/RTU/FTU)',
                                 model: item.type,
-                                imei: item.imei
+                                imei: item.sim
                             });
                             idx += 1;
                         });
