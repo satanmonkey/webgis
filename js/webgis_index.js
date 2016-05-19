@@ -2880,7 +2880,7 @@ function InitToolPanel(viewer)
     $('input[id^=chb_show_icon_]').iCheck({
         checkboxClass: 'icheckbox_flat-green'
     });
-    $('input[id^=chb_show_icon_]').iCheck('check');
+    $('input[id^=chb_show_icon_]').iCheck('uncheck');
     
     //$('#chb_show_label').on('click', function(){
     $('input[id^=chb_show_label_]').on("ifChanged", function(e){
@@ -2927,7 +2927,10 @@ function InitToolPanel(viewer)
                 console.log('turn off edge:' + webgis_type);
                 if($.webgis.config.map_backend === 'cesium')
                 {
-                    RemoveSegmentsByType(viewer, 'edge_tower');
+                    _.forEach(['edge_tower', 'edge_dn'], function (item) {
+                        RemoveSegmentsByType(viewer, item);
+                    });
+
                 }
                 if($.webgis.config.map_backend === 'leaflet')
                 {
@@ -6822,24 +6825,24 @@ function GetContactPointByIndex(tower, side, index)
 function RemoveSegmentsByType(viewer, webgis_type)
 {
     var scene = viewer.scene;
-    var remove_one = function()
-    {
-        var ret = false;
-        for(var i in $.webgis.geometry.segments)
-        {
-            var seg = $.webgis.geometry.segments[i];
-            if(seg.webgis_type === webgis_type)
-            {
-                try{
-                    scene.primitives.remove(seg.primitive);
-                }catch(e){}
-                $.webgis.geometry.segments.splice(i,1);
-                ret = true;
-                break;
-            }
-        }
-        return ret;
-    };
+    // console.log($.webgis.geometry.segments);
+    // var remove_one = function()
+    // {
+    //     var ret = false;
+    //     _.forEach($.webgis.geometry.segments, function (seg){
+    //         console.log(seg);
+    //         if(seg.webgis_type === webgis_type)
+    //         {
+    //             try{
+    //                 scene.primitives.remove(seg.primitive);
+    //             }catch(e){}
+    //             $.webgis.geometry.segments.splice(i,1);
+    //             ret = true;
+    //             return;
+    //         }
+    //     });
+    //     return ret;
+    // };
     
     if(webgis_type===undefined)
     {
@@ -6847,11 +6850,15 @@ function RemoveSegmentsByType(viewer, webgis_type)
         $.webgis.geometry.segments.length = 0;
     }else
     {
-        var ok = remove_one();
-        while(ok)
-        {
-            ok = remove_one();
-        }
+        // var ok = remove_one();
+        // while(ok)
+        // {
+        //     ok = remove_one();
+        // }
+        var arr = _.remove($.webgis.geometry.segments, {webgis_type: webgis_type});
+        _.forEach(arr, function (seg) {
+            scene.primitives.remove(seg.primitive);
+        });
     }
 }
 
@@ -12012,7 +12019,12 @@ function ShowDNFaultDetectDialog(viewer)
         ]
     });
 
-    var algorithmlist = [{value:'gis', label:'简单定位算法'},{value:'rset', label:'粗糙集算法'}, {value:'ants', label:'蚁群优化算法'}, {value:'bayes', label:'贝叶斯算法'}];
+    var algorithmlist = [
+        {value:'gis', label:'简单定位算法'},
+        // {value:'rset', label:'粗糙集算法'},
+        {value:'ants', label:'蚁群优化算法'},
+        {value:'bayes', label:'贝叶斯算法'}
+    ];
     var flds = [
         { display: "配电网名称", id: "name", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140,
         change:function(v){
@@ -13138,6 +13150,7 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                 var id = $(inputfile).attr('id');
                 $.webgis.data.dn_network.import_excel_data.data_bus = to_json(wb);
                 var jsondata = $.webgis.data.dn_network.import_excel_data.data_bus;
+                // console.log(jsondata);
                 if(jsondata.length){
                     $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
                 }else{
@@ -13220,6 +13233,7 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                 var id = $(inputfile).attr('id');
                 $.webgis.data.dn_network.import_excel_data.data_Lnbr = to_json(wb);
                 var jsondata = $.webgis.data.dn_network.import_excel_data.data_Lnbr;
+
                 if(jsondata.length){
                     $('#' + id + '_hasdatatip').html('<a href="javascript:void(0);">查看...</a>');
                 }else{
@@ -13267,6 +13281,7 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
                 }else{
                     $('#' + id + '_hasdatatip').html('');
                 }
+
                 if(jsondata.length){
                     $('#' + id + '_hasdatatip').find('a').off();
                     $('#' + id + '_hasdatatip').find('a').on('click', function(e){
@@ -13293,8 +13308,8 @@ function RebuildAlgorithmOptionForm(viewer, algorithm)
     if(algorithm === 'gis'){
         $('#form_dn_algorithm_option_gis').empty();
         var flds = [
-            { display: "线路运行数据", id: "org_decision", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
-                handleFile:handleFile_rset_G_state
+            { display: "线路运行数据()", id: "file_data_bus", newline: true, type: "grid", defaultvalue:"导入XLS...", group: '导入外部数据', width: 220, labelwidth: 150,
+                handleFile:handleFile_data_bus
             },
         ];
         $('#form_dn_algorithm_option_gis').webgisform(flds, {
