@@ -12065,6 +12065,8 @@ function ShowDNFaultDetectDialog(viewer)
                 $('#form_dn_network_fault_detect_interval').multipleSelect('refresh');
             }
         }},
+        { display: "起始时间", id: "timestamp_start", newline: true, type: "date",  group: '时间范围', width: 200, labelwidth: 140},
+        { display: "结束时间", id: "timestamp_stop", newline: true, type: "date",  group: '时间范围', width: 200, labelwidth: 140},
         // { display: "配电网类型", id: "line_type", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         // { display: "数据发送间隔", id: "interval", newline: true, type: "select", editor: { data: [], filter:true }, group: '配电网', width: 200, labelwidth: 140},
         { display: "检测算法", id: "algorithm", newline: true, type: "select", editor: { data: algorithmlist },  group: '算法列表', width: 200, labelwidth: 140},
@@ -12557,6 +12559,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                         if(!_.isEmpty(formdata)){
                             formdata.dn_id = formdata1.name;
                             formdata.line_type = formdata1.line_type;
+                            formdata.timestamp_start = formdata1.timestamp_start;
+                            formdata.timestamp_stop = formdata1.timestamp_stop;
                             ShowConfirm(null, 500, 200,
                                 '提交确认',
                                 '确认提交吗? ',
