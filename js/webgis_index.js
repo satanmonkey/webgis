@@ -4380,15 +4380,16 @@ function ClearPoi(viewer)
     delete $.webgis.data.czmls;
     $.webgis.data.czmls = [];
     ReloadCzmlDataSource(viewer, $.webgis.config.zaware, true);
-    for(var k in $.webgis.data.gltf_models_mapping)
-    {
-        var m = $.webgis.data.gltf_models_mapping[k];
-        if(scene.primitives.contains(m))
+    _.forIn($.webgis.data.gltf_models_mapping, function (v, k) {
+        if(scene.primitives.contains(v))
         {
-            var b = scene.primitives.remove(m);
+            var b = scene.primitives.remove(v);
             //console.log(b);
         }
-    }
+    });
+    _.forEach($.webgis.geometry.pure_ftu_points, function (item) {
+        viewer.entities.remove(item);
+    });
 }
 
 function TranslateToCN()
