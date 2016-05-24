@@ -34,16 +34,17 @@ $(function() {
                     var point = {};
 
                     text = g.properties.name;
-                    color = 'rgba(0, 255, 255, 0.7)';
+                    color = 'rgba(0, 255, 255, 0.5)';
                     billboard.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                     label.verticalOrigin = Cesium.VerticalOrigin.BOTTOM;
                     // label.pixelOffset = new Cesium.Cartesian2(0, -50);
-                    point.pixelSize = 40;
+                    point.pixelSize = 20;
 
                     label.text = text;
                     label.style = Cesium.LabelStyle.FILL_AND_OUTLINE;
                     label.fillColor = Cesium.Color.fromCssColorString(color);
                     label.scale = 1;
+                    label.show = false;
                     point.color = Cesium.Color.fromCssColorString(color);
 
                     var entity = new Cesium.Entity({
@@ -12560,8 +12561,8 @@ function ShowDNAlgorithmOptionDialog(viewer, algorithm)
                         if(!_.isEmpty(formdata)){
                             formdata.dn_id = formdata1.name;
                             formdata.line_type = formdata1.line_type;
-                            formdata.timestamp_start = formdata1.timestamp_start;
-                            formdata.timestamp_stop = formdata1.timestamp_stop;
+                            formdata.timestamp_start = moment(formdata1.timestamp_start).local().format('YYYY-MM-DD HH:mm:ss');
+                            formdata.timestamp_stop = moment(formdata1.timestamp_stop).local().format('YYYY-MM-DD HH:mm:ss');
                             ShowConfirm(null, 500, 200,
                                 '提交确认',
                                 '确认提交吗? ',
