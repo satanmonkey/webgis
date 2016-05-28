@@ -6469,6 +6469,8 @@ function TowerInfoMixin(viewer)
                 LookAtTarget(viewer, id);
             }
         }
+        // $.webgis.control.drawhelper
+
     }
 
     function moveOverObject(e) {

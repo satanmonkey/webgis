@@ -19,7 +19,8 @@ var DrawHelper = (function() {
         this._viewer = cesiumWidget;
 		this._scene = cesiumWidget.scene;
 		this._tooltip = createTooltip(cesiumWidget.container);
-		//console.log(cesiumWidget.container);
+		this._jg = new jsGraphics('cesiumContainer');
+
         this._surfaces = [];
 		this._primitives = [];
         this.initialiseHandlers();
@@ -47,6 +48,8 @@ var DrawHelper = (function() {
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
         handler.setInputAction(
             function (movement) {
+                _self._jg.clear();
+
                 callPrimitiveCallback('leftDoubleClick', movement.position);
             }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
         var mouseOutObject;
@@ -76,18 +79,18 @@ var DrawHelper = (function() {
             function (movement) {
                 callPrimitiveCallback('leftDown', movement.position);
             }, Cesium.ScreenSpaceEventType.LEFT_DOWN);
-    }
+    };
 
     _.prototype.setListener = function(primitive, type, callback) {
         primitive[type] = callback;
-    }
+    };
 
     _.prototype.muteHandlers = function(muted) {
         this._handlersMuted = muted;
-    }
+    };
     _.prototype.addPrimitive = function(primitive) {
         this._primitives.push(primitive);
-    }
+    };
     _.prototype.clearPrimitive = function() {
 		for(var i in this._primitives)
 		{
@@ -115,7 +118,8 @@ var DrawHelper = (function() {
 			}
 		}
         this._primitives.length = 0;
-    }
+        this._jg.clear();
+    };
     _.prototype.close = function() {
 		this.stopDrawing();
 		this.disableAllEditMode();
@@ -123,15 +127,16 @@ var DrawHelper = (function() {
 		this.clearPrimitive();
 		this._tooltip.destroy();
 		$('#' + this.toolbar_container_id).css('display','none');
-    }
+
+    };
     _.prototype.show = function(isshow) {
 		$('#' + this.toolbar_container_id).css('display',isshow?'block':'none');
-    }
+    };
     _.prototype.isVisible = function() {
 		if($('#' + this.toolbar_container_id).css('display') == 'block') 
 			return true;
 		return false;
-    }
+    };
 
     // register event handling for an editable shape
     // shape should implement setEditMode and setHighlighted
@@ -154,7 +159,7 @@ var DrawHelper = (function() {
         setListener(surface, 'leftClick', function(position) {
             surface.setEditMode(true);
         });
-    }
+    };
 
     _.prototype.startDrawing = function(cleanUp) {
         // undo any current edit of shapes
@@ -165,39 +170,40 @@ var DrawHelper = (function() {
         }
         this.editCleanUp = cleanUp;
         this.muteHandlers(true);
-    }
+    };
 
     _.prototype.stopDrawing = function() {
         // check for cleanUp first
+        this._jg.clear();
         if(this.editCleanUp) {
             this.editCleanUp();
             this.editCleanUp = null;
         }
         this.muteHandlers(false);
-    }
+    };
 
     // make sure only one shape is highlighted at a time
     _.prototype.disableAllHighlights = function() {
         this.setHighlighted(undefined);
-    }
+    };
 
     _.prototype.setHighlighted = function(surface) {
         if(this._highlightedSurface && !this._highlightedSurface.isDestroyed() && this._highlightedSurface != surface) {
             this._highlightedSurface.setHighlighted(false);
         }
         this._highlightedSurface = surface;
-    }
+    };
 
     _.prototype.disableAllEditMode = function() {
         this.setEdited(undefined);
-    }
+    };
 
     _.prototype.setEdited = function(surface) {
         if(this._editedSurface && !this._editedSurface.isDestroyed()) {
             this._editedSurface.setEditMode(false);
         }
         this._editedSurface = surface;
-    }
+    };
 
     var material = Cesium.Material.fromType(Cesium.Material.ColorType);
     material.uniforms.color = new Cesium.Color(1.0, 1.0, 0.0, 0.5);
@@ -209,7 +215,7 @@ var DrawHelper = (function() {
         asynchronous: true,
         show: true,
         debugShowBoundingVolume: false
-    }
+    };
 
     var defaultSurfaceOptions = copyOptions(defaultShapeOptions, {
         appearance: new Cesium.EllipsoidSurfaceAppearance({
@@ -258,7 +264,7 @@ var DrawHelper = (function() {
             this._primitive = undefined;
             this._outlinePolygon = undefined;
 
-        }
+        };
 
         _.prototype.setAttribute = function(name, value) {
             this[name] = value;
@@ -373,7 +379,7 @@ var DrawHelper = (function() {
                 this.strokeColor = strokeColor;
                 this.strokeWidth = strokeWidth;
             }
-        }
+        };
 
         return _;
     })();
@@ -423,7 +429,7 @@ var DrawHelper = (function() {
             return new Cesium.RectangleOutlineGeometry({
                 rectangle: this.extent
             });
-        }
+        };
 
         return _;
     })();
@@ -468,7 +474,7 @@ var DrawHelper = (function() {
             return Cesium.PolygonOutlineGeometry.fromPositions({
                 positions : this.getPositions()
             });
-        }
+        };
 
         return _;
     })();
@@ -529,7 +535,7 @@ var DrawHelper = (function() {
                 center: this.getCenter(),
                 radius: this.getRadius()
             });
-        }
+        };
 
         return _;
     })();
@@ -610,7 +616,7 @@ var DrawHelper = (function() {
                 semiMinorAxis: this.getSemiMinorAxis(),
                 rotation: this.getRotation()
             });
-        }
+        };
 
         return _;
     })();
@@ -680,7 +686,7 @@ var DrawHelper = (function() {
                     vertexFormat : Cesium.EllipsoidSurfaceAppearance.VERTEX_FORMAT,
                     ellipsoid : this.ellipsoid
                 });
-        }
+        };
         
         return _;
     })();
@@ -689,25 +695,25 @@ var DrawHelper = (function() {
         iconUrl: "img/dragIcon.png",
         shiftX: 0,
         shiftY: 0
-    }
+    };
 
     var dragBillboard = {
         iconUrl: "img/dragIcon.png",
         shiftX: 0,
         shiftY: 0
-    }
+    };
 
     var dragHalfBillboard = {
         iconUrl: "img/dragIconLight.png",
         shiftX: 0,
         shiftY: 0
-    }
+    };
 
     _.prototype.createBillboardGroup = function(points, options, callbacks) {
         var markers = new _.BillboardGroup(this, options);
         markers.addBillboards(points, callbacks);
         return markers;
-    }
+    };
 
     _.BillboardGroup = function(drawHelper, options) {
 
@@ -734,7 +740,7 @@ var DrawHelper = (function() {
             //a.addImage(image);
         //};
         image.src = options.iconUrl;
-    }
+    };
 
     _.BillboardGroup.prototype.createBillboard = function(position, callbacks) {
 		if(this._billboards.isDestroyed())
@@ -838,22 +844,22 @@ var DrawHelper = (function() {
         }
 
         return billboard;
-    }
+    };
 
     _.BillboardGroup.prototype.insertBillboard = function(index, position, callbacks) {
         this._orderedBillboards.splice(index, 0, this.createBillboard(position, callbacks));
-    }
+    };
 
     _.BillboardGroup.prototype.addBillboard = function(position, callbacks) {
         this._orderedBillboards.push(this.createBillboard(position, callbacks));
-    }
+    };
 
     _.BillboardGroup.prototype.addBillboards = function(positions, callbacks) {
         var index =  0;
         for(; index < positions.length; index++) {
             this.addBillboard(positions[index], callbacks);
         }
-    }
+    };
 
     _.BillboardGroup.prototype.updateBillboardsPositions = function(positions) {
         var index =  0;
@@ -861,31 +867,31 @@ var DrawHelper = (function() {
             //this.getBillboard(index).setPosition(positions[index]);
             this.getBillboard(index).position = positions[index];
         }
-    }
+    };
 
     _.BillboardGroup.prototype.countBillboards = function() {
         return this._orderedBillboards.length;
-    }
+    };
 
     _.BillboardGroup.prototype.getBillboard = function(index) {
         return this._orderedBillboards[index];
-    }
+    };
 
     _.BillboardGroup.prototype.removeBillboard = function(index) {
         this._billboards.remove(this.getBillboard(index));
         this._orderedBillboards.splice(index, 1);
-    }
+    };
 
     _.BillboardGroup.prototype.remove = function() {
 		try
 		{
 			this._billboards = this._billboards && this._billboards.removeAll() && this._billboards.destroy();
 		}catch(e){}
-    }
+    };
 
     _.BillboardGroup.prototype.setOnTop = function() {
         this._scene.primitives.raiseToTop(this._billboards);
-    }
+    };
 
     _.prototype.startDrawingMarker = function(options) {
 
@@ -926,7 +932,7 @@ var DrawHelper = (function() {
         mouseHandler.setInputAction(function(movement) {
             var position = movement.endPosition;
             if(position != null) {
-                //var cartesian = scene.camera.pickEllipsoid(position, ellipsoid);
+
 				var ray = scene.camera.getPickRay(position);
 				var cartesian = scene.globe.pick(ray, scene);					
 				
@@ -938,45 +944,73 @@ var DrawHelper = (function() {
             }
         }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-    }
+    };
 
     _.prototype.startDrawingPolygon = function(options) {
         var options = copyOptions(options, defaultSurfaceOptions);
         this.startDrawingPolyshape(true, options);
-    }
+    };
 
     _.prototype.startDrawingPolyline = function(options) {
         var options = copyOptions(options, defaultPolylineOptions);
         this.startDrawingPolyshape(false, options);
-    }
+    };
+
+    _.prototype.updateJGPolyLine = function (positions) {
+        this._jg.clear();
+        this._jg.setColor('yellow');
+        this._jg.setStroke(2);
+        var xarr = [], yarr = [];
+        for(var i in positions)
+        {
+            var pos = positions[i];
+            var winpos = Cesium.SceneTransforms.wgs84ToWindowCoordinates(this._scene, pos);
+            xarr.push(Math.floor(winpos.x));
+            yarr.push(Math.floor(winpos.y));
+        }
+        this._jg.drawPolyline(xarr, yarr);
+        this._jg.paint();
+        
+    };
 
     _.prototype.startDrawingPolyshape = function(isPolygon, options) {
-        //if(false)
-		//{
+        // if(false)
+		// {
 		this.startDrawing(
 			function() {
-				primitives.remove(poly);
+				primitives.remove(polygeo);
 				markers.remove();
 				mouseHandler.destroy();
 				tooltip.setVisible(false);
 			}
 		);
-		//}
+		// }
 
         var _self = this;
         var scene = this._scene;
-        var primitives = scene.primitives;
+        // var primitives = scene.primitives;
+        var primitives = this._viewer.entities;
         var tooltip = this._tooltip;
 
+
         var minPoints = isPolygon ? 3 : 2;
-        var poly;
+        var poly, polygeo;
+
         if(isPolygon) {
-            poly = new Cesium.Polygon(options);
+            options.positions = [];
+            poly = Cesium.PolygonGeometry.fromPositions(options);
+            polygeo =  Cesium.PolygonGeometry.createGeometry(poly);
         } else {
             poly = new DrawHelper.PolylinePrimitive(options);
+            poly._positions = [];
+            polygeo =  Cesium.PolylineGeometry.createGeometry(poly);
         }
         poly.asynchronous = false;
-        primitives.add(poly);
+        if (polygeo){
+            primitives.add(polygeo);
+        }
+
+
 		_self.addPrimitive(poly);
         var positions = [];
         var markers = new _.BillboardGroup(this, defaultBillboard);
@@ -985,54 +1019,32 @@ var DrawHelper = (function() {
 
         // Now wait for start
         mouseHandler.setInputAction(function(movement) {
-            if(movement.position != null) {
+            if(movement.position != null)
+            {
                 //var cartesian = scene.camera.pickEllipsoid(movement.position, ellipsoid);
 				var ray = scene.camera.getPickRay(movement.position);
 				var cartesian = scene.globe.pick(ray, scene);					
-                if (cartesian) {
+                if (cartesian)
+                {
                     // first click
                     if(positions.length == 0) {
                         positions.push(cartesian.clone());
                         markers.addBillboard(positions[0]);
                     }
                     if(positions.length >= minPoints) {
-                        poly.positions = positions;
+                        if(isPolygon){
+                            poly.positions = positions;
+                        }else{
+                            poly._positions = positions;
+                        }
+
                     }
                     // add new point to polygon
                     // this one will move with the mouse
                     positions.push(cartesian);
-					//if(!isPolygon && positions.length >= minPoints) 
-					//{
-						//var positions1 = positions.slice();
-						//var p2 = positions1.pop();
-						//var p1 = positions1.pop();
-						//var carto1 = ellipsoid.cartesianToCartographic(p1);
-						//var carto2 = ellipsoid.cartesianToCartographic(p2);
-						//if(carto1.longitude != carto2.longitude || carto1.latitude != carto2.latitude)
-						//{
-							//var polylines = new Cesium.PolylineCollection({
-								//modelMatrix:Cesium.Matrix4.IDENTITY,
-								//depthTest : false
-							//});
-							
-							//var color = Cesium.Color.fromCssColorString("rgba(255,0,0,0.5)");
-							//var polyline = polylines.add({
-								//positions : [p1, p2],
-								//material : Cesium.Material.fromType('PolylineArrow', {
-								////material : Cesium.Material.fromType('Color', {
-									//color : color
-								//}),
-								//width : 10.0,
-								//show:true,
-								//id:'tmp_polyline_last_segment_' + positions.length
-							//});
-							//polylines.id = 'tmp_polyline_last_segment_' + positions.length ;
-							//scene.primitives.add(polylines);
-							//console.log(scene.primitives);
-						//}
-					//}
-                    // add marker at the new position
 					markers.addBillboard(cartesian);
+
+
                 }
             }
         }, Cesium.ScreenSpaceEventType.LEFT_CLICK);
@@ -1053,9 +1065,7 @@ var DrawHelper = (function() {
                         // make sure it is slightly different
                         cartesian.y += (1 + Math.random());
                         positions.push(cartesian);
-                        if(positions.length >= minPoints) {
-                            poly.positions = positions;
-                        }
+
                         // update marker
                         markers.getBillboard(positions.length - 1).position = cartesian;
                         // show tooltip
@@ -1113,12 +1123,15 @@ var DrawHelper = (function() {
 						{
 							tooltip.showAt(position, tip);
 						}
+
+                        _self.updateJGPolyLine(positions);
                     }
                 }
             }
         }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
         mouseHandler.setInputAction(function(movement) {
+            _self._jg.clear();
             var position = movement.position;
             if(position != null) {
                 if(positions.length < minPoints + 2) {
@@ -1132,7 +1145,7 @@ var DrawHelper = (function() {
                         if(typeof options.callback == 'function') {
                             // remove overlapping ones
                             var index = positions.length - 1;
-                            // TODO - calculate some epsilon based on the zoom level
+
                             var epsilon = Cesium.Math.EPSILON3;
                             for(; index > 0 && positions[index].equalsEpsilon(positions[index - 1], epsilon); index--) {}
                             options.callback(positions.splice(0, index + 1));
@@ -1140,20 +1153,10 @@ var DrawHelper = (function() {
                     }
                 }
             }
-			//var i = scene.primitives.length-1;
-			//while(i>0)
-			//{
-				//var ply = scene.primitives.get(i);
-				//console.log(ply.id);
-				//if(ply && ply.id && ply.id.indexOf('tmp_polyline_last_segment_')>-1)
-				//{
-					//scene.primitives.remove(ply);
-				//}
-				//i = i - 1;
-			//}
+
         }, Cesium.ScreenSpaceEventType.LEFT_DOUBLE_CLICK);
 
-    }
+    };
 
     _.prototype.startDrawingExtent = function(options) {
 
@@ -1161,8 +1164,8 @@ var DrawHelper = (function() {
 
         this.startDrawing(
             function() {
-                if(extent != null) {
-                    primitives.remove(extent);
+                if(rect != null) {
+                    primitives.remove(rect);
                 }
                 markers.remove();
                 mouseHandler.destroy();
@@ -1172,23 +1175,25 @@ var DrawHelper = (function() {
 
         var _self = this;
         var scene = this._scene;
-        var primitives = this._scene.primitives;
+        var primitives = this._viewer.entities;
         var tooltip = this._tooltip;
 
         var firstPoint = null;
-        var extent = null;
+        var rect, rectgeom;
         var markers = null;
 
         var mouseHandler = new Cesium.ScreenSpaceEventHandler(scene.canvas);
 
         function updateExtent(value) {
-            if(extent == null) {
-                extent = new Cesium.RectanglePrimitive();
-                extent.asynchronous = false;
-                primitives.add(extent);
-				_self.addPrimitive(extent);
+            if(rect === undefined) {
+                rect = new Cesium.RectangleGeometry({
+                    rectangle:value
+                });
+                rectgeom = Cesium.RectangleGeometry.createGeometry(rect);
+                primitives.add(rectgeom);
+				_self.addPrimitive(rectgeom);
             }
-            extent.rectangle = value;
+            rect.rectangle = value;
             // update the markers
             var corners = ellipsoid.cartographicArrayToCartesianArray([Cesium.Rectangle.northeast(value), Cesium.Rectangle.northwest(value), Cesium.Rectangle.southeast(value), Cesium.Rectangle.southwest(value)]);
             // create if they do not yet exist
@@ -1207,7 +1212,7 @@ var DrawHelper = (function() {
 				var ray = scene.camera.getPickRay(movement.position);
 				var cartesian = scene.globe.pick(ray, scene);					
                 if (cartesian) {
-                    if(extent == null) {
+                    if(rect === undefined) {
                         // create the rectangle
                         firstPoint = ellipsoid.cartesianToCartographic(cartesian);
                         var value = getExtent(firstPoint, firstPoint);
@@ -1225,7 +1230,7 @@ var DrawHelper = (function() {
         mouseHandler.setInputAction(function(movement) {
             var position = movement.endPosition;
             if(position != null) {
-                if(extent == null) {
+                if(rect == null) {
                     tooltip.showAt(position, "<p>点击鼠标设定矩形范围顶点</p>");
                 } else {
                     //var cartesian = scene.camera.pickEllipsoid(position, ellipsoid);
@@ -1243,10 +1248,16 @@ var DrawHelper = (function() {
 							var area = 0;
 							var polypos = [];
 							var cartolist = [];
+                            var cartelist = [];
 							cartolist.push(Cesium.Cartographic.fromRadians(value.west, value.north, 0));
 							cartolist.push(Cesium.Cartographic.fromRadians(value.west, value.south, 0));
 							cartolist.push(Cesium.Cartographic.fromRadians(value.east, value.south, 0));
 							cartolist.push(Cesium.Cartographic.fromRadians(value.east, value.north, 0));
+							cartelist.push(Cesium.Cartesian3.fromRadians(value.west, value.north, 0, ellipsoid, new Cesium.Cartesian3()));
+							cartelist.push(Cesium.Cartesian3.fromRadians(value.west, value.south, 0, ellipsoid, new Cesium.Cartesian3()));
+							cartelist.push(Cesium.Cartesian3.fromRadians(value.east, value.south, 0, ellipsoid, new Cesium.Cartesian3()));
+							cartelist.push(Cesium.Cartesian3.fromRadians(value.east, value.north, 0, ellipsoid, new Cesium.Cartesian3()));
+							cartelist.push(Cesium.Cartesian3.fromRadians(value.west, value.north, 0, ellipsoid, new Cesium.Cartesian3()));
 							for(var i in cartolist)
 							{
 								var carto = cartolist[i];
@@ -1266,12 +1277,13 @@ var DrawHelper = (function() {
 						}
                         
                         tooltip.showAt(position, s);
+                        _self.updateJGPolyLine(cartelist);
                     }
                 }
             }
         }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-    }
+    };
 
     _.prototype.startDrawingCircle = function(options) {
 
@@ -1361,7 +1373,7 @@ var DrawHelper = (function() {
             }
         }, Cesium.ScreenSpaceEventType.MOUSE_MOVE);
 
-    }
+    };
 
     _.prototype.enhancePrimitives = function() {
 
@@ -1423,7 +1435,7 @@ var DrawHelper = (function() {
 
             enhanceWithListeners(billboard);
 
-        }
+        };
         
         function setHighlighted(highlighted) {
 
@@ -1619,17 +1631,17 @@ var DrawHelper = (function() {
                 } else {
                     this.setWidth(originalWidth);
                 }
-            }
+            };
 
             polyline.getExtent = function() {
                 return Cesium.Rectangle.fromCartographicArray(ellipsoid.cartesianArrayToCartographicArray(this.getPositions()));
-            }
+            };
 
             enhanceWithListeners(polyline);
 
             polyline.setEditMode(false);
 
-        }
+        };
 
         DrawHelper.PolygonPrimitive.prototype.setEditable = function() {
 
@@ -1646,7 +1658,7 @@ var DrawHelper = (function() {
 
             polygon.setEditMode(false);
 
-        }
+        };
 
         DrawHelper.ExtentPrimitive.prototype.setEditable = function() {
 
@@ -1721,7 +1733,7 @@ var DrawHelper = (function() {
                     }
                     this._editMode = false;
                 }
-            }
+            };
 
             extent.setHighlighted = setHighlighted;
 
@@ -1729,7 +1741,7 @@ var DrawHelper = (function() {
 
             extent.setEditMode(false);
 
-        }
+        };
 
         _.EllipsePrimitive.prototype.setEditable = function() {
 
@@ -1810,14 +1822,14 @@ var DrawHelper = (function() {
                     }
                     this._editMode = false;
                 }
-            }
+            };
 
             ellipse.setHighlighted = setHighlighted;
 
             enhanceWithListeners(ellipse);
 
             ellipse.setEditMode(false);
-        }
+        };
 
         _.CirclePrimitive.prototype.setEditable = function() {
 
@@ -1905,7 +1917,7 @@ var DrawHelper = (function() {
                     }
                     this._editMode = false;
                 }
-            }
+            };
 
             circle.setHighlighted = setHighlighted;
 
@@ -1914,7 +1926,7 @@ var DrawHelper = (function() {
             circle.setEditMode(false);
         }
 
-    }
+    };
 
     _.DrawHelperWidget = (function() {
 
@@ -2051,7 +2063,7 @@ var DrawHelper = (function() {
     _.prototype.addToolbar = function(container, options) {
         options = copyOptions(options, {container: container});
         return new _.DrawHelperWidget(this, options);
-    }
+    };
 
     function getExtent(mn, mx) {
         var e = new Cesium.Rectangle();
@@ -2096,14 +2108,14 @@ var DrawHelper = (function() {
 
             // add to frame div and display coordinates
             frameDiv.appendChild(div);
-        }
+        };
 
         tooltip.prototype.setVisible = function(visible) {
             this._div.style.display = visible ? 'block' : 'none';
-        }
+        };
         tooltip.prototype.destroy = function(visible) {
             $(this._div).remove();
-        }
+        };
 
         tooltip.prototype.showAt = function(position, message) {
             if(position && message) {
@@ -2112,7 +2124,7 @@ var DrawHelper = (function() {
                 this._div.style.left = position.x + 10 + "px";
                 this._div.style.top = (position.y - this._div.clientHeight / 2) + "px";
             }
-        }
+        };
 
         return new tooltip(frameDiv);
     }
@@ -2167,7 +2179,7 @@ var DrawHelper = (function() {
             this._listeners[name] = (this._listeners[name] || []);
             this._listeners[name].push(callback);
             return this._listeners[name].length;
-        }
+        };
 
         element.executeListeners = function(event, defaultCallback) {
             if(this._listeners[event.name] && this._listeners[event.name].length > 0) {
