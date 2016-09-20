@@ -70,7 +70,7 @@ $(function() {
                         LoadModelsMapping($.webgis.db.db_name, function(){
                             //if($.webgis.db.db_name === 'ztgd') name = '永发I回线';
                             var extent = GetDefaultExtent($.webgis.db.db_name);
-                            FlyToExtent(viewer, {extent:extent, duration:0});
+                            FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
                             LoadSysRole($.webgis.db.db_name, function(){
                                 $('#lnglat_indicator').html( '当前用户:' + $.webgis.current_userinfo['displayname'] );
                             });
@@ -113,6 +113,7 @@ $(function() {
         InitScreenSize(viewer);
     }catch(ex)
     {
+        throw ex;
         console.log(ex);
         $('#cesiumContainer').empty();
         $('#control_toolpanel_kmgd_left').css('display','none');
@@ -361,9 +362,13 @@ function InitLeafletViewer()
     var layers = [];
     var url_temlate, lyr;
     var baseMaps = {};
-    
-    url_temlate = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
-    
+    url_temlate = '';
+    if($.webgis.remote.tiles_host.length){
+        url_temlate = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
+    }else{
+        url_temlate = '/tiles?image_type={image_type}&x={x}&y={y}&level={z}';
+    }
+
     
     lyr = L.tileLayer(url_temlate, {
         image_type:'arcgis_sat', 
@@ -577,73 +582,92 @@ function InitCesiumViewer()
     {
         prefix = 'ztgdgis/';
     }
+    var url = '', terrain_url = '';
+    if($.webgis.remote.tiles_host.length){
+        url = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles';
+        terrain_url = 'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/terrain';
+    }else{
+        url = '/tiles';
+        terrain_url =  '/terrain';
+    }
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'Esri卫星图',
+    //     iconUrl : 'img/esri-sat.png',
+    //     tooltip : 'Esri卫星图',
+    //     creationFunction : function() {
+    //         return new ESRIImageryFromServerProvider({
+    //             //url : 'http://dev.virtualearth.net',
+    //             //mapStyle : Cesium.BingMapsStyle.AERIAL
+    //             ////proxy : proxyIfNeeded
+    //             url :  url,
+    //             imageType: 'arcgis_sat',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
     providerViewModels.push(new Cesium.ProviderViewModel({
-        name : 'Esri卫星图',
-        iconUrl : 'img/esri-sat.png',
-        tooltip : 'Esri卫星图',
-        creationFunction : function() {
-            return new ESRIImageryFromServerProvider({
-                //url : 'http://dev.virtualearth.net',
-                //mapStyle : Cesium.BingMapsStyle.AERIAL
-                ////proxy : proxyIfNeeded
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-                imageType: 'arcgis_sat',
-                queryType: 'server'
-            });
-        }
+            name : 'Esri卫星图',
+            iconUrl : '/img/esri-sat.png',
+            tooltip : 'Esri卫星图',
+            creationFunction : function() {
+                return new ESRIImageryFromServerProvider({
+                    url : '/tileproxy_tile_esri_sat'
+                });
+            }
     }));
-    providerViewModels.push(new Cesium.ProviderViewModel({
-        name : 'YN_SAT',
-        iconUrl : 'img/wmts-sat.png',
-        tooltip : 'YN_SAT',
-        creationFunction : function() {
-            return new ArcGisMapServerImageryProvider({
-                url : 'http://' + $.webgis.remote.arcserver_host + ':6080/arcgis/rest/services/' + prefix + 'YN_SAT/ImageServer',
-                name: 'YN_SAT'
-                //usePreCachedTilesIfAvailable:false
-            });
-        }
-    }));
-    //providerViewModels.push(new Cesium.ProviderViewModel({
-    //    name : 'Bing卫星图',
-    //    iconUrl : 'img/bingAerial.png',
-    //    tooltip : 'Bing卫星图',
-    //    creationFunction : function() {
-    //        return new BingImageryFromServerProvider({
-    //            //url : 'http://dev.virtualearth.net',
-    //            //mapStyle : Cesium.BingMapsStyle.AERIAL
-    //            ////proxy : proxyIfNeeded
-    //            url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-    //            imageType: 'bing_sat',
-    //            queryType: 'server'
-    //        });
-    //    }
-    //}));
-    providerViewModels.push(new Cesium.ProviderViewModel({
-        name : '高德地图',
-        iconUrl : 'img/wmts-map.png',
-        tooltip : '高德地图',
-        creationFunction : function() {
-            return new AMapTileImageryProvider({
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/tiles',
-                imageType: 'amap_map',
-                queryType: 'server'
-            });
-        }
-    }));
+
+
+
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'YN_SAT',
+    //     iconUrl : 'img/wmts-sat.png',
+    //     tooltip : 'YN_SAT',
+    //     creationFunction : function() {
+    //         return new ArcGisMapServerImageryProvider({
+    //             url : 'http://' + $.webgis.remote.arcserver_host + ':6080/arcgis/rest/services/' + prefix + 'YN_SAT/ImageServer',
+    //             name: 'YN_SAT'
+    //             //usePreCachedTilesIfAvailable:false
+    //         });
+    //     }
+    // }));
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'Bing卫星图',
+    //     iconUrl : 'img/bingAerial.png',
+    //     tooltip : 'Bing卫星图',
+    //     creationFunction : function() {
+    //         return new BingImageryFromServerProvider({
+    //             //url : 'http://dev.virtualearth.net',
+    //             //mapStyle : Cesium.BingMapsStyle.AERIAL
+    //             ////proxy : proxyIfNeeded
+    //             url : url,
+    //             imageType: 'bing_sat',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
+    // providerViewModels.push(new Cesium.ProviderViewModel({
+    //     name : '高德地图',
+    //     iconUrl : 'img/wmts-map.png',
+    //     tooltip : '高德地图',
+    //     creationFunction : function() {
+    //         return new AMapTileImageryProvider({
+    //             url :  url,
+    //             imageType: 'amap_map',
+    //             queryType: 'server'
+    //         });
+    //     }
+    // }));
     
-    //providerViewModels.push(new Cesium.ProviderViewModel({
-        //name : 'Bing Maps Aerial with Labels',
-        //iconUrl : 'img/bingAerialLabels.png',
-        //tooltip : 'Bing Maps aerial imagery with label overlays \nhttp://www.bing.com/maps',
-        //creationFunction : function() {
-            //return new Cesium.BingMapsImageryProvider({
-                //url : 'http://dev.virtualearth.net',
-                //mapStyle : Cesium.BingMapsStyle.AERIAL_WITH_LABELS
-                ////proxy : proxyIfNeeded
-            //});
-        //}
-    //}));
+    providerViewModels.push(new Cesium.ProviderViewModel({
+            name : '高德地图',
+            iconUrl : '/img/wmts-map.png',
+            tooltip : '高德地图',
+            creationFunction : function() {
+                return new AMapTileImageryProvider({
+                    url :  '/tileproxy_tile_amap_map'
+                });
+            }
+    }));
     
     
     var terrainProviderViewModels = [];
@@ -656,20 +680,31 @@ function InitCesiumViewer()
         }
     }));
 
-
     terrainProviderViewModels.push(new Cesium.ProviderViewModel({
-        name : 'quantized-mesh中国云南',
-        iconUrl : Cesium.buildModuleUrl('/img/aster-gdem.png'),
-        tooltip : 'quantized-mesh中国云南',
-        creationFunction : function() {
-            return new HeightmapAndQuantizedMeshTerrainProvider({
-                //url : "terrain",
-                url :  'http://' + $.webgis.remote.tiles_host + ':' + $.webgis.remote.tiles_port + '/terrain',
-                terrain_type : 'quantized_mesh',
-                credit : ''
-            });
-        }
+            name : 'STK World Terrain w/ Water Lighting',
+            iconUrl : '/img/aster-gdem.png',
+            creationFunction : function() {
+                return new Cesium.CesiumTerrainProvider({
+                    url : '/tileproxy_terrain_quantized_mesh',
+                    requestVertexNormals : true,
+                    requestWaterMask : true
+                });
+            }
     }));
+
+    // terrainProviderViewModels.push(new Cesium.ProviderViewModel({
+    //     name : 'quantized-mesh中国云南',
+    //     iconUrl : Cesium.buildModuleUrl('/img/aster-gdem.png'),
+    //     tooltip : 'quantized-mesh中国云南',
+    //     creationFunction : function() {
+    //         return new HeightmapAndQuantizedMeshTerrainProvider({
+    //             //url : "terrain",
+    //             url :  terrain_url,
+    //             terrain_type : 'quantized_mesh',
+    //             credit : ''
+    //         });
+    //     }
+    // }));
     //terrainProviderViewModels.push(new Cesium.ProviderViewModel({
         //name : 'Small Terrain heightmaps with water',
         //iconUrl : Cesium.buildModuleUrl('Widgets/Images/TerrainProviders/STK.png'),
@@ -4561,7 +4596,7 @@ function InitSearchBox(viewer)
                     LoadTowerByLineName(viewer, $.webgis.db.db_name, name, function(data){
                         LoadLineByLineName(viewer, $.webgis.db.db_name, name, function(data1){
                             var extent = GetExtentByCzml();
-                            FlyToExtent(viewer, {extent:extent});
+                            FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
                             if($.webgis.config.map_backend === 'cesium')
                             {
                                 ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
@@ -4660,7 +4695,7 @@ function LoadAntiBirdTowers(viewer)
                     }
                 });
                 var extent = GetExtentByCzml();
-                FlyToExtent(viewer, {extent:extent});
+                FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
                 if ($.webgis.config.map_backend === 'cesium') {
                     ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
                 }
@@ -4681,7 +4716,7 @@ function LoadAntiBirdTowers(viewer)
             }
         });
         var extent = GetExtentByCzml();
-        FlyToExtent(viewer, {extent:extent});
+        FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
         if ($.webgis.config.map_backend === 'cesium') {
             ReloadCzmlDataSource(viewer, $.webgis.config.zaware);
         }
@@ -5294,7 +5329,7 @@ function ReloadBorders(viewer, forcereload)
             
         }
     });
-    FlyToExtent(viewer, {extent:extent});
+    FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
 }
 
 function LoadSegments(db_name, callback)
@@ -5871,9 +5906,9 @@ function LookAtTargetExtent(viewer, id, dx, dy)
         var south = Cesium.Math.toRadians(y - dy);
         var east = Cesium.Math.toRadians(x + dx);
         var north = Cesium.Math.toRadians(y + dy);
-        //var extent = new Cesium.Extent(west, south, east, north);
-        var extent = {west:west,south:south,east:east,north:north};
-        FlyToExtent(viewer, {extent:extent});
+        var extent = new Cesium.Extent(west, south, east, north);
+        //scene.camera.controller.viewExtent(extent, ellipsoid);
+        FlyToExtent(viewer, west, south, east, north);
     }
 }
 function ViewExtentByPos(viewer, lng, lat,  dx, dy)
@@ -5921,21 +5956,24 @@ function FlyToPointCart3(viewer, cartopos, duration)
     });    
 }
 
-function FlyToExtent(viewer, option)
+function FlyToExtent(viewer, west, south, east, north)
 {
     if($.webgis.config.map_backend === 'cesium')
     {
         var scene = viewer.scene;
-        var extent = Cesium.Rectangle.fromDegrees(option.extent.west, option.extent.south, option.extent.east, option.extent.north);
-        var opt = { destination : extent };
-        delete option.extent;
-        opt = $.extend(true, opt, option)
-        scene.camera.flyTo(opt);
+        var extent = Cesium.Rectangle.fromDegrees(west, south, east, north);
+        //console.log(extent);
+        //scene.camera.flyToRectangle({
+            //destination : extent
+        //});
+        scene.camera.flyTo({
+            destination : extent
+        });
     }
     if($.webgis.config.map_backend === 'leaflet')
     {
-        var southWest = L.latLng(option.extent.south, option.extent.west);
-        var    northEast = L.latLng(option.extent.north, option.extent.east);
+        var southWest = L.latLng(south, west);
+        var    northEast = L.latLng(north, east);        
         var bounds = L.latLngBounds(southWest, northEast);
         viewer.fitBounds(bounds);
     }
@@ -6364,7 +6402,7 @@ function TowerInfoMixin(viewer)
         });
         eventHelper.add(viewer.homeButton.viewModel.command.afterExecute, function(commandInfo){
             var extent = GetExtentByCzml();
-            FlyToExtent(viewer, {extent:extent});
+            FlyToExtent(viewer, extent['west'], extent['south'], extent['east'], extent['north']);
         });
     }
 

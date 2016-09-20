@@ -128,19 +128,23 @@ function GetParamsFromUrl () {
 
 function GetDefaultExtent(db_name)
 {
-	if(db_name == 'kmgd')
-	{
-		return {'west':101.69184, 'south':24.04067, 'east':103.71404, 'north':26.06087};
-	}
-	if(db_name == 'ztgd')
-	{
-		return {'west':102.7013, 'south':26.32388, 'east':104.7235, 'north':28.34408};
-	}
+    if(db_name === 'kmgd' || db_name === 'kmgd_yx')
+    {
+        return {'west':101.69184, 'south':24.04067, 'east':103.71404, 'north':26.06087};
+    }
+    else if(db_name === 'ztgd')
+    {
+        return {'west':102.7013, 'south':26.32388, 'east':104.7235, 'north':28.34408};
+    }
+    else
+    {
+        return {'west':101.69184, 'south':24.04067, 'east':103.71404, 'north':26.06087};
+    }
 }
 function GetDefaultCenter(db_name)
 {
-	var ext = GetDefaultExtent(db_name);
-	return [(ext['west'] + ext['east'])/2.0, (ext['south'] + ext['north'])/2.0];
+    var ext = GetDefaultExtent(db_name);
+    return [(ext['west'] + ext['east'])/2.0, (ext['south'] + ext['north'])/2.0];
 }
 
 function InitWebGISFormDefinition()
